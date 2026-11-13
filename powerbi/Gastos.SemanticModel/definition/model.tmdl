@@ -1,0 +1,21 @@
+model Model
+	culture: pt-BR
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: pt-BR
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["pServidor", "pBanco", "pMeta", "pDiasFechamento", "Movimentacao", "dCalendario", "dFatura", "dOrigem", "dArea", "dCategoria", "dGrupo", "Parametros", "_Medidas"]
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+ref table Movimentacao
+ref table dCalendario
+ref table dFatura
+ref table dOrigem
+ref table dArea
+ref table dCategoria
+ref table dGrupo
+ref table Parametros
+ref table _Medidas

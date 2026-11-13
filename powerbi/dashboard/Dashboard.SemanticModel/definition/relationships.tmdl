@@ -1,0 +1,16 @@
+relationship relData
+	fromColumn: fato_movto_financ.SK_DATA
+	toColumn: dim_calendario.SK_DATA
+
+relationship relOrigem
+	fromColumn: fato_movto_financ.SK_ORIGEM
+	toColumn: dim_origem.SK_ORIGEM
+
+relationship relCategoria
+	fromColumn: fato_movto_financ.SK_CATEGORIA_FINANC
+	toColumn: dim_categoria_financ.SK_CATEGORIA_FINANC
+
+relationship relGrupo
+	fromColumn: fato_movto_financ.SK_GRUPO_FINANC
+	toColumn: dim_grupo_financ.SK_GRUPO_FINANC
+

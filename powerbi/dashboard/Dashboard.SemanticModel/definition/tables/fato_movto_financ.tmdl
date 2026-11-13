@@ -1,0 +1,103 @@
+/// Cópia de gold.fato_movto_financ: um lançamento por linha.
+table fato_movto_financ
+	lineageTag: a30cb07d-c1ab-5d42-9d43-e31ce0b53a4e
+
+	column SK_DATA
+		dataType: int64
+		isHidden
+		lineageTag: 51bbd59d-8f01-51fc-9663-600ce0e565c8
+		summarizeBy: none
+		sourceColumn: SK_DATA
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_ORIGEM
+		dataType: int64
+		isHidden
+		lineageTag: 841715ab-7abc-519b-b3fb-3aa284f8150d
+		summarizeBy: none
+		sourceColumn: SK_ORIGEM
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_CATEGORIA_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: 4bd07926-45c2-5faf-8bbe-2119a8d58d57
+		summarizeBy: none
+		sourceColumn: SK_CATEGORIA_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_GRUPO_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: c4d208c5-c0b9-5ff4-a815-7937172d0c12
+		summarizeBy: none
+		sourceColumn: SK_GRUPO_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Despesa é negativa; receita, positiva.
+	column VL_TRANSACAO
+		dataType: double
+		isHidden
+		formatString: "R$" #,0.00
+		lineageTag: 650ee1bb-0b3d-5228-8b62-6ca58f3d3056
+		summarizeBy: sum
+		sourceColumn: VL_TRANSACAO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// ANALITICO ou SINTETICO. Filtre sempre ANALITICO: o SINTETICO é o pagamento da fatura e contaria o cartão duas vezes.
+	column DS_NIVEL
+		dataType: string
+		lineageTag: 3300722b-71f9-5314-85a4-d5088d9a2c64
+		summarizeBy: none
+		sourceColumn: DS_NIVEL
+
+		annotation SummarizationSetBy = Automatic
+
+	/// RECEITA ou DESPESA.
+	column DS_TIPO_FLUXO
+		dataType: string
+		lineageTag: b1dd5ec6-d217-5bb2-a8e2-5b8c6c51f9c0
+		summarizeBy: none
+		sourceColumn: DS_TIPO_FLUXO
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_PARCELA
+		dataType: int64
+		formatString: #,0
+		lineageTag: 26330ee8-10a0-5c88-8ece-223c6325166e
+		summarizeBy: none
+		sourceColumn: NR_PARCELA
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Descrição como veio da origem.
+	column DS_DETALHE_ORIGINAL
+		dataType: string
+		lineageTag: a58f3ab5-81ce-56aa-8af9-90888e6f96ac
+		summarizeBy: none
+		sourceColumn: DS_DETALHE_ORIGINAL
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fato_movto_financ = m
+		mode: import
+		source =
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="fato_movto_financ"]}[Data],
+				
+				    // Copia da gold: so a selecao das colunas que esta aba usa. Nada e
+				    // transformado aqui - o que precisa ser derivado e coluna
+				    // calculada, que fica visivel no modelo.
+				    Final  = Table.SelectColumns(Tabela, {"SK_DATA", "SK_ORIGEM", "SK_CATEGORIA_FINANC", "SK_GRUPO_FINANC", "VL_TRANSACAO", "DS_NIVEL", "DS_TIPO_FLUXO", "NR_PARCELA", "DS_DETALHE_ORIGINAL"}, MissingField.UseNull)
+				in
+				    Final
+
+	annotation PBI_ResultType = Exception
+

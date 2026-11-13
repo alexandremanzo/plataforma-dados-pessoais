@@ -1,0 +1,35 @@
+/// Traz os parâmetros para dentro do modelo, para o DAX lê-los.
+table Parametros
+	isHidden
+	lineageTag: aa2e3cb6-5ede-59ef-a144-62e099720055
+
+	column 'Meta da fatura'
+		dataType: double
+		isHidden
+		lineageTag: de6468b4-fdc0-5feb-871b-70f0308f1adf
+		summarizeBy: none
+		sourceColumn: Meta da fatura
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dias antes do fechamento'
+		dataType: int64
+		isHidden
+		lineageTag: 4181501b-ccb4-5dcf-8819-feec574d6777
+		summarizeBy: none
+		sourceColumn: Dias antes do fechamento
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Parametros = m
+		mode: import
+		source = ```
+				let
+				    Tabela = #table(
+				        type table [#"Meta da fatura" = number, #"Dias antes do fechamento" = Int64.Type],
+				        {{pMeta, pDiasFechamento}})
+				in
+				    Tabela
+				```
+
+	annotation PBI_ResultType = Table

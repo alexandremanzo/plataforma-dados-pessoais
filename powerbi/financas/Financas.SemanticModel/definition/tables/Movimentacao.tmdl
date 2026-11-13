@@ -1,0 +1,131 @@
+/// Fato: um lançamento por linha. O pagamento da fatura (SINTETICO) fica de fora para não contar o cartão duas vezes.
+table Movimentacao
+	lineageTag: 30ed6045-de91-539b-b857-6a4685863a1b
+
+	column SK_DATA
+		dataType: int64
+		isHidden
+		lineageTag: 4b8ca811-7d22-5bec-9fa7-52a38ec9acf0
+		summarizeBy: none
+		sourceColumn: SK_DATA
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_ORIGEM
+		dataType: int64
+		isHidden
+		lineageTag: 1fe5a22a-c0a3-5e1d-a1b5-6164399e61c5
+		summarizeBy: none
+		sourceColumn: SK_ORIGEM
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_CATEGORIA_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: 20497781-9f4d-598e-9536-2c4f8ddc81fe
+		summarizeBy: none
+		sourceColumn: SK_CATEGORIA_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_GRUPO_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: e124eeae-b729-5485-a9cf-55ad5c2e0f3e
+		summarizeBy: none
+		sourceColumn: SK_GRUPO_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column VL_TRANSACAO
+		dataType: decimal
+		formatString: "R$" #,0.00
+		isHidden
+		lineageTag: 0988c770-53e1-5ad1-a8f2-79ad3e95766d
+		summarizeBy: none
+		sourceColumn: VL_TRANSACAO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Valor quando o fluxo é RECEITA; zero quando não é.
+	column VL_RECEITA
+		dataType: decimal
+		formatString: "R$" #,0.00
+		isHidden
+		lineageTag: 71b31110-1bdd-57fd-873f-c8963b78cc4c
+		summarizeBy: none
+		sourceColumn: VL_RECEITA
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Valor positivo quando o fluxo é DESPESA; zero quando não é.
+	column VL_DESPESA
+		dataType: decimal
+		formatString: "R$" #,0.00
+		isHidden
+		lineageTag: aa1b7062-7d1b-53a6-ab32-c084233ea930
+		summarizeBy: none
+		sourceColumn: VL_DESPESA
+
+		annotation SummarizationSetBy = Automatic
+
+	/// RECEITA ou DESPESA.
+	column DS_TIPO_FLUXO
+		dataType: string
+		lineageTag: e39f99e5-4660-5557-8fbf-da2eccaf05b8
+		summarizeBy: none
+		sourceColumn: DS_TIPO_FLUXO
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_PARCELA
+		dataType: int64
+		formatString: #,0
+		lineageTag: 520a25f0-3fde-5f79-8248-884775afc5d3
+		summarizeBy: none
+		sourceColumn: NR_PARCELA
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Descrição como veio da origem.
+	column DS_DETALHE_ORIGINAL
+		dataType: string
+		lineageTag: 8c4a1b0d-6392-531c-8701-28052910cdf0
+		summarizeBy: none
+		sourceColumn: DS_DETALHE_ORIGINAL
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Movimentacao = m
+		mode: import
+		source = ```
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="fato_movto_financ"]}[Data],
+
+				    // SINTETICO e o pagamento da fatura: o total do cartao saindo da
+				    // conta. Somado junto com as compras do cartao, contaria o mesmo
+				    // gasto duas vezes — e o erro nao se denuncia, so dobra o numero.
+				    Analitico = Table.SelectRows(Tabela, each [DS_NIVEL] = "ANALITICO"),
+
+				    // A base guarda despesa NEGATIVA e receita POSITIVA (conferido:
+				    // 12.745 despesas, todas < 0; 2.302 receitas, todas > 0). As duas
+				    // colunas abaixo deixam cada fluxo somavel direto, sem ABS espalhado
+				    // por dezenas de medidas.
+				    Receita = Table.AddColumn(Analitico, "VL_RECEITA",
+				                  each if [DS_TIPO_FLUXO] = "RECEITA" then [VL_TRANSACAO] else 0,
+				                  type number),
+				    Despesa = Table.AddColumn(Receita, "VL_DESPESA",
+				                  each if [DS_TIPO_FLUXO] = "DESPESA" then -[VL_TRANSACAO] else 0,
+				                  type number),
+				    Final   = Table.SelectColumns(Despesa, {
+				                  "SK_DATA", "SK_ORIGEM", "SK_CATEGORIA_FINANC",
+				                  "SK_GRUPO_FINANC", "VL_TRANSACAO", "VL_RECEITA", "VL_DESPESA",
+				                  "DS_TIPO_FLUXO", "NR_PARCELA", "DS_DETALHE_ORIGINAL"},
+				                  MissingField.UseNull)
+				in
+				    Final
+				```
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saldo da Vida</title>
+<style>
+  /* Mesmo mundo dos outros painéis. Patrimônio é azul-pervinca; cada pedaço
+     mantém a cor do painel de onde vem: investimentos ouro, cartão limão, família lilás. */
+  :root {
+    color-scheme: dark;
+    --bg: #071013;
+    --bg-alto: #0a171b;
+    --painel: #0e1d21;
+    --painel-2: #12262b;
+    --linha: #1d343a;
+    --linha-forte: #2a4a51;
+    --tinta: #e8f2f0;
+    --fraca: #8fa8a5;
+    --apagada: #5d7774;
+    --pl: #7aa2ff;
+    --invest: #e9c46a;
+    --cartao: #b8e05a;
+    --familia: #a68cff;
+    --renda: #4fd1a5;
+    --gasto: #ff6f61;
+    --bom: #4fd1a5;
+    --ruim: #ff6f61;
+    --atencao: #ffb547;
+    --raio: 14px;
+    --display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    --texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 560px at 6% -10%, rgba(122, 162, 255, .11), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(233, 196, 106, .06), transparent 60%),
+      var(--bg);
+    color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.5;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 80px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px 96px; } }
+
+  .barra-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0;
+    border-bottom: 1px solid var(--linha); font-size: 13px; color: var(--fraca); flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 10px; color: var(--tinta); font-weight: 600; letter-spacing: .02em; }
+  .marca svg { width: 26px; height: 26px; }
+  .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav a { color: var(--fraca); text-decoration: none; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; transition: color .15s, border-color .15s; }
+  .nav a:hover, .nav a:focus-visible { color: var(--tinta); border-color: var(--linha-forte); outline: none; }
+  .nav a.cta { color: var(--bg); background: var(--pl); font-weight: 600; }
+
+  .hero { padding: 48px 0 24px; display: grid; gap: 28px; }
+  .hero > *, .grade > *, .sim > *, .filtros > * { min-width: 0; }
+  .olho { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--pl); font-weight: 600; margin: 0 0 14px; }
+  .hero h1 { font-family: var(--display); font-weight: 600; font-stretch: 85%; font-size: clamp(34px, 5.4vw, 66px);
+    line-height: 1.04; letter-spacing: -.015em; margin: 0; max-width: 22ch; text-wrap: balance; }
+  .hero h1 em { font-style: normal; color: var(--pl); }
+  .hero .tese { max-width: 72ch; color: var(--fraca); font-size: 18px; margin: 18px 0 0; text-wrap: pretty; }
+  .hero .tese b { color: var(--tinta); font-weight: 600; }
+
+  .filtros { display: flex; gap: 12px 20px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; z-index: 10;
+    padding: 12px 0; background: linear-gradient(180deg, var(--bg) 70%, transparent); }
+  .segmento { display: inline-grid; grid-auto-flow: column; padding: 4px; gap: 4px; background: var(--bg-alto);
+    border: 1px solid var(--linha); border-radius: 12px; max-width: 100%; overflow-x: auto; }
+  .segmento button { font: inherit; font-size: 13px; color: var(--fraca); background: transparent; border: 0; border-radius: 9px;
+    padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+  .segmento button[aria-pressed="true"] { background: var(--painel-2); color: var(--tinta); box-shadow: 0 0 0 1px var(--linha-forte); }
+  .segmento button:focus-visible { outline: 2px solid var(--pl); outline-offset: 1px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr)); gap: 12px; }
+  .kpi { background: linear-gradient(180deg, var(--painel-2), var(--painel)); border: 1px solid var(--linha);
+    border-top: 2px solid var(--cor-k, var(--linha)); border-radius: var(--raio); padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .kpi .numero { font-size: 30px; }
+  .rotulo { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); font-weight: 600; }
+  .numero { font-family: var(--display); font-weight: 600; line-height: 1.1; letter-spacing: -.01em; }
+  .nota { font-size: 13px; color: var(--fraca); }
+  .nota b { color: var(--tinta); }
+  .delta { font-size: 12px; font-weight: 600; }
+  .bom { color: var(--bom); }
+  .ruim { color: var(--ruim); }
+  .aviso { color: var(--atencao); }
+
+  section.bloco { padding: 56px 0 0; scroll-margin-top: 64px; }
+  .cab { display: grid; gap: 8px; margin-bottom: 24px; max-width: 76ch; }
+  .cab h2 { font-family: var(--display); font-weight: 600; font-stretch: 90%; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .cab p { margin: 0; color: var(--fraca); text-wrap: pretty; }
+  .cab p b { color: var(--tinta); font-weight: 600; }
+  .cab .olho { margin: 0; }
+  .grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+  .cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 22px; min-width: 0;
+    display: flex; flex-direction: column; gap: 12px; }
+  .cartao h3 { margin: 0; font-size: 17px; font-weight: 600; }
+  .cartao .sub { margin: 0; color: var(--fraca); font-size: 14px; }
+  .cartao .sub b { color: var(--tinta); }
+  .tela { width: 100%; position: relative; }
+  .tela svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg .grid { stroke: var(--linha); stroke-width: 1; }
+  svg .zero { stroke: var(--linha-forte); stroke-width: 1.2; }
+  svg .ax { fill: var(--apagada); font-size: 11px; font-family: var(--texto); }
+  svg .rot { fill: var(--fraca); font-size: 12px; font-family: var(--texto); }
+  svg .val { fill: var(--tinta); font-size: 12px; font-weight: 600; font-family: var(--texto); }
+
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--fraca); align-items: center; }
+  .legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .legenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* balanço: ativos de um lado, passivos do outro */
+  .balanco { display: grid; gap: 10px; }
+  .faixa { display: flex; height: 34px; border-radius: 9px; overflow: hidden; background: var(--bg-alto); }
+  .faixa span { height: 100%; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+  .itens { display: grid; gap: 2px; }
+  .item { display: grid; grid-template-columns: auto 1fr auto; gap: 10px 12px; align-items: center; font-size: 14px; padding: 7px 0; border-bottom: 1px solid var(--linha); }
+  .item:last-child { border-bottom: 0; }
+  .item i { width: 10px; height: 10px; border-radius: 3px; }
+  .item small { color: var(--apagada); font-size: 12px; display: block; }
+  .item b { white-space: nowrap; font-weight: 600; }
+  .item.total { border-top: 1px solid var(--linha-forte); border-bottom: 0; padding-top: 10px; font-size: 15px; }
+
+  /* tabelas */
+  .tabela { width: 100%; overflow-x: auto; }
+  .tabela.alta { max-height: 440px; overflow-y: auto; }
+  table.dados { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.dados th, table.dados td { padding: 9px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--linha); }
+  table.dados th { color: var(--fraca); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; position: sticky; top: 0; background: var(--painel); }
+  table.dados th:first-child, table.dados td:first-child { text-align: left; }
+  table.dados tbody tr:hover td { background: var(--painel-2); }
+  table.dados tr.velho td { color: var(--apagada); }
+  table.dados tr.parcial td:first-child::after { content: " *"; color: var(--atencao); }
+
+  /* simulador */
+  .sim { display: grid; gap: 16px; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 980px) { .sim { grid-template-columns: 1fr; } }
+  .ctl { display: grid; gap: 4px; padding: 9px 0; border-bottom: 1px solid var(--linha); }
+  .ctl:last-child { border-bottom: 0; }
+  .ctl .topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+  .ctl .topo b { font-family: var(--display); font-size: 17px; color: var(--cor-c, var(--pl)); white-space: nowrap; }
+  .ctl .base { font-size: 12px; color: var(--apagada); }
+  .ctl input[type="range"] { width: 100%; accent-color: var(--cor-c, var(--pl)); height: 20px; cursor: pointer; background: transparent; margin: 0; }
+  .ctl input[type="range"]:focus-visible { outline: 2px solid var(--pl); outline-offset: 2px; border-radius: 6px; }
+  .ctl.forte { border-bottom: 1px solid var(--linha-forte); padding-bottom: 14px; margin-bottom: 4px; }
+  .ctl.forte .topo b { font-size: 26px; }
+  .botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+  .botao { font: inherit; font-size: 13px; color: var(--tinta); background: var(--painel-2); border: 1px solid var(--linha-forte);
+    border-radius: 9px; padding: 7px 12px; cursor: pointer; }
+  .botao:hover { border-color: var(--pl); }
+  .botao:focus-visible { outline: 2px solid var(--pl); outline-offset: 1px; }
+  .placar { border-radius: var(--raio); padding: 24px; border: 1px solid var(--linha-forte);
+    background: radial-gradient(600px 240px at 100% 0, rgba(122, 162, 255, .13), transparent 70%), linear-gradient(180deg, var(--painel-2), var(--painel));
+    display: grid; gap: 18px; }
+  .placar-nums { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+  .placar .numero { font-size: clamp(28px, 3vw, 40px); }
+  .placar p { margin: 0; font-size: 14px; color: var(--fraca); }
+  .placar p b { color: var(--tinta); }
+
+  .notas { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--fraca); display: grid; gap: 12px; max-width: 86ch; }
+  .notas h2 { font-size: 15px; color: var(--tinta); margin: 0; font-weight: 600; }
+  .notas ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .notas b { color: var(--tinta); font-weight: 600; }
+
+  .dica { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .12s; background: #0b1a1e;
+    border: 1px solid var(--linha-forte); border-radius: 10px; padding: 8px 12px; font-size: 13px; color: var(--tinta);
+    box-shadow: 0 12px 30px rgba(0,0,0,.45); white-space: nowrap; }
+  .dica .q { color: var(--fraca); display: block; font-size: 12px; margin-bottom: 2px; }
+  .dica i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+
+  .entra { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .entra.visto { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .entra { opacity: 1; transform: none; transition: none; } * { transition-duration: 0s !important; } }
+
+  .mzo-atual { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: #8fa8a5; margin-left: auto; cursor: help; }
+  .mzo-atual i { width: 7px; height: 7px; border-radius: 50%; background: #4fd1a5; box-shadow: 0 0 0 3px rgba(79, 209, 165, .18); flex: none; }
+  .mzo-atual b { color: #e8f2f0; font-weight: 600; }
+
+  .mzo-logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #e8f2f0; }
+  .mzo-logo .mzo-selo { flex: none; filter: drop-shadow(0 4px 14px rgba(233, 196, 106, .25)); }
+  .mzo-txt { display: grid; line-height: 1; gap: 3px; }
+  .mzo-txt b { font-family: Bahnschrift, "DIN Alternate", system-ui, sans-serif; font-weight: 700; font-size: 17px; letter-spacing: .14em; }
+  .mzo-txt small { font-size: 8.5px; letter-spacing: .38em; text-transform: uppercase; color: #8fa8a5; font-weight: 600; }
+  .marca .mzo-sep { width: 1px; height: 26px; background: #2a4a51; margin: 0 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="barra-topo">
+    <div class="marca"><span class="mzo-logo"><svg class="mzo-selo" width="28" height="28" viewBox="0 0 40 40" fill="none" aria-hidden="true"><defs><linearGradient id="mzo-g" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse"><stop stop-color="#f2d38a"/><stop offset=".55" stop-color="#e9c46a"/><stop offset="1" stop-color="#4fd1a5"/></linearGradient></defs><rect x="1" y="1" width="38" height="38" rx="11" fill="url(#mzo-g)"/><path d="M9.5 28.5V12.5l10.5 11 10.5-11v16" stroke="#071013" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30.5" cy="28.5" r="2.6" fill="#071013"/></svg><span class="mzo-txt"><b>MZO</b><small>Analytics</small></span></span><span class="mzo-sep"></span>
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M5 26h22" stroke="#7aa2ff" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M8 21V14M14 21V10M20 21V12M26 21V6" stroke="#e9c46a" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="26" cy="6" r="2.4" fill="#7aa2ff"/>
+      </svg>
+      Saldo da Vida
+    </div>
+    <nav class="nav" aria-label="Seções">
+      <a href="#evolucao">Evolução</a>
+      <a href="#balanco">Ativos × passivos</a>
+      <a href="#ponte">O que mudou</a>
+      <a href="#poupanca">Poupança</a>
+      <a href="#estilo">Renda × gasto</a>
+      <a href="#simulador" class="cta">Simulador</a>
+    </nav>
+    <span class="mzo-atual" title="Dados fictícios de demonstração · Fictional demo data
+Última carga conferida em 13/11/2026 07:00
+fato_familia: dados 13/11/2026 07:00 · conferido 13/11/2026 07:00
+fato_investimento: dados 13/11/2026 07:00 · conferido 13/11/2026 07:00
+fato_movto_financ: dados 13/11/2026 07:00 · conferido 13/11/2026 07:00
+fato_posicao_investimento: dados 13/11/2026 07:00 · conferido 13/11/2026 07:00"><i></i>Dados fictícios · atualizado <b>13/11 07:00</b></span>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="olho" id="periodo-txt">—</p>
+      <h1 id="manchete">—</h1>
+      <p class="tese" id="tese">—</p>
+    </div>
+  </header>
+
+  <div class="filtros">
+    <div class="segmento" role="group" aria-label="Período" id="periodos"></div>
+    <div class="segmento" role="group" aria-label="Visão da conta da casa" id="visoes"></div>
+    <div class="segmento" role="group" aria-label="Vencidos não pagos" id="vencidos"></div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <!-- ===================================================== evolução -->
+  <section class="bloco entra" id="evolucao">
+    <div class="cab">
+      <p class="olho">Evolução</p>
+      <h2 id="evo-titulo">Patrimônio líquido mês a mês</h2>
+      <p>Acima do zero, os investimentos; abaixo, o que ainda está para pagar no cartão e na casa. A linha é a diferença: o patrimônio líquido.
+        O valor dos investimentos antes de hoje é <b>estimado</b> (o banco guarda o que entrou e saiu, não o preço de cada mês).</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda" id="leg-evo"></div>
+      <div class="tela" id="g-evo"></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== balanço -->
+  <section class="bloco entra" id="balanco">
+    <div class="cab">
+      <p class="olho">Ativos × passivos</p>
+      <h2 id="bal-titulo">O que você tem e o que deve, hoje</h2>
+      <p>A conta da casa é dividida entre Ale e Lia. Na visão <b>sua parte</b>, entra a fatia do Ale pela proporção dos depósitos; em <b>casa inteira</b>, entra tudo.</p>
+    </div>
+    <div class="grade">
+      <div class="cartao">
+        <h3>Balanço</h3>
+        <div class="balanco"><div class="faixa" id="faixa"></div><div class="itens" id="itens"></div></div>
+      </div>
+      <div class="cartao">
+        <h3>Quando as dívidas caem</h3>
+        <p class="sub" id="cal-sub">—</p>
+        <div class="legenda"><span><i style="background:var(--cartao)"></i>Cartão</span><span><i style="background:var(--familia)"></i>Casa</span></div>
+        <div class="tela" id="g-cal"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== ponte -->
+  <section class="bloco entra" id="ponte">
+    <div class="cab">
+      <p class="olho">O que mudou</p>
+      <h2 id="ponte-titulo">De onde veio a variação</h2>
+      <p>Do patrimônio líquido no começo do período ao de hoje: o que você aportou, o que a carteira rendeu, as parcelas novas e as pagas.</p>
+    </div>
+    <div class="grade">
+      <div class="cartao"><div class="tela" id="g-ponte"></div></div>
+      <div class="cartao">
+        <h3>Mês a mês</h3>
+        <div class="tabela alta" id="t-ponte"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== poupança -->
+  <section class="bloco entra" id="poupanca">
+    <div class="cab">
+      <p class="olho">Taxa de poupança</p>
+      <h2 id="pou-titulo">Quanto da renda vira investimento</h2>
+      <p>Renda é o que entrou na conta (salário, PLR, acertos e outras), com a régua do painel de finanças. Aporte é o que entrou na XP menos o que saiu dela.
+        Meses de resgate aparecem abaixo do zero.</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda"><span><i style="background:var(--renda);opacity:.35"></i>Renda</span><span><i style="background:var(--invest)"></i>Aporte líquido</span><span><i style="background:var(--pl);height:2px"></i>Taxa de poupança (12 meses)</span></div>
+      <div class="tela" id="g-pou"></div>
+      <p class="nota" id="pou-nota"></p>
+    </div>
+  </section>
+
+  <!-- ===================================================== estilo de vida -->
+  <section class="bloco entra" id="estilo">
+    <div class="cab">
+      <p class="olho">Renda × gasto</p>
+      <h2 id="est-titulo">O custo de vida acompanha a renda?</h2>
+      <p>Média por mês em cada ano. A <b>elasticidade</b> diz quanto o gasto cresceu para cada 1% de crescimento da renda: acima de 1, o custo de vida cresce mais rápido que o que entra.
+        Compra de bem (carro, apartamento) fica fora do gasto.</p>
+    </div>
+    <div class="grade">
+      <div class="cartao">
+        <div class="legenda"><span><i style="background:var(--renda)"></i>Renda</span><span><i style="background:#2f8f6f"></i>Só salário</span><span><i style="background:var(--gasto)"></i>Gasto</span></div>
+        <div class="tela" id="g-est"></div>
+      </div>
+      <div class="cartao">
+        <div class="tabela" id="t-est"></div>
+        <p class="nota" id="est-nota">—</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== simulador -->
+  <section class="bloco entra" id="simulador">
+    <div class="cab">
+      <p class="olho">Simulador</p>
+      <h2 id="sim-titulo">Quando o patrimônio chega na meta</h2>
+      <p>Parte de hoje. Os investimentos crescem com o aporte e o retorno; as parcelas e contas já lançadas caem nas datas que estão no banco; os novos parcelamentos viram dívida por alguns meses.
+        A meta fica guardada neste navegador.</p>
+    </div>
+    <div class="sim">
+      <div class="cartao">
+        <div class="ctl forte"><div class="topo"><label for="s-meta">Meta de patrimônio líquido</label><b id="s-meta-v">—</b></div>
+          <input type="range" id="s-meta" min="50000" max="2000000" step="10000"><span class="base" id="s-meta-b">—</span></div>
+        <div class="ctl" style="--cor-c:var(--invest)"><div class="topo"><label for="s-ap">Aporte por mês</label><b id="s-ap-v">—</b></div>
+          <input type="range" id="s-ap" min="0" max="20000" step="100"><span class="base" id="s-ap-b">—</span></div>
+        <div class="ctl" style="--cor-c:var(--invest)"><div class="topo"><label for="s-ret">Retorno ao ano</label><b id="s-ret-v">—</b></div>
+          <input type="range" id="s-ret" min="0" max="20" step="0.5"><span class="base" id="s-ret-b">—</span></div>
+        <div class="ctl" style="--cor-c:var(--cartao)"><div class="topo"><label for="s-np">Novos parcelamentos por mês</label><b id="s-np-v">—</b></div>
+          <input type="range" id="s-np" min="0" max="5000" step="50"><span class="base" id="s-np-b">—</span></div>
+        <div class="ctl"><div class="topo"><label for="s-hz">Horizonte</label><b id="s-hz-v">—</b></div>
+          <input type="range" id="s-hz" min="1" max="20" step="1"><span class="base">anos a partir de hoje</span></div>
+        <div class="botoes"><button type="button" class="botao" id="s-reset">Voltar ao ritmo atual</button></div>
+      </div>
+      <div class="placar">
+        <div class="placar-nums" id="sim-nums"></div>
+        <p id="sim-txt">—</p>
+        <div class="legenda"><span><i style="background:var(--pl)"></i>Patrimônio líquido</span><span><i style="background:var(--invest)"></i>Investido</span><span><i style="background:#fff;height:2px"></i>Meta</span></div>
+        <div class="tela" id="g-sim"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="notas">
+    <h2>De onde vêm estes números</h2>
+    <ul>
+      <li><b>Patrimônio líquido</b> = investimentos − parcelas em aberto no cartão − o que a casa ainda tem a pagar. Apartamento e carro não entram como ativo: o banco não tem o valor de mercado deles.</li>
+      <li><b>Investimentos</b> é o mesmo total do painel de investimentos (<span id="n-fonte">—</span>). Só XP: previdência e cofrinho ficam fora, como lá.</li>
+      <li><b>Histórico dos investimentos</b> é estimado: o custo acumulado vem do extrato (entradas − saídas + proventos − custos) e a diferença para o total de hoje, <span id="n-ganho">—</span>, é distribuída pelos meses na proporção do capital investido em cada um.</li>
+      <li><b>Cartão em aberto</b> segue o painel de cartão: parcelas já contratadas com fatura depois do mês. O histórico é exato.</li>
+      <li><b>Casa a pagar</b> segue o painel de família: tudo marcado como não pago, inclusive vencidos. O histórico conta só os compromissos (financiamento e Resort) com data depois do mês, a partir do primeiro lançamento de cada um; as contas lançadas (condomínio, luz, diarista, IPTU) só entram no mês de hoje. <b>Vencidos não pagos</b> (<span id="n-venc">—</span>, quase tudo parcela prevista ao lado da paga e financiamento em dobro) contam, como na família; a chave no topo deixa ver sem eles. O financiamento só está lançado até <span id="n-fin">—</span>: o saldo devedor depois disso não está no banco, então a dívida real é maior.</li>
+      <li><b>Sua parte</b> usa <span id="n-parte">—</span>, a proporção dos depósitos de Ale e Lia na conta da casa nos últimos 12 meses (a mesma do simulador da família).</li>
+      <li><b>Renda e gasto</b> seguem o painel de finanças. Antes de 2024 a planilha tinha outra classificação e o gasto pode estar inflado; esses anos aparecem apagados e ficam fora da elasticidade. O mês corrente fica fora das médias (está incompleto).</li>
+      <li>Gerado em <span id="n-gerado">—</span> a partir do <i>db-demo</i>. Arquivo local, sem conexão com a internet.</li>
+    </ul>
+  </footer>
+</div>
+
+<div class="dica" id="dica" role="tooltip"></div>
+
+<script>
+const D = {"gerado":"13/11/2026 15:43","hoje":"2026-11-13","mes_hoje":"2026-11","linhas":[["2021-11",1608.15,1599.82,1600.0,0.0,0.18,8.33,0.0,0.0,0.0],["2021-12",5760.5,5722.38,4110.0,13.73,1.17,29.79,538.5,538.5,0.0],["2022-01",7529.45,7452.54,1720.0,10.37,0.21,38.79,8540.55,8181.55,0.0],["2022-02",13431.02,13284.96,5820.0,13.17,0.75,69.15,6105.4,0.0,0.0],["2022-03",15205.23,14981.18,1650.0,46.44,0.22,77.98,8270.23,4599.98,0.0],["2022-04",17040.92,16729.79,1720.0,28.76,0.15,87.09,5151.25,0.0,0.0],["2022-05",18919.22,18511.73,1730.0,52.32,0.38,96.36,4005.0,0.0,0.0],["2022-06",20980.91,20466.88,1770.0,193.16,8.01,106.54,2858.75,0.0,0.0],["2022-07",22944.74,22314.55,1790.0,57.96,0.29,116.16,1712.5,0.0,0.0],["2022-08",25119.74,24362.73,1990.0,58.39,0.21,126.82,4657.11,4090.86,0.0],["2022-09",27391.07,26496.14,2010.0,123.78,0.37,137.92,5590.86,1500.0,0.0],["2022-10",29732.23,28687.97,2120.0,72.1,0.27,149.33,5627.26,1900.02,0.0],["2022-11",32027.43,30822.72,2050.0,85.22,0.47,160.45,6163.64,2400.0,0.0],["2022-12",37048.02,35657.7,4550.0,298.65,13.67,185.61,3183.35,0.0,0.0],["2023-01",39571.31,37983.27,2230.0,95.96,0.39,197.72,2066.68,0.0,0.0],["2023-02",46174.53,44355.6,6280.0,93.0,0.67,230.89,950.01,0.0,0.0],["2023-03",48816.38,46754.08,2220.0,179.08,0.6,243.37,1113.73,480.39,0.0],["2023-04",51300.97,48983.69,2120.0,109.7,0.09,254.98,636.93,0.0,0.0],["2023-05",53851.99,51267.84,2160.0,124.64,0.49,266.87,1260.13,1100.0,0.0],["2023-06",56781.46,53916.65,2180.0,491.79,22.98,280.66,2650.0,2100.0,0.0],["2023-07",59392.27,56234.73,2200.0,118.35,0.27,292.73,1750.0,0.0,0.0],["2023-08",62272.9,58809.24,2440.0,134.91,0.4,306.13,1400.0,0.0,0.0],["2023-09",65153.37,61370.25,2320.0,241.33,0.32,319.46,4595.84,3545.84,0.0],["2023-10",68135.49,64019.12,2500.0,149.22,0.35,333.25,7718.39,3915.78,0.0],["2023-11",71058.68,66595.65,2430.0,146.92,0.39,346.66,10401.5,4781.6,0.0],["2023-12",77241.94,72402.03,5150.0,687.78,31.4,376.88,7404.85,0.0,0.0],["2024-01",80305.51,75074.81,2510.0,163.36,0.58,390.8,4758.2,0.0,0.0],["2024-02",68119.19,62562.82,-12697.18,185.19,-0.0,325.67,6236.63,2819.82,0.0],["2024-03",71236.03,65339.54,2460.0,316.72,-0.0,340.12,8345.61,3617.04,0.0],["2024-04",74327.74,68076.88,2570.0,167.34,-0.0,354.37,5887.15,0.0,107100.0],["2024-05",77416.73,70797.34,2540.0,180.46,-0.0,368.53,3428.69,0.0,104720.0],["2024-06",81322.89,74316.65,2790.0,764.03,34.72,386.85,2180.13,0.0,102340.0],["2024-07",84676.63,77268.18,2770.0,181.85,0.32,402.21,1104.84,0.0,99960.0],["2024-08",88025.37,80199.45,2740.0,191.68,0.41,417.47,8279.55,7600.0,97580.0],["2024-09",91543.31,83283.86,2740.0,345.17,0.76,433.53,5854.26,0.0,95200.0],["2024-10",95121.28,86412.02,2930.0,198.6,0.44,449.81,3727.13,0.0,92820.0],["2024-11",98773.2,89597.55,2990.0,196.07,0.54,466.39,1600.0,0.0,90440.0],["2024-12",105561.01,95886.23,5450.0,879.66,40.98,499.13,7037.94,7037.94,88060.0],["2025-01",109244.07,99053.68,2960.0,208.27,0.82,515.62,9555.45,4626.01,85680.0],["2025-02",117085.32,106341.37,7080.0,208.44,0.75,553.55,5848.28,0.0,83300.0],["2025-03",121159.35,109843.62,3030.0,472.74,0.49,571.78,2141.11,0.0,87570.0],["2025-04",124945.56,113041.41,2940.0,258.4,0.61,588.43,9047.25,7692.29,83140.0],["2025-05",129049.37,116538.58,3240.0,257.42,0.25,606.63,5647.21,0.0,78710.0],["2025-06",133824.41,120685.41,3010.0,1190.76,53.93,628.22,2247.17,0.0,75480.0],["2025-07",137998.6,124213.02,3240.0,287.81,0.2,646.58,1705.89,731.28,72250.0],["2025-08",142102.8,127652.73,3150.0,290.4,0.69,664.49,1322.9,0.0,69020.0],["2025-09",146532.02,131397.97,3210.0,536.17,0.93,683.98,939.91,0.0,90960.0],["2025-10",150728.84,134892.62,3160.0,335.41,0.76,702.17,556.92,0.0,88780.0],["2025-11",155058.12,138500.94,3270.0,338.68,0.36,720.95,7867.38,7449.69,85760.0],["2025-12",163190.91,145874.39,6000.0,1439.33,65.88,759.34,5594.09,0.0,82740.0],["2026-01",167702.34,149607.06,3390.0,343.38,0.71,778.77,8379.2,5058.4,79720.0],["2026-02",176351.33,157436.53,7480.0,349.68,0.21,819.52,6894.47,1514.4,76700.0],["2026-03",181416.14,161659.83,3530.0,694.57,1.27,841.51,5668.02,0.0,73680.0],["2026-04",186153.44,165535.45,3550.0,326.67,1.05,861.68,4441.57,0.0,70660.0],["2026-05",190795.5,169296.25,3400.0,361.14,0.34,881.26,3215.12,0.0,67640.0],["2026-06",197057.03,174648.66,3690.0,1741.66,79.25,909.12,8385.54,6047.7,64620.0],["2026-07",202110.96,178772.01,3750.0,373.69,0.34,930.58,6077.96,585.6,61600.0],["2026-08",207069.64,182779.25,3610.0,398.43,1.19,951.44,3539.58,0.0,58580.0],["2026-09",212520.56,187255.42,3670.0,806.86,0.69,974.74,1001.2,0.0,55560.0],["2026-10",217632.16,191370.86,3730.0,386.0,0.56,996.16,3768.72,3290.0,52120.0],["2026-11",222468.21,195190.86,3820.0,0.0,-0.0,1016.05,3112.44,0.0,51703.98]],"renda_gasto":[["2021-01",8700.0,8700.0,5082.22,0.0,0.0],["2021-02",20975.96,8700.0,4573.08,0.0,0.0],["2021-03",9300.0,9300.0,7183.86,0.0,0.0],["2021-04",9300.0,9300.0,5562.12,0.0,0.0],["2021-05",9300.0,9300.0,7221.86,0.0,0.0],["2021-06",9300.0,9300.0,6304.98,0.0,0.0],["2021-07",9300.0,9300.0,9574.4,0.0,0.0],["2021-08",9300.0,9300.0,4890.58,0.0,0.0],["2021-09",9300.0,9300.0,4000.49,0.0,0.0],["2021-10",9300.0,9300.0,5185.51,0.0,0.0],["2021-11",13950.0,9300.0,3527.48,0.0,1600.0],["2021-12",13113.0,9300.0,5598.08,0.0,4110.0],["2022-01",9300.0,9300.0,13427.92,0.0,1720.0],["2022-02",22933.24,9300.0,5199.52,0.0,5820.0],["2022-03",10100.0,10100.0,11334.74,0.0,1650.0],["2022-04",10100.0,10100.0,4864.09,0.0,1720.0],["2022-05",10100.0,10100.0,4006.24,0.0,1730.0],["2022-06",10100.0,10100.0,4379.13,0.0,1770.0],["2022-07",10100.0,10100.0,7729.03,0.0,1790.0],["2022-08",10100.0,10100.0,9128.62,0.0,1990.0],["2022-09",10100.0,10100.0,7372.59,0.0,2010.0],["2022-10",10100.0,10100.0,6281.93,0.0,2120.0],["2022-11",15150.0,10100.0,7866.12,0.0,2050.0],["2022-12",14241.0,10100.0,5069.37,0.0,4550.0],["2023-01",10100.0,10100.0,8687.74,0.0,2230.0],["2023-02",20106.86,10100.0,11019.28,0.0,6280.0],["2023-03",10900.0,10900.0,11159.19,0.0,2220.0],["2023-04",10900.0,10900.0,7568.66,0.0,2120.0],["2023-05",10900.0,10900.0,9431.27,0.0,2160.0],["2023-06",10900.0,10900.0,10750.4,0.0,2180.0],["2023-07",10900.0,10900.0,7283.51,0.0,2200.0],["2023-08",10900.0,10900.0,8089.4,0.0,2440.0],["2023-09",10900.0,10900.0,11766.55,0.0,2320.0],["2023-10",10900.0,10900.0,13513.01,0.0,2500.0],["2023-11",16350.0,10900.0,12293.84,0.0,2430.0],["2023-12",15369.0,10900.0,8805.11,0.0,5150.0],["2024-01",10900.0,10900.0,11615.5,0.0,2510.0],["2024-02",22765.15,10900.0,12332.58,0.0,-12697.18],["2024-03",11600.0,11600.0,13089.72,0.0,2460.0],["2024-04",11600.0,11600.0,9689.09,0.0,2570.0],["2024-05",11600.0,11600.0,9793.21,0.0,2540.0],["2024-06",11600.0,11600.0,8243.12,0.0,2790.0],["2024-07",11600.0,11600.0,10896.71,0.0,2770.0],["2024-08",11600.0,11600.0,16289.62,0.0,2740.0],["2024-09",11600.0,11600.0,9355.06,0.0,2740.0],["2024-10",11600.0,11600.0,8242.56,0.0,2930.0],["2024-11",17400.0,11600.0,7315.26,0.0,2990.0],["2024-12",16356.0,11600.0,16956.57,0.0,5450.0],["2025-01",11600.0,11600.0,11049.62,0.0,2960.0],["2025-02",24865.08,11600.0,10225.38,0.0,7080.0],["2025-03",12300.0,12300.0,11390.97,0.0,3030.0],["2025-04",12300.0,12300.0,16220.81,0.0,2940.0],["2025-05",12300.0,12300.0,11162.4,78900.0,3240.0],["2025-06",25800.0,12300.0,10000.17,0.0,3010.0],["2025-07",25800.0,12300.0,9501.32,0.0,3240.0],["2025-08",25800.0,12300.0,8755.89,0.0,3150.0],["2025-09",25800.0,12300.0,11588.41,0.0,3210.0],["2025-10",12300.0,12300.0,9368.05,0.0,3160.0],["2025-11",18450.0,12300.0,15504.86,0.0,3270.0],["2025-12",17343.0,12300.0,10179.32,0.0,6000.0],["2026-01",12300.0,12300.0,15418.31,0.0,3390.0],["2026-02",28170.17,12300.0,12526.18,0.0,7480.0],["2026-03",12900.0,12900.0,10703.41,0.0,3530.0],["2026-04",12900.0,12900.0,8906.16,0.0,3550.0],["2026-05",12900.0,12900.0,9435.5,0.0,3400.0],["2026-06",12900.0,12900.0,14505.32,0.0,3690.0],["2026-07",12900.0,12900.0,12765.2,0.0,3750.0],["2026-08",12900.0,12900.0,8998.55,0.0,3610.0],["2026-09",12900.0,12900.0,8618.05,0.0,3670.0],["2026-10",12900.0,12900.0,12286.0,0.0,3730.0],["2026-11",19350.0,12900.0,7146.18,0.0,3820.0]],"hoje_v":{"invest":222468.21,"invest_fonte":"app da XP em 13/11/2026","custo":195190.86,"ganho":27277.35,"cartao":3112.44,"fam_comp":49740.0,"fam_contas":1758.58,"fam_venc":205.4},"parte_ale":0.5973,"fam_detalhe":[["Financiamento",0,33320.0,14,"2028-01-08"],["Resort · Saldo",0,16000.0,25,"2028-11-25"],["Condomínio",1,616.23,1,"2026-12-10"],["Luz",1,515.57,2,"2026-12-15"],["Resort · Taxas",0,420.0,1,"2027-10-05"],["Água",1,241.77,2,"2026-12-16"],["Internet",1,239.8,2,"2026-12-18"],["Luz",2,205.4,1,"2026-09-15"],["Gás",1,145.21,2,"2026-12-20"]],"futuro":[["2026-11",0.0,1360.26],["2026-12",480.44,4263.72],["2027-01",329.0,3020.0],["2027-02",329.0,3020.0],["2027-03",329.0,3020.0],["2027-04",329.0,3020.0],["2027-05",329.0,3020.0],["2027-06",329.0,3020.0],["2027-07",329.0,3020.0],["2027-08",329.0,3020.0],["2027-09",0.0,3020.0],["2027-10",0.0,3440.0],["2027-11",0.0,3020.0],["2027-12",0.0,3020.0],["2028-01",0.0,3020.0],["2028-02",0.0,640.0],["2028-03",0.0,640.0],["2028-04",0.0,640.0],["2028-05",0.0,640.0],["2028-06",0.0,640.0],["2028-07",0.0,640.0],["2028-08",0.0,640.0],["2028-09",0.0,640.0],["2028-10",0.0,640.0],["2028-11",0.0,640.0]],"ntot_med":5.6};
+
+(function () {
+  'use strict';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const num = (v, c) => v == null || isNaN(v) ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: c || 0, maximumFractionDigits: c || 0 });
+  const brl = (v, c) => (v < 0 ? '−' : '') + 'R$ ' + num(Math.abs(v), c);
+  const kbrl = (v) => (v < 0 ? '−' : '') + 'R$ ' + (Math.abs(v) >= 1e6 ? num(Math.abs(v) / 1e6, 2) + ' mi' : Math.abs(v) >= 1e4 ? num(Math.abs(v) / 1e3, 0) + ' mil' : Math.abs(v) >= 1e3 ? num(Math.abs(v) / 1e3, 1) + ' mil' : num(Math.abs(v), 0));
+  const sinal = (v, f) => (v > 0 ? '+' : '') + (f || kbrl)(v);
+  const pct = (v, c) => v == null || !isFinite(v) ? '—' : num(100 * v, c || 0) + '%';
+  const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const rotMes = (k) => MESES[+k.slice(5) - 1] + '/' + k.slice(2, 4);
+  const somaMes = (k, n) => { let [y, m] = k.split('-').map(Number); m += n; while (m > 12) { m -= 12; y++; } while (m < 1) { m += 12; y--; } return y + '-' + String(m).padStart(2, '0'); };
+  const soma = (l, f) => l.reduce((s, x) => s + f(x), 0);
+  const guarda = { le: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    grava: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sem armazenamento */ } } };
+  const eixoK = (v) => Math.abs(v) >= 1e6 ? num(v / 1e6, 1) + 'mi' : num(v / 1000, Math.abs(v) % 1000 && Math.abs(v) < 1e4 ? 1 : 0) + 'k';
+  const passoY = (amp) => [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 25000, 50000, 100000, 200000, 250000, 500000].find((p) => amp / p <= 6) || 1e6;
+
+  const MES_HOJE = D.mes_hoje, H = D.hoje_v;
+  // [mes, investido, custo acum, aporte, proventos, custos, ganho no mês, cartão aberto, cartão novo, casa a pagar 100%]
+  const L = D.linhas.map((r) => ({ m: r[0], inv: r[1], custo: r[2], ap: r[3], prov: r[4], cus: r[5], gan: r[6], car: r[7], carNovo: r[8], fam: r[9] }));
+  const IDX = {}; L.forEach((x, i) => { IDX[x.m] = i; });
+  const TODOS = L.map((x) => x.m);
+  const RG = D.renda_gasto.map((r) => ({ m: r[0], renda: r[1], sal: r[2], gasto: r[3], bem: r[4], ap: r[5] }));
+  const contas = H.fam_contas;
+
+  const dica = $('#dica');
+  function mostra(html, ev) {
+    dica.innerHTML = html; dica.style.opacity = '1';
+    const w = dica.offsetWidth, h = dica.offsetHeight;
+    let x = ev.clientX + 14, y = ev.clientY - h - 12;
+    if (x + w > window.innerWidth - 8) x = ev.clientX - w - 14;
+    if (y < 8) y = ev.clientY + 16;
+    dica.style.left = Math.max(8, x) + 'px'; dica.style.top = y + 'px';
+  }
+  const esconde = () => { dica.style.opacity = '0'; };
+  function anima(el, alvo, fmt) {
+    const de = el._v === undefined ? alvo : el._v;
+    el._v = alvo;
+    if (calmo || de === alvo) { el.textContent = fmt(alvo); return; }
+    const t0 = performance.now();
+    cancelAnimationFrame(el._raf);
+    const passo = (t) => { const p = Math.min(1, (t - t0) / 500), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(de + (alvo - de) * e); if (p < 1) el._raf = requestAnimationFrame(passo); };
+    el._raf = requestAnimationFrame(passo);
+  }
+  function kpi(alvo, rot, valor, nota, cor, delta) {
+    const d = document.createElement('div'); d.className = 'kpi'; d.style.setProperty('--cor-k', cor);
+    d.innerHTML = '<span class="rotulo"></span><span class="numero"></span><span class="nota"></span>';
+    d.children[0].textContent = rot; d.children[1].textContent = valor; d.children[2].innerHTML = nota;
+    if (delta) { const s = document.createElement('span'); s.className = 'delta ' + delta.cls; s.textContent = delta.txt; d.appendChild(s); }
+    alvo.appendChild(d);
+  }
+  function eixo(W, Hh, m, lo, hi) {
+    const Y = (v) => m.t + (hi - v) * (Hh - m.t - m.b) / ((hi - lo) || 1);
+    const p = passoY(hi - lo);
+    let s = '';
+    for (let v = Math.ceil(lo / p) * p; v <= hi + 1e-6; v += p)
+      s += '<line class="' + (Math.abs(v) < 1e-6 ? 'zero' : 'grid') + '" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + eixoK(v) + '</text>';
+    return { Y, s };
+  }
+  // colunas transparentes para o tooltip de cada mês
+  function colunas(host, n, x0, bw, html) {
+    $$('.col', host).forEach((g) => {
+      g.addEventListener('mousemove', (ev) => mostra(html(+g.dataset.i), ev));
+      g.addEventListener('mouseleave', esconde);
+    });
+  }
+
+  // --------------------------------------------------------- filtros
+  const anoFim = +MES_HOJE.slice(0, 4);
+  const PERIODOS = [
+    { id: '12m', nome: 'Últimos 12 meses', meses: TODOS.slice(-12) },
+    { id: 'a0', nome: String(anoFim), meses: TODOS.filter((k) => k.startsWith(String(anoFim))) },
+    { id: 'a1', nome: String(anoFim - 1), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 1))) },
+    { id: 'a2', nome: String(anoFim - 2), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 2))) },
+    { id: 'a3', nome: String(anoFim - 3), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 3))) },
+    { id: 'tudo', nome: 'Tudo', meses: TODOS }
+  ].filter((p) => p.meses.length);
+  const VISOES = [{ id: 'ale', nome: 'Sua parte da casa', parte: D.parte_ale }, { id: 'casa', nome: 'Casa inteira', parte: 1 }];
+  // vencidos não pagos: o painel da família conta; a chave deixa ver sem eles (costumam ser lançamento duplicado)
+  const VENC = [{ id: 'sim', nome: 'Contar vencidos', conta: true }, { id: 'nao', nome: 'Ignorar vencidos', conta: false }];
+  const est = { per: PERIODOS.find((p) => p.id === 'a0') || PERIODOS[0], vis: VISOES[0], venc: VENC[0] };
+  function botoes(host, lista, chave) {
+    lista.forEach((p) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = p.nome; b.dataset.id = p.id;
+      b.setAttribute('aria-pressed', p === est[chave]);
+      b.addEventListener('click', () => { est[chave] = p; $$('button', host).forEach((x) => x.setAttribute('aria-pressed', x.dataset.id === p.id)); recorte(); simula(); });
+      host.appendChild(b);
+    });
+  }
+  botoes($('#periodos'), PERIODOS, 'per'); botoes($('#visoes'), VISOES, 'vis');
+  if (H.fam_venc > 0) botoes($('#vencidos'), VENC, 'venc'); else $('#vencidos').remove();
+
+  // casa a pagar em cada mês: compromissos no histórico; contas lançadas e vencidos só no mês de hoje
+  const vencDe = () => est.venc.conta ? H.fam_venc : 0;
+  const famComp = (x) => x.m === MES_HOJE ? H.fam_comp : x.fam;
+  const famDe = (x) => est.vis.parte * (x.m === MES_HOJE ? H.fam_comp + H.fam_contas + vencDe() : x.fam);
+  const plDe = (x) => x.inv - x.car - famDe(x);
+  const antes = (m) => { const i = IDX[m]; return i > 0 ? L[i - 1] : null; };
+  const zero = { m: '', inv: 0, car: 0, fam: 0 };
+
+  // --------------------------------------------------------- topo
+  function abertura() {
+    const ms = est.per.meses, fim = L[IDX[ms[ms.length - 1]]], ini = antes(ms[0]) || zero;
+    const pl = plDe(fim), dPl = pl - plDe(ini);
+    $('#periodo-txt').textContent = est.per.nome + ' · ' + rotMes(ms[0]) + ' a ' + rotMes(ms[ms.length - 1]) + ' · ' + est.vis.nome.toLowerCase();
+    $('#manchete').innerHTML = (fim.m === MES_HOJE ? 'Seu patrimônio líquido é ' : 'Em ' + rotMes(fim.m) + ', o patrimônio líquido era ') + '<em>' + kbrl(pl) + '</em>.';
+    const div = fim.car + famDe(fim);
+    const poup = taxa(ms);
+    $('#tese').innerHTML = 'São <b>' + kbrl(fim.inv) + '</b> investidos menos <b>' + kbrl(div) + '</b> que ainda estão para pagar'
+      + ' (' + kbrl(fim.car) + ' no cartão e ' + kbrl(famDe(fim)) + ' na casa). '
+      + 'No período o patrimônio ' + (dPl >= 0 ? 'cresceu <b>' : 'caiu <b>') + kbrl(Math.abs(dPl)) + '</b>'
+      + (poup.renda > 0 ? ', e ' + pct(poup.ap / poup.renda) + ' da renda virou aporte.' : '.');
+    const k = $('#kpis'); k.innerHTML = '';
+    kpi(k, 'Patrimônio líquido', kbrl(pl), fim.m === MES_HOJE ? 'hoje' : 'em ' + rotMes(fim.m), 'var(--pl)',
+      { txt: sinal(dPl) + ' no período', cls: dPl >= 0 ? 'bom' : 'ruim' });
+    kpi(k, 'Investimentos', kbrl(fim.inv), fim.m === MES_HOJE ? H.invest_fonte : 'estimado', 'var(--invest)');
+    kpi(k, 'Cartão em aberto', kbrl(fim.car), 'parcelas já contratadas', 'var(--cartao)');
+    kpi(k, 'Casa a pagar', kbrl(famDe(fim)), est.vis.id === 'ale' ? pct(est.vis.parte, 1) + ' de ' + kbrl(famDe(fim) / est.vis.parte) : 'total lançado e não pago', 'var(--familia)');
+    kpi(k, 'Taxa de poupança', pct(poup.renda ? poup.ap / poup.renda : null), brl(poup.ap / Math.max(1, poup.n)) + ' de aporte por mês', 'var(--bom)');
+    const g = soma(ms.map((m) => L[IDX[m]]), (x) => x.prov - x.cus + x.gan);
+    kpi(k, 'Rendeu', sinal(g), 'proventos + ganho estimado', 'var(--invest)');
+  }
+
+  // renda e aporte de meses fechados
+  function taxa(ms) {
+    const set = new Set(ms.filter((m) => m < MES_HOJE));
+    const r = RG.filter((x) => set.has(x.m));
+    return { renda: soma(r, (x) => x.renda), ap: soma(r, (x) => x.ap), gasto: soma(r, (x) => x.gasto), n: r.length };
+  }
+
+  // --------------------------------------------------------- evolução
+  function evolucao() {
+    const host = $('#g-evo'), ms = est.per.meses.length < 6 ? TODOS.slice(-Math.max(12, est.per.meses.length)) : est.per.meses;
+    const X = ms.map((m) => L[IDX[m]]);
+    const W = Math.max(320, host.clientWidth), Hh = 320, m = { t: 14, r: 12, b: 30, l: 54 };
+    const hi = Math.max.apply(null, X.map((x) => x.inv)) * 1.06, lo = -Math.max.apply(null, X.map((x) => x.car + famDe(x))) * 1.15 || -1;
+    const e = eixo(W, Hh, m, lo, hi), Y = e.Y, bw = (W - m.l - m.r) / X.length, cx = (i) => m.l + bw * (i + 0.5);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Patrimônio líquido por mês">' + e.s;
+    const area = (f0, f1, cor, op) => {
+      let a = X.map((x, i) => cx(i) + ',' + Y(f1(x))).join(' '), b = X.map((x, i) => cx(i) + ',' + Y(f0(x))).reverse().join(' ');
+      return '<polygon points="' + a + ' ' + b + '" fill="' + cor + '" opacity="' + op + '"/>';
+    };
+    s += area(() => 0, (x) => x.inv, 'var(--invest)', 0.28);
+    s += area(() => 0, (x) => -x.car, 'var(--cartao)', 0.55);
+    s += area((x) => -x.car, (x) => -x.car - famDe(x), 'var(--familia)', 0.5);
+    s += '<polyline points="' + X.map((x, i) => cx(i) + ',' + Y(x.inv)).join(' ') + '" fill="none" stroke="var(--invest)" stroke-width="1.4" opacity=".8"/>';
+    s += '<polyline points="' + X.map((x, i) => cx(i) + ',' + Y(plDe(x))).join(' ') + '" fill="none" stroke="var(--pl)" stroke-width="2.6" stroke-linejoin="round"/>';
+    const u = X.length - 1;
+    s += '<circle cx="' + cx(u) + '" cy="' + Y(plDe(X[u])) + '" r="4.5" fill="var(--pl)" stroke="var(--bg)" stroke-width="2"/>';
+    const passoX = Math.max(1, Math.ceil(X.length / Math.floor((W - m.l) / 52)));
+    X.forEach((x, i) => {
+      s += '<rect class="col" data-i="' + i + '" x="' + (m.l + i * bw) + '" y="' + m.t + '" width="' + bw + '" height="' + (Hh - m.t - m.b) + '" fill="transparent"/>';
+      if ((u - i) % passoX === 0) s += '<text class="ax" x="' + cx(i) + '" y="' + (Hh - 8) + '" text-anchor="middle">' + rotMes(x.m) + '</text>';
+    });
+    host.innerHTML = s + '</svg>';
+    colunas(host, X.length, m.l, bw, (i) => { const x = X[i];
+      return '<span class="q">' + rotMes(x.m) + (x.m === MES_HOJE ? ' · hoje' : ' · investido estimado') + '</span>'
+        + '<i style="background:var(--invest)"></i>Investimentos ' + brl(x.inv) + '<br><i style="background:var(--cartao)"></i>Cartão −' + brl(x.car)
+        + '<br><i style="background:var(--familia)"></i>Casa −' + brl(famDe(x)) + '<br><b>Patrimônio líquido ' + brl(plDe(x)) + '</b>'; });
+    $('#leg-evo').innerHTML = '<span><i style="background:var(--pl)"></i>Patrimônio líquido</span><span><i style="background:var(--invest);opacity:.6"></i>Investimentos</span>'
+      + '<span><i style="background:var(--cartao);opacity:.7"></i>Cartão em aberto</span><span><i style="background:var(--familia);opacity:.7"></i>Casa a pagar</span>';
+    const pico = X.reduce((a, x) => plDe(x) > plDe(a) ? x : a, X[0]);
+    $('#evo-titulo').textContent = pico === X[u] ? 'O patrimônio líquido está no maior valor do período' : 'O maior valor do período foi em ' + rotMes(pico.m) + ': ' + kbrl(plDe(pico));
+  }
+
+  // --------------------------------------------------------- balanço de hoje
+  function balanco() {
+    const p = est.vis.parte, fam = D.fam_detalhe;
+    const itens = [
+      { nome: 'Investimentos', nota: H.invest_fonte, v: H.invest, cor: 'var(--invest)', ativo: true },
+      { nome: 'Cartão em aberto', nota: 'parcelas com fatura depois de ' + rotMes(MES_HOJE), v: -H.cartao, cor: 'var(--cartao)' },
+    ].concat(fam.filter((f) => f[1] !== 2 || est.venc.conta).slice().sort((a, b) => a[1] - b[1] || b[2] - a[2]).map((f) => ({ nome: f[0] + (f[1] === 2 ? ' (vencido)' : ''),
+      nota: ['compromisso', 'conta lançada', 'vencido e não pago · conferir'][f[1]] + ' · ' + f[3] + (f[3] === 1 ? ' lançamento' : ' lançamentos') + (f[1] === 2 ? ', o último em ' : ' até ') + rotMes(f[4].slice(0, 7))
+      + (p < 1 ? ' · ' + pct(p, 1) + ' de ' + brl(f[2]) : ''), v: -p * f[2], cor: ['var(--familia)', '#7d6bc4', 'var(--atencao)'][f[1]] })));
+    const pl = soma(itens, (x) => x.v), passivo = -soma(itens.filter((x) => x.v < 0), (x) => x.v);
+    $('#faixa').innerHTML = '<span style="width:' + 100 * pl / H.invest + '%;background:var(--pl)" title="Patrimônio líquido"></span>'
+      + itens.filter((x) => x.v < 0).map((x) => '<span style="width:' + 100 * -x.v / H.invest + '%;background:' + x.cor + '" title="' + x.nome + '"></span>').join('');
+    $('#itens').innerHTML = itens.map((x) => '<div class="item"><i style="background:' + x.cor + '"></i><span>' + x.nome + '<small>' + x.nota + '</small></span><b class="' + (x.v < 0 ? 'ruim' : '') + '">' + (x.v < 0 ? '−' + brl(-x.v) : brl(x.v)) + '</b></div>').join('')
+      + '<div class="item total"><i style="background:var(--pl)"></i><span>Patrimônio líquido<small>' + pct(passivo / H.invest) + ' dos investimentos estão comprometidos</small></span><b>' + brl(pl) + '</b></div>';
+    $('#bal-titulo').textContent = 'De cada R$ 100 investidos, R$ ' + num(100 * passivo / H.invest) + ' já têm destino';
+
+    // calendário das dívidas
+    const F = D.futuro.map((f, i) => i === 0 ? [f[0], f[1], f[2] - (est.venc.conta ? 0 : H.fam_venc)] : f).filter((f) => f[1] + f[2] > 0.5);
+    const host = $('#g-cal');
+    if (!F.length) { host.innerHTML = '<p class="nota">Nada lançado para os próximos meses.</p>'; return; }
+    const n = Math.min(F.length, 14), X = F.slice(0, n);
+    const W = Math.max(300, host.clientWidth), Hh = 240, m = { t: 14, r: 8, b: 30, l: 50 };
+    const hi = Math.max.apply(null, X.map((f) => f[1] + p * f[2])) * 1.1;
+    const e = eixo(W, Hh, m, 0, hi), Y = e.Y, bw = (W - m.l - m.r) / n;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Dívida por mês de vencimento">' + e.s;
+    X.forEach((f, i) => {
+      const x0 = m.l + i * bw + bw * 0.16, w = Math.max(2, bw * 0.68), c = f[1], fm = p * f[2];
+      s += '<g class="col" data-i="' + i + '"><rect x="' + (m.l + i * bw) + '" y="' + m.t + '" width="' + bw + '" height="' + (Hh - m.t - m.b) + '" fill="transparent"/>'
+        + '<rect x="' + x0 + '" y="' + Y(c) + '" width="' + w + '" height="' + (Y(0) - Y(c)) + '" fill="var(--cartao)"/>'
+        + '<rect x="' + x0 + '" y="' + Y(c + fm) + '" width="' + w + '" height="' + (Y(c) - Y(c + fm)) + '" fill="var(--familia)"/></g>'
+        + '<text class="ax" x="' + (m.l + (i + 0.5) * bw) + '" y="' + (Hh - 8) + '" text-anchor="middle">' + (i % Math.ceil(n / Math.floor(W / 48)) === 0 ? rotMes(f[0]) : '') + '</text>';
+    });
+    host.innerHTML = s + '</svg>';
+    colunas(host, n, m.l, bw, (i) => { const f = X[i]; return '<span class="q">' + rotMes(f[0]) + (f[0] === MES_HOJE ? ' · inclui vencidos' : '') + '</span>'
+      + '<i style="background:var(--cartao)"></i>Cartão ' + brl(f[1]) + '<br><i style="background:var(--familia)"></i>Casa ' + brl(p * f[2]) + '<br><b>Total ' + brl(f[1] + p * f[2]) + '</b>'; });
+    const resto = F.slice(n), totResto = soma(resto, (f) => f[1] + p * f[2]);
+    const tot2 = soma(F.slice(0, 2), (f) => f[1] + p * f[2]);
+    $('#cal-sub').innerHTML = '<b>' + brl(tot2) + '</b> caem até ' + rotMes(F[Math.min(1, F.length - 1)][0])
+      + (resto.length ? '; depois de ' + rotMes(X[n - 1][0]) + ' ainda há ' + brl(totResto) + ' (o saldo do Resort vai até ' + rotMes(F[F.length - 1][0]) + ').' : '.');
+  }
+
+  // --------------------------------------------------------- ponte
+  function ponte() {
+    const ms = est.per.meses, X = ms.map((m) => L[IDX[m]]), ini = antes(ms[0]) || zero, fim = X[X.length - 1], p = est.vis.parte;
+    const ap = soma(X, (x) => x.ap), prov = soma(X, (x) => x.prov), cus = soma(X, (x) => x.cus), gan = soma(X, (x) => x.gan);
+    const novo = soma(X, (x) => x.carNovo), pagas = novo - (fim.car - ini.car);
+    const temHoje = fim.m === MES_HOJE;
+    const dComp = -(famComp(fim) - (ini.m ? famComp(ini) : 0)) * p, dContas = temHoje ? -contas * p : 0, dVenc = temHoje ? -vencDe() * p : 0;
+    const passos = [
+      { nome: 'Início', v: plDe(ini), base: true, nota: ini.m ? 'fim de ' + rotMes(ini.m) : 'antes do primeiro aporte' },
+      { nome: 'Aportes líquidos', v: ap, cor: 'var(--invest)' },
+      { nome: 'Proventos', v: prov - cus, cor: 'var(--invest)', nota: 'menos custos' },
+      { nome: 'Ganho de mercado', v: gan, cor: 'var(--invest)', nota: 'estimado' },
+      { nome: 'Novas parcelas', v: -novo, cor: 'var(--cartao)' },
+      { nome: 'Parcelas pagas', v: pagas, cor: 'var(--cartao)' },
+      { nome: 'Casa: compromissos', v: dComp, cor: 'var(--familia)', nota: dComp >= 0 ? 'pagos' : 'novos' },
+    ];
+    if (temHoje && contas) passos.push({ nome: 'Casa: contas lançadas', v: dContas, cor: '#7d6bc4', nota: 'entram só hoje' });
+    if (dVenc) passos.push({ nome: 'Casa: vencidos', v: dVenc, cor: 'var(--atencao)', nota: 'conferir' });
+    passos.push({ nome: 'Fim', v: plDe(fim), base: true, nota: temHoje ? 'hoje' : 'fim de ' + rotMes(fim.m) });
+    const host = $('#g-ponte'), W = Math.max(300, host.clientWidth), lh = 30, m = { t: 6, r: 14, l: Math.min(170, W * 0.38) }, Hh = m.t + passos.length * lh + 6;
+    let acc = 0, mn = 0, mx = 0;
+    const pts = passos.map((x) => { let a, b; if (x.base) { a = 0; b = x.v; acc = x.v; } else { a = acc; b = acc + x.v; acc = b; } mn = Math.min(mn, a, b); mx = Math.max(mx, a, b); return { x, a, b }; });
+    const larg = W - m.l - m.r - 74, X0 = (v) => m.l + (v - mn) * larg / ((mx - mn) || 1);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Variação do patrimônio líquido">';
+    s += '<line class="zero" x1="' + X0(0) + '" x2="' + X0(0) + '" y1="0" y2="' + Hh + '"/>';
+    pts.forEach((q, i) => {
+      const y = m.t + i * lh, x1 = X0(Math.min(q.a, q.b)), x2 = X0(Math.max(q.a, q.b));
+      const cor = q.x.base ? 'var(--pl)' : q.x.v >= 0 ? q.x.cor : 'var(--ruim)';
+      s += '<text class="rot" x="' + (m.l - 8) + '" y="' + (y + 17) + '" text-anchor="end">' + q.x.nome + '</text>'
+        + '<rect x="' + x1 + '" y="' + (y + 5) + '" width="' + Math.max(1.5, x2 - x1) + '" height="' + (lh - 10) + '" rx="3" fill="' + cor + '"' + (q.x.base || q.x.v >= 0 ? '' : ' opacity=".85"') + '/>'
+        + '<text class="val" x="' + (x2 + 6) + '" y="' + (y + 17) + '">' + (q.x.base ? kbrl(q.x.v) : sinal(q.x.v)) + '</text>';
+    });
+    host.innerHTML = s + '</svg>';
+    const dPl = plDe(fim) - plDe(ini), maior = passos.filter((x) => !x.base).sort((a, b) => Math.abs(b.v) - Math.abs(a.v))[0];
+    $('#ponte-titulo').textContent = (dPl >= 0 ? '+' : '−') + kbrl(Math.abs(dPl)) + ' no período; o maior peso veio de ' + maior.nome.toLowerCase().replace('casa: ', 'casa, ');
+
+    // tabela mês a mês (o mais recente em cima)
+    let t = '<table class="dados"><thead><tr><th>Mês</th><th>Patrimônio</th><th>Variação</th><th>Aporte</th><th>Rendeu</th><th>Cartão</th><th>Casa</th></tr></thead><tbody>';
+    X.slice().reverse().forEach((x) => {
+      const a = antes(x.m) || zero, d = plDe(x) - plDe(a);
+      const dc = -(x.car - a.car), df = -(famDe(x) - famDe(a));
+      const c = (v) => '<td class="' + (v > 0.5 ? 'bom' : v < -0.5 ? 'ruim' : '') + '">' + (Math.abs(v) < 0.5 ? '—' : sinal(v, brl)) + '</td>';
+      t += '<tr><td>' + rotMes(x.m) + '</td><td>' + brl(plDe(x)) + '</td>' + c(d) + c(x.ap) + c(x.prov - x.cus + x.gan) + c(dc) + c(df) + '</tr>';
+    });
+    $('#t-ponte').innerHTML = t + '</tbody></table>';
+  }
+
+  // --------------------------------------------------------- poupança
+  function poupanca() {
+    const ms = (est.per.meses.length < 6 ? RG.slice(-13, -1).map((x) => x.m) : est.per.meses).filter((m) => m < MES_HOJE);
+    const X = RG.filter((x) => ms.includes(x.m));
+    const host = $('#g-pou');
+    if (!X.length) { host.innerHTML = '<p class="nota">Sem meses fechados no período.</p>'; return; }
+    const W = Math.max(320, host.clientWidth), Hh = 300, m = { t: 14, r: 44, b: 30, l: 54 };
+    const hi = Math.max.apply(null, X.map((x) => Math.max(x.renda, x.ap))) * 1.08, lo = Math.min(0, Math.min.apply(null, X.map((x) => x.ap))) * 1.1;
+    const e = eixo(W, Hh, m, lo, hi), Y = e.Y, bw = (W - m.l - m.r) / X.length, cx = (i) => m.l + bw * (i + 0.5);
+    // taxa móvel de 12 meses
+    const tx = X.map((x) => { const i = RG.indexOf(x), j = RG.slice(Math.max(0, i - 11), i + 1); const r = soma(j, (z) => z.renda); return r > 0 ? soma(j, (z) => z.ap) / r : null; });
+    const tmax = Math.max(0.6, Math.max.apply(null, tx.filter((v) => v != null).map(Math.abs))), YT = (v) => m.t + (tmax - v) * (Hh - m.t - m.b) / (2 * tmax);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Renda e aporte por mês">' + e.s;
+    for (const v of [-0.5, 0, 0.25, 0.5]) if (Math.abs(v) <= tmax) s += '<text class="ax" x="' + (W - m.r + 6) + '" y="' + (YT(v) + 4) + '">' + pct(v) + '</text>';
+    X.forEach((x, i) => {
+      const x0 = m.l + i * bw;
+      s += '<g class="col" data-i="' + i + '"><rect x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (Hh - m.t - m.b) + '" fill="transparent"/>'
+        + '<rect x="' + (x0 + bw * 0.1) + '" y="' + Y(x.renda) + '" width="' + Math.max(2, bw * 0.8) + '" height="' + Math.max(0, Y(0) - Y(x.renda)) + '" fill="var(--renda)" opacity=".22"/>'
+        + '<rect x="' + (x0 + bw * 0.28) + '" y="' + Y(Math.max(0, x.ap)) + '" width="' + Math.max(1.5, bw * 0.44) + '" height="' + Math.abs(Y(0) - Y(x.ap)) + '" fill="' + (x.ap >= 0 ? 'var(--invest)' : 'var(--ruim)') + '"/></g>';
+    });
+    const pts = tx.map((v, i) => v == null ? null : cx(i) + ',' + YT(v)).filter(Boolean);
+    s += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--pl)" stroke-width="2.2"/>';
+    const passoX = Math.max(1, Math.ceil(X.length / Math.floor((W - m.l) / 52)));
+    X.forEach((x, i) => { if ((X.length - 1 - i) % passoX === 0) s += '<text class="ax" x="' + cx(i) + '" y="' + (Hh - 8) + '" text-anchor="middle">' + rotMes(x.m) + '</text>'; });
+    host.innerHTML = s + '</svg>';
+    colunas(host, X.length, m.l, bw, (i) => { const x = X[i];
+      return '<span class="q">' + rotMes(x.m) + '</span>Renda ' + brl(x.renda) + '<br>Gasto ' + brl(x.gasto) + '<br><i style="background:var(--invest)"></i>Aporte ' + brl(x.ap)
+        + (x.renda > 0 ? ' (' + pct(x.ap / x.renda) + ')' : '') + (tx[i] != null ? '<br><b>Taxa 12 meses ' + pct(tx[i]) + '</b>' : ''); });
+    const t = taxa(ms), r = t.renda ? t.ap / t.renda : null, sobra = t.renda ? (t.renda - t.gasto) / t.renda : null;
+    $('#pou-titulo').textContent = r == null ? 'Quanto da renda vira investimento' : pct(r) + ' da renda virou aporte';
+    $('#pou-nota').innerHTML = sobra == null ? '' : 'Pela conta do painel de finanças, a sobra (renda − gasto) foi <b>' + pct(sobra) + '</b> da renda, ou ' + brl((t.renda - t.gasto) / t.n) + ' por mês.'
+      + (t.ap > t.renda - t.gasto + 1 ? ' O aporte passou da sobra: a diferença veio de outro bolso, como resgate de previdência ou cofrinho, que não contam como renda.' : '');
+  }
+
+  // --------------------------------------------------------- renda × gasto por ano
+  const ANOS = (() => {
+    const out = {};
+    RG.filter((x) => x.m < MES_HOJE).forEach((x) => { const a = x.m.slice(0, 4); const o = out[a] || (out[a] = { a, n: 0, renda: 0, sal: 0, gasto: 0, ap: 0 });
+      o.n++; o.renda += x.renda; o.sal += x.sal; o.gasto += x.gasto; o.ap += x.ap; });
+    return Object.values(out).map((o) => Object.assign(o, { r: o.renda / o.n, s: o.sal / o.n, g: o.gasto / o.n, velho: +o.a < 2024 }));
+  })();
+  function estilo() {
+    const host = $('#g-est'), X = ANOS, W = Math.max(300, host.clientWidth), Hh = 260, m = { t: 14, r: 12, b: 30, l: 54 };
+    const hi = Math.max.apply(null, X.map((x) => Math.max(x.r, x.g))) * 1.1;
+    const e = eixo(W, Hh, m, 0, hi), Y = e.Y, bw = (W - m.l - m.r) / X.length, cx = (i) => m.l + bw * (i + 0.5);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Renda e gasto por ano">' + e.s;
+    const linha = (f, cor, w) => {
+      X.forEach((x, i) => { if (i) s += '<line x1="' + cx(i - 1) + '" y1="' + Y(f(X[i - 1])) + '" x2="' + cx(i) + '" y2="' + Y(f(x)) + '" stroke="' + cor + '" stroke-width="' + w + '"' + (x.velho ? ' stroke-dasharray="4 4" opacity=".45"' : '') + '/>'; });
+      X.forEach((x, i) => { s += '<circle cx="' + cx(i) + '" cy="' + Y(f(x)) + '" r="4" fill="' + cor + '"' + (x.velho ? ' opacity=".45"' : '') + '/>'; });
+    };
+    linha((x) => x.s, '#2f8f6f', 1.8); linha((x) => x.r, 'var(--renda)', 2.6); linha((x) => x.g, 'var(--gasto)', 2.6);
+    X.forEach((x, i) => { s += '<rect class="col" data-i="' + i + '" x="' + (m.l + i * bw) + '" y="' + m.t + '" width="' + bw + '" height="' + (Hh - m.t - m.b) + '" fill="transparent"/>'
+      + '<text class="ax" x="' + cx(i) + '" y="' + (Hh - 8) + '" text-anchor="middle">' + x.a + (x.n < 12 ? '*' : '') + '</text>'; });
+    host.innerHTML = s + '</svg>';
+    colunas(host, X.length, m.l, bw, (i) => { const x = X[i];
+      return '<span class="q">' + x.a + ' · média de ' + x.n + ' meses' + (x.velho ? ' · classificação antiga' : '') + '</span>Renda ' + brl(x.r) + '<br>Salário ' + brl(x.s) + '<br>Gasto ' + brl(x.g) + '<br><b>Sobra ' + brl(x.r - x.g) + '</b>'; });
+    let t = '<table class="dados"><thead><tr><th>Ano</th><th>Renda/mês</th><th>Gasto/mês</th><th>Sobra</th><th>Renda Δ</th><th>Gasto Δ</th><th>Elasticidade</th></tr></thead><tbody>';
+    const novos = [];
+    X.forEach((x, i) => {
+      const a = X[i - 1], dr = a ? x.r / a.r - 1 : null, dg = a ? x.g / a.g - 1 : null, el = a && dr > 0.02 ? dg / dr : null;
+      if (a && !a.velho && !x.velho) novos.push({ x, dr, dg, el });
+      const cls = (v, ruimSe) => v == null ? '' : (ruimSe(v) ? 'ruim' : 'bom');
+      t += '<tr class="' + (x.velho ? 'velho' : '') + (x.n < 12 ? ' parcial' : '') + '"><td>' + x.a + '</td><td>' + brl(x.r) + '</td><td>' + brl(x.g) + '</td><td class="' + (x.r - x.g >= 0 ? 'bom' : 'ruim') + '">' + brl(x.r - x.g) + '</td>'
+        + '<td>' + (dr == null ? '—' : sinal(dr, (v) => pct(v))) + '</td><td class="' + cls(dg, (v) => v > (dr || 0)) + '">' + (dg == null ? '—' : sinal(dg, (v) => pct(v))) + '</td>'
+        + (el != null ? '<td class="' + cls(el, (v) => v > 1) + '">' + num(el, 2) + '</td>'
+          : a && dr <= 0.02 && dg > 0 ? '<td class="ruim">gasto ↑, renda não</td>' : '<td>—</td>') + '</tr>';
+    });
+    $('#t-est').innerHTML = t + '</tbody></table>';
+    const a24 = X.find((x) => x.a === '2024'), ult = X[X.length - 1];
+    if (a24 && ult !== a24) {
+      const dr = ult.r / a24.r - 1, dg = ult.g / a24.g - 1;
+      $('#est-titulo').textContent = 'Desde 2024 a renda ' + (dr >= 0 ? 'subiu ' : 'caiu ') + pct(Math.abs(dr)) + ' e o gasto ' + (dg >= 0 ? 'subiu ' : 'caiu ') + pct(Math.abs(dg));
+      const ds = ult.s / a24.s - 1;
+      $('#est-nota').innerHTML = (dr > 0.02 ? (dg > dr ? 'O custo de vida cresceu <b>mais rápido</b> que a renda' : 'O custo de vida cresceu <b>mais devagar</b> que a renda')
+          + ': elasticidade de <b>' + num(dg / dr, 2) + '</b> entre 2024 e ' + ult.a + '.'
+          : dg > 0 ? 'O gasto <b>subiu sem a renda acompanhar</b> entre 2024 e ' + ult.a + ': para cada R$ 100 que entram, saem R$ ' + num(100 * ult.g / ult.r) + ' (eram R$ ' + num(100 * a24.g / a24.r) + ').'
+          : 'Renda e gasto caíram entre 2024 e ' + ult.a + '.')
+        + ' Pelo salário, que não tem PLR nem acerto, a renda ' + (ds >= 0 ? 'subiu ' : 'caiu ') + pct(Math.abs(ds)) + '. <span class="aviso">*</span> ano incompleto; anos apagados têm a classificação antiga.';
+    }
+  }
+
+  // --------------------------------------------------------- simulador
+  const fechados = L.filter((x) => x.m < MES_HOJE).slice(-12);
+  const RIT = {
+    ap: Math.max(0, Math.round(soma(fechados, (x) => x.ap) / Math.max(1, fechados.length) / 100) * 100),
+    np: Math.round(soma(fechados, (x) => x.carNovo) / Math.max(1, fechados.length) / 50) * 50,
+    // retorno estimado em 12 meses: proventos + ganho sobre o capital médio
+    ret: (() => { const cap = soma(fechados, (x) => x.inv) / Math.max(1, fechados.length); const g = soma(fechados, (x) => x.prov - x.cus + x.gan);
+      return cap > 0 ? Math.max(0, Math.min(20, Math.round(200 * g / cap) / 2)) : 10; })(),
+  };
+  const plHoje = () => plDe(L[L.length - 1]);
+  const metaPadrao = () => Math.ceil(plHoje() * 2 / 50000) * 50000;
+  const sim = { meta: +guarda.le('patrimonio-meta') || metaPadrao(), ap: RIT.ap, ret: RIT.ret, np: RIT.np, hz: 5 };
+  const ctl = (id, k, fmt, base) => {
+    const el = $('#s-' + id); el.value = sim[k];
+    el.addEventListener('input', () => { sim[k] = +el.value; if (k === 'meta') guarda.grava('patrimonio-meta', String(sim.meta)); simula(); });
+    return () => { el.value = sim[k]; $('#s-' + id + '-v').textContent = fmt(sim[k]); if (base) $('#s-' + id + '-b').innerHTML = base(); };
+  };
+  const pintores = [
+    ctl('meta', 'meta', kbrl, () => 'hoje: ' + kbrl(plHoje()) + ' · ' + pct(plHoje() / sim.meta) + ' do caminho'),
+    ctl('ap', 'ap', brl, () => 'ritmo dos últimos 12 meses: ' + brl(RIT.ap)),
+    ctl('ret', 'ret', (v) => num(v, 1) + '%', () => 'estimado nos últimos 12 meses: ' + num(RIT.ret, 1) + '% (proventos + ganho)'),
+    ctl('np', 'np', brl, () => 'média de 12 meses: ' + brl(RIT.np) + ' · ~' + num(D.ntot_med, 0) + ' parcelas cada'),
+    ctl('hz', 'hz', (v) => v + (v === 1 ? ' ano' : ' anos')),
+  ];
+  $('#s-reset').addEventListener('click', () => { sim.ap = RIT.ap; sim.ret = RIT.ret; sim.np = RIT.np; simula(); });
+
+  function projeta(ap, nMeses) {
+    const p = est.vis.parte, r = Math.pow(1 + sim.ret / 100, 1 / 12) - 1, n = Math.max(1, Math.round(D.ntot_med));
+    // dívida já lançada: sai do saldo no mês em que vence (vencidos e o mês de hoje saem no primeiro mês)
+    const fut = {}; D.futuro.slice(1).forEach((z) => { fut[z[0]] = z; });
+    let c = H.cartao, f = famDe(L[L.length - 1]) - (D.futuro[0][2] - H.fam_venc + vencDe()) * p;
+    let inv = H.invest; const out = [];
+    for (let t = 1; t <= nMeses; t++) {
+      const m = somaMes(MES_HOJE, t), fx = fut[m];
+      if (fx) { c -= fx[1]; f -= fx[2] * p; }
+      // cada mês entra um parcelamento novo, pago em n faturas a partir do mês seguinte:
+      // em aberto ao fim do mês t = np/n × Σ (n − j), j = 0 … min(t, n) − 1
+      const k = Math.min(t, n), novos = sim.np / n * (k * n - k * (k - 1) / 2);
+      inv = inv * (1 + r) + ap;
+      out.push({ m, inv, pl: inv - Math.max(0, c) - Math.max(0, f) - novos });
+    }
+    return out;
+  }
+  function simula() {
+    pintores.forEach((f) => f());
+    const nM = sim.hz * 12, P = projeta(sim.ap, Math.max(nM, 600)), chega = P.findIndex((x) => x.pl >= sim.meta);
+    const fim = P[nM - 1];
+    const nums = $('#sim-nums'); nums.innerHTML = '';
+    const bloco = (rot, v, nota, cor) => { const d = document.createElement('div'); d.innerHTML = '<span class="rotulo">' + rot + '</span><div class="numero" style="color:' + (cor || 'var(--tinta)') + '">' + v + '</div><span class="nota">' + nota + '</span>'; nums.appendChild(d); };
+    bloco('Em ' + sim.hz + (sim.hz === 1 ? ' ano' : ' anos'), kbrl(fim.pl), 'patrimônio líquido em ' + rotMes(fim.m), 'var(--pl)');
+    bloco('Chega na meta', chega < 0 ? 'Não chega' : rotMes(P[chega].m), chega < 0 ? 'em 50 anos' : 'em ' + (chega + 1 >= 24 ? num((chega + 1) / 12, 1) + ' anos' : (chega + 1) + ' meses'), chega >= 0 && chega < nM ? 'var(--bom)' : 'var(--atencao)');
+    // aporte necessário para chegar na meta no horizonte
+    let lo = 0, hi = 200000;
+    for (let k = 0; k < 40; k++) { const md = (lo + hi) / 2; if (projeta(md, nM)[nM - 1].pl >= sim.meta) hi = md; else lo = md; }
+    bloco('Aporte para a meta', hi >= 199999 ? '—' : brl(Math.ceil(hi / 50) * 50), 'por mês, para chegar em ' + sim.hz + (sim.hz === 1 ? ' ano' : ' anos'));
+    $('#sim-txt').innerHTML = 'Aportando <b>' + brl(sim.ap) + '</b> por mês a <b>' + num(sim.ret, 1) + '% ao ano</b>, com ' + brl(sim.np) + ' de parcelamentos novos por mês, '
+      + (chega < 0 ? 'o patrimônio não chega em <b>' + kbrl(sim.meta) + '</b>.' : chega < nM ? 'a meta de <b>' + kbrl(sim.meta) + '</b> chega em <b>' + rotMes(P[chega].m) + '</b>.'
+        : 'a meta de <b>' + kbrl(sim.meta) + '</b> fica para depois do horizonte, em ' + rotMes(P[chega].m) + '.')
+      + ' Rendimento de ' + kbrl(fim.inv - H.invest - sim.ap * nM) + ' no período.';
+    $('#sim-titulo').textContent = chega < 0 ? 'Neste ritmo a meta não chega' : 'Neste ritmo a meta chega em ' + rotMes(P[chega].m);
+    grafico(P.slice(0, nM));
+  }
+  function grafico(P) {
+    const host = $('#g-sim'), W = Math.max(300, host.clientWidth), Hh = 260, m = { t: 14, r: 12, b: 30, l: 54 };
+    const X = [{ m: MES_HOJE, inv: H.invest, pl: plHoje() }].concat(P);
+    const hi = Math.max(sim.meta, Math.max.apply(null, X.map((x) => x.inv))) * 1.06;
+    const e = eixo(W, Hh, m, 0, hi), Y = e.Y, dx = (W - m.l - m.r) / (X.length - 1), cx = (i) => m.l + i * dx;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Projeção do patrimônio">' + e.s;
+    s += '<polygon points="' + X.map((x, i) => cx(i) + ',' + Y(x.pl)).join(' ') + ' ' + cx(X.length - 1) + ',' + Y(0) + ' ' + cx(0) + ',' + Y(0) + '" fill="var(--pl)" opacity=".12"/>';
+    s += '<polyline points="' + X.map((x, i) => cx(i) + ',' + Y(x.inv)).join(' ') + '" fill="none" stroke="var(--invest)" stroke-width="1.6"/>';
+    s += '<polyline points="' + X.map((x, i) => cx(i) + ',' + Y(x.pl)).join(' ') + '" fill="none" stroke="var(--pl)" stroke-width="2.6"/>';
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(sim.meta) + '" y2="' + Y(sim.meta) + '" stroke="#e8f2f0" stroke-width="1.4" stroke-dasharray="6 4" opacity=".75"/>';
+    const u = X.length - 1;
+    s += '<circle cx="' + cx(u) + '" cy="' + Y(X[u].pl) + '" r="4.5" fill="var(--pl)" stroke="var(--bg)" stroke-width="2"/>';
+    const anos = Math.max(1, Math.round(sim.hz / Math.max(1, Math.floor((W - m.l) / 60))));
+    X.forEach((x, i) => { if (i % (12 * anos) === 0) s += '<text class="ax" x="' + cx(i) + '" y="' + (Hh - 8) + '" text-anchor="middle">' + rotMes(x.m) + '</text>'; });
+    const pas = Math.max(1, Math.floor(X.length / 120));
+    X.forEach((x, i) => { if (i % pas === 0) s += '<rect class="col" data-i="' + i + '" x="' + (cx(i) - dx * pas / 2) + '" y="' + m.t + '" width="' + dx * pas + '" height="' + (Hh - m.t - m.b) + '" fill="transparent"/>'; });
+    host.innerHTML = s + '</svg>';
+    colunas(host, X.length, m.l, dx, (i) => { const x = X[i]; return '<span class="q">' + rotMes(x.m) + '</span><i style="background:var(--invest)"></i>Investido ' + brl(x.inv) + '<br><b>Patrimônio líquido ' + brl(x.pl) + '</b>'; });
+  }
+
+  // --------------------------------------------------------- montagem
+  $('#n-fonte').textContent = H.invest_fonte;
+  $('#n-ganho').textContent = brl(H.ganho) + ' (sobre um custo de ' + brl(H.custo) + ')';
+  const fin = D.fam_detalhe.find((f) => f[0] === 'Financiamento' && f[1] === 0);
+  $('#n-fin').textContent = fin ? rotMes(fin[4].slice(0, 7)) : '—';
+  $('#n-venc').textContent = brl(H.fam_venc) + ' na casa toda';
+  $('#n-parte').textContent = pct(D.parte_ale, 1) + ' para o Ale';
+  $('#n-gerado').textContent = D.gerado;
+
+  const obs = 'IntersectionObserver' in window ? new IntersectionObserver((ents) => {
+    ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visto'); obs.unobserve(e.target); } });
+  }, { threshold: 0.05 }) : null;
+  $$('.entra').forEach((s) => { if (obs) obs.observe(s); else s.classList.add('visto'); });
+
+  function recorte() { abertura(); evolucao(); balanco(); ponte(); poupanca(); estilo(); }
+  recorte(); simula();
+  let tm;
+  window.addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(() => { recorte(); simula(); }, 150); });
+})();
+</script>
+</body>
+</html>

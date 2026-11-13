@@ -1,0 +1,66 @@
+/// Grupo do gasto e sua natureza.
+table dGrupo
+	lineageTag: a535004d-714c-563d-bba2-28746b8c9f52
+
+	column SK_GRUPO_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: cd564d0d-b60c-5869-b9d7-aa71af3dc9b3
+		summarizeBy: none
+		sourceColumn: SK_GRUPO_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_GRUPO
+		dataType: string
+		lineageTag: 5b684c37-4cfc-5ff2-8e14-71283db6729b
+		summarizeBy: none
+		sourceColumn: NM_GRUPO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Compressível, Essencial, Eventual, Não é gasto — ou A classificar quando o grupo ainda não foi tratado.
+	column DS_CLASSE
+		dataType: string
+		lineageTag: d0abb235-9e05-5603-b78f-be3e5b3aebe5
+		sortByColumn: NR_ORDEM_CLASSE
+		summarizeBy: none
+		sourceColumn: DS_CLASSE
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_ORDEM_CLASSE
+		dataType: int64
+		isHidden
+		lineageTag: 1f4c38ec-376f-54b8-a917-a3ee35a9a7d3
+		summarizeBy: none
+		sourceColumn: NR_ORDEM_CLASSE
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dGrupo = m
+		mode: import
+		source = ```
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_grupo_financ"]}[Data],
+
+				    // Grupo sem classificacao vira rotulo visivel, nao nulo. Lacuna que
+				    // aparece na tela e lacuna que alguem preenche; nula some na conta.
+				    Classe = Table.AddColumn(Tabela, "DS_CLASSE",
+				                 each if [DS_COMPRESSIBILIDADE] = null then "A classificar"
+				                      else [DS_COMPRESSIBILIDADE], type text),
+				    Ordem  = Table.AddColumn(Classe, "NR_ORDEM_CLASSE",
+				                 each if [DS_CLASSE] = "Compressivel" then 1
+				                      else if [DS_CLASSE] = "Eventual" then 2
+				                      else if [DS_CLASSE] = "Essencial" then 3
+				                      else if [DS_CLASSE] = "A classificar" then 4
+				                      else 5, Int64.Type),
+				    Final  = Table.SelectColumns(Ordem, {
+				                 "SK_GRUPO_FINANC", "NM_GRUPO", "DS_CLASSE", "NR_ORDEM_CLASSE"},
+				                 MissingField.UseNull)
+				in
+				    Final
+				```
+
+	annotation PBI_ResultType = Table

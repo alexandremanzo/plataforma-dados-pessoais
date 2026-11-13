@@ -1,0 +1,42 @@
+{
+  "_sobre": "Foto da carteira por classe, gerada pelo gerador de dados ficticios da demonstracao.",
+  "data": "2026-11-13",
+  "total": 222468.21,
+  "classes": [
+    {
+      "nome": "Pós-fixado",
+      "valor": 75291.04,
+      "rent": 17.84
+    },
+    {
+      "nome": "Renda Variável Brasil",
+      "valor": 44786.43,
+      "rent": 20.03
+    },
+    {
+      "nome": "Fundos Listados",
+      "valor": 50008.19,
+      "rent": -4.67
+    },
+    {
+      "nome": "Inflação",
+      "valor": 24696.97,
+      "rent": 14.2
+    },
+    {
+      "nome": "Multimercado",
+      "valor": 15957.73,
+      "rent": 23.5
+    },
+    {
+      "nome": "Prefixado",
+      "valor": 11627.85,
+      "rent": 26.31
+    },
+    {
+      "nome": "Saldo em conta",
+      "valor": 100.0,
+      "rent": null
+    }
+  ]
+}

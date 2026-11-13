@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conta da Casa</title>
+<style>
+  /* Mesmo mundo dos outros painéis. A casa é violeta; Ale azul, Lia rosa,
+     a conta conjunta cinza-esverdeado. Ouro = Resort. */
+  :root {
+    color-scheme: dark;
+    --bg: #071013;
+    --bg-alto: #0a171b;
+    --painel: #0e1d21;
+    --painel-2: #12262b;
+    --linha: #1d343a;
+    --linha-forte: #2a4a51;
+    --tinta: #e8f2f0;
+    --fraca: #8fa8a5;
+    --apagada: #5d7774;
+    --casa: #a68cff;
+    --ale: #6c8cff;
+    --lia: #ff7eb6;
+    --conta: #8fa8a5;
+    --resort: #e9c46a;
+    --bom: #4fd1a5;
+    --ruim: #ff6f61;
+    --atencao: #ffb547;
+    --raio: 14px;
+    --display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    --texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 560px at 6% -10%, rgba(166, 140, 255, .12), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(255, 126, 182, .07), transparent 60%),
+      var(--bg);
+    color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.5;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 80px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px 96px; } }
+
+  .barra-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0;
+    border-bottom: 1px solid var(--linha); font-size: 13px; color: var(--fraca); flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 10px; color: var(--tinta); font-weight: 600; letter-spacing: .02em; }
+  .marca svg { width: 26px; height: 26px; }
+  .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav a { color: var(--fraca); text-decoration: none; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; transition: color .15s, border-color .15s; }
+  .nav a:hover, .nav a:focus-visible { color: var(--tinta); border-color: var(--linha-forte); outline: none; }
+  .nav a.cta { color: var(--bg); background: var(--casa); font-weight: 600; }
+
+  .hero { padding: 48px 0 24px; display: grid; gap: 28px; }
+  .hero > *, .grade > *, .grade-3 > *, .sim > *, .filtros > * { min-width: 0; }
+  .olho { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--casa); font-weight: 600; margin: 0 0 14px; }
+  .hero h1 { font-family: var(--display); font-weight: 600; font-stretch: 85%; font-size: clamp(34px, 5.4vw, 66px);
+    line-height: 1.04; letter-spacing: -.015em; margin: 0; max-width: 22ch; text-wrap: balance; }
+  .hero h1 em { font-style: normal; color: var(--casa); }
+  .hero .tese { max-width: 70ch; color: var(--fraca); font-size: 18px; margin: 18px 0 0; text-wrap: pretty; }
+  .hero .tese b { color: var(--tinta); font-weight: 600; }
+
+  .filtros { display: flex; gap: 12px 20px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; z-index: 10;
+    padding: 12px 0; background: linear-gradient(180deg, var(--bg) 70%, transparent); }
+  .segmento { display: inline-grid; grid-auto-flow: column; padding: 4px; gap: 4px; background: var(--bg-alto);
+    border: 1px solid var(--linha); border-radius: 12px; max-width: 100%; overflow-x: auto; }
+  .segmento button { font: inherit; font-size: 13px; color: var(--fraca); background: transparent; border: 0; border-radius: 9px;
+    padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+  .segmento button[aria-pressed="true"] { background: var(--painel-2); color: var(--tinta); box-shadow: 0 0 0 1px var(--linha-forte); }
+  .segmento button:focus-visible { outline: 2px solid var(--casa); outline-offset: 1px; }
+  .chave { display: inline-flex; gap: 10px; align-items: center; cursor: pointer; font-size: 14px; color: var(--fraca); }
+  .chave input { appearance: none; flex: none; width: 38px; height: 22px; border-radius: 99px; margin: 0; background: var(--linha-forte);
+    position: relative; cursor: pointer; transition: background .2s; }
+  .chave input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--tinta); transition: transform .2s; }
+  .chave input:checked { background: var(--casa); }
+  .chave input:checked::after { transform: translateX(16px); }
+  .chave input:focus-visible { outline: 2px solid var(--casa); outline-offset: 2px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; }
+  .kpi { background: linear-gradient(180deg, var(--painel-2), var(--painel)); border: 1px solid var(--linha);
+    border-top: 2px solid var(--cor-k, var(--linha)); border-radius: var(--raio); padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .kpi .numero { font-size: 30px; }
+  .rotulo { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); font-weight: 600; }
+  .numero { font-family: var(--display); font-weight: 600; line-height: 1.1; letter-spacing: -.01em; }
+  .nota { font-size: 13px; color: var(--fraca); }
+  .nota b { color: var(--tinta); }
+  .delta { font-size: 12px; font-weight: 600; }
+  .bom { color: var(--bom); }
+  .ruim { color: var(--ruim); }
+  .aviso { color: var(--atencao); }
+
+  section.bloco { padding: 56px 0 0; scroll-margin-top: 64px; }
+  .cab { display: grid; gap: 8px; margin-bottom: 24px; max-width: 76ch; }
+  .cab h2 { font-family: var(--display); font-weight: 600; font-stretch: 90%; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .cab p { margin: 0; color: var(--fraca); text-wrap: pretty; }
+  .cab p b { color: var(--tinta); font-weight: 600; }
+  .cab .olho { margin: 0; }
+  .grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+  .grade-3 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 22px; min-width: 0;
+    display: flex; flex-direction: column; gap: 12px; }
+  .cartao h3 { margin: 0; font-size: 17px; font-weight: 600; }
+  .cartao .sub { margin: 0; color: var(--fraca); font-size: 14px; }
+  .cartao .sub b { color: var(--tinta); }
+  .tela { width: 100%; position: relative; }
+  .tela svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg .grid { stroke: var(--linha); stroke-width: 1; }
+  svg .ax { fill: var(--apagada); font-size: 11px; font-family: var(--texto); }
+
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--fraca); align-items: center; }
+  .legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .legenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  .barras { display: grid; gap: 6px; }
+  .barra { display: grid; grid-template-columns: minmax(120px, 210px) 1fr minmax(150px, auto); gap: 14px; align-items: center; font-size: 14px; padding: 4px 0; }
+  .barra .trilho { height: 12px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; display: flex; }
+  .barra .trilho span { height: 100%; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+  .barra .v { text-align: right; color: var(--fraca); font-size: 13px; white-space: nowrap; }
+  .barra .v b { color: var(--tinta); }
+  .barra .n { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+  .barra .n i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .barra .n span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 560px) { .barra { grid-template-columns: 1fr auto; } .barra .trilho { grid-column: 1 / -1; grid-row: 2; } }
+
+  /* categorias com detalhe */
+  .cats { display: grid; gap: 4px; }
+  .cat > button { width: 100%; display: grid; grid-template-columns: minmax(110px, 200px) 1fr minmax(150px, auto); gap: 14px; align-items: center;
+    font: inherit; font-size: 14px; color: var(--tinta); background: transparent; border: 0; padding: 7px 8px; border-radius: 10px; cursor: pointer; text-align: left; }
+  .cat > button:hover { background: var(--painel-2); }
+  .cat > button:focus-visible { outline: 2px solid var(--casa); }
+  .cat .trilho { height: 12px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; display: flex; }
+  .cat .trilho span { height: 100%; }
+  .cat .v { text-align: right; color: var(--fraca); font-size: 13px; white-space: nowrap; }
+  .cat .v b { color: var(--tinta); }
+  .cat .grupos { display: none; padding: 4px 8px 12px 24px; }
+  .cat.aberto .grupos { display: grid; gap: 4px; }
+  .cat.aberto > button { background: var(--painel-2); }
+  .gr { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; font-size: 13px; color: var(--fraca); align-items: center; }
+  .gr b { color: var(--tinta); font-weight: 600; }
+  @media (max-width: 560px) { .cat > button { grid-template-columns: 1fr auto; } .cat .trilho { grid-column: 1 / -1; grid-row: 2; } }
+
+  /* pessoas */
+  .pessoas { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+  .pessoa { background: var(--painel); border: 1px solid var(--linha); border-left: 3px solid var(--cor-p); border-radius: var(--raio); padding: 18px 20px; display: grid; gap: 4px; }
+  .pessoa .numero { font-size: 34px; color: var(--cor-p); }
+  .divisao { height: 16px; border-radius: 99px; overflow: hidden; display: flex; background: var(--bg-alto); }
+  .divisao span { height: 100%; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+
+  /* resort */
+  .progresso { height: 14px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; display: flex; }
+  .progresso span { height: 100%; }
+
+  /* tabelas */
+  .tabela { width: 100%; overflow-x: auto; }
+  .tabela.alta { max-height: 380px; overflow-y: auto; }
+  table.dados { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.dados th, table.dados td { padding: 9px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--linha); }
+  table.dados th { color: var(--fraca); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; position: sticky; top: 0; background: var(--painel); }
+  table.dados th:first-child, table.dados td:first-child { text-align: left; }
+  table.dados td.esq, table.dados th.esq { text-align: left; }
+  table.dados tbody tr:hover td { background: var(--painel-2); }
+
+  /* simulador */
+  .sim { display: grid; gap: 16px; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 980px) { .sim { grid-template-columns: 1fr; } }
+  .ctl { display: grid; gap: 4px; padding: 9px 0; border-bottom: 1px solid var(--linha); }
+  .ctl:last-child { border-bottom: 0; }
+  .ctl .topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+  .ctl .topo b { font-family: var(--display); font-size: 17px; color: var(--cor-c, var(--casa)); white-space: nowrap; }
+  .ctl .base { font-size: 12px; color: var(--apagada); }
+  .ctl input[type="range"] { width: 100%; accent-color: var(--cor-c, var(--casa)); height: 20px; cursor: pointer; background: transparent; margin: 0; }
+  .ctl input[type="range"]:focus-visible { outline: 2px solid var(--casa); outline-offset: 2px; border-radius: 6px; }
+  .ctl.forte { border-bottom: 1px solid var(--linha-forte); padding-bottom: 14px; margin-bottom: 4px; }
+  .botao { font: inherit; font-size: 13px; color: var(--tinta); background: var(--painel-2); border: 1px solid var(--linha-forte);
+    border-radius: 9px; padding: 7px 12px; cursor: pointer; }
+  .botao:hover { border-color: var(--casa); }
+  .botao:focus-visible { outline: 2px solid var(--casa); outline-offset: 1px; }
+  .lista-sim { max-height: 640px; overflow-y: auto; padding-right: 4px; }
+  .placar { border-radius: var(--raio); padding: 24px; border: 1px solid var(--linha-forte);
+    background: radial-gradient(600px 240px at 100% 0, rgba(166, 140, 255, .14), transparent 70%), linear-gradient(180deg, var(--painel-2), var(--painel));
+    display: grid; gap: 18px; }
+  .placar-nums { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+  .placar .numero { font-size: clamp(28px, 3vw, 40px); }
+  .placar p { margin: 0; font-size: 14px; color: var(--fraca); }
+  .placar p b { color: var(--tinta); }
+
+  .notas { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--fraca); display: grid; gap: 12px; max-width: 86ch; }
+  .notas h2 { font-size: 15px; color: var(--tinta); margin: 0; font-weight: 600; }
+  .notas ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .notas b { color: var(--tinta); font-weight: 600; }
+
+  .dica { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .12s; background: #0b1a1e;
+    border: 1px solid var(--linha-forte); border-radius: 10px; padding: 8px 12px; font-size: 13px; color: var(--tinta);
+    box-shadow: 0 12px 30px rgba(0,0,0,.45); white-space: nowrap; }
+  .dica .q { color: var(--fraca); display: block; font-size: 12px; margin-bottom: 2px; }
+  .dica i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+
+  .entra { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .entra.visto { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .entra { opacity: 1; transform: none; transition: none; } * { transition-duration: 0s !important; } }
+
+  .mzo-atual { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: #8fa8a5; margin-left: auto; cursor: help; }
+  .mzo-atual i { width: 7px; height: 7px; border-radius: 50%; background: #4fd1a5; box-shadow: 0 0 0 3px rgba(79, 209, 165, .18); flex: none; }
+  .mzo-atual b { color: #e8f2f0; font-weight: 600; }
+
+  .mzo-logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #e8f2f0; }
+  .mzo-logo .mzo-selo { flex: none; filter: drop-shadow(0 4px 14px rgba(233, 196, 106, .25)); }
+  .mzo-txt { display: grid; line-height: 1; gap: 3px; }
+  .mzo-txt b { font-family: Bahnschrift, "DIN Alternate", system-ui, sans-serif; font-weight: 700; font-size: 17px; letter-spacing: .14em; }
+  .mzo-txt small { font-size: 8.5px; letter-spacing: .38em; text-transform: uppercase; color: #8fa8a5; font-weight: 600; }
+  .marca .mzo-sep { width: 1px; height: 26px; background: #2a4a51; margin: 0 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="barra-topo">
+    <div class="marca"><span class="mzo-logo"><svg class="mzo-selo" width="28" height="28" viewBox="0 0 40 40" fill="none" aria-hidden="true"><defs><linearGradient id="mzo-g" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse"><stop stop-color="#f2d38a"/><stop offset=".55" stop-color="#e9c46a"/><stop offset="1" stop-color="#4fd1a5"/></linearGradient></defs><rect x="1" y="1" width="38" height="38" rx="11" fill="url(#mzo-g)"/><path d="M9.5 28.5V12.5l10.5 11 10.5-11v16" stroke="#071013" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30.5" cy="28.5" r="2.6" fill="#071013"/></svg><span class="mzo-txt"><b>MZO</b><small>Analytics</small></span></span><span class="mzo-sep"></span>
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M5 15.5 16 6l11 9.5" stroke="#a68cff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 13.5V26h16V13.5" stroke="#a68cff" stroke-width="2.2" stroke-linejoin="round"/>
+        <circle cx="13" cy="18.5" r="2" fill="#6c8cff"/><circle cx="19" cy="18.5" r="2" fill="#ff7eb6"/>
+      </svg>
+      Conta da Casa
+    </div>
+    <nav class="nav" aria-label="Seções">
+      <a href="#historico">Histórico</a>
+      <a href="#pessoas">Por pessoa</a>
+      <a href="#categorias">Categorias</a>
+      <a href="#resort">Resort</a>
+      <a href="#futuro">A pagar</a>
+      <a href="#projetos">Projetos</a>
+      <a href="#simulador" class="cta">Simulador</a>
+    </nav>
+    <span class="mzo-atual" title="Dados fictícios de demonstração · Fictional demo data
+Última carga conferida em 13/11/2026 07:00
+fato_familia: dados 13/11/2026 07:00 · conferido 13/11/2026 07:00"><i></i>Dados fictícios · atualizado <b>13/11 07:00</b></span>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="olho" id="periodo-txt">—</p>
+      <h1 id="manchete">—</h1>
+      <p class="tese" id="tese">—</p>
+    </div>
+  </header>
+
+  <div class="filtros">
+    <div class="segmento" role="group" aria-label="Período" id="periodos"></div>
+    <label class="chave"><input type="checkbox" id="t-entrada"> Incluir entrada do apartamento (2024)</label>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <!-- ===================================================== histórico -->
+  <section class="bloco entra" id="historico">
+    <div class="cab">
+      <p class="olho">Histórico</p>
+      <h2 id="hist-titulo">O que entrou e o que saiu</h2>
+      <p>Barra da esquerda é o que cada um depositou; a da direita é o gasto da casa, por categoria. O ponto é o saldo do mês.
+        Períodos longos aparecem por ano, em média mensal.</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda" id="leg-hist"></div>
+      <div class="tela" id="g-hist"></div>
+    </div>
+    <div class="cartao" style="margin-top:16px">
+      <h3>Saldo da conta conjunta</h3>
+      <p class="sub" id="saldo-sub">—</p>
+      <div class="tela" id="g-saldo"></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== pessoas -->
+  <section class="bloco entra" id="pessoas">
+    <div class="cab">
+      <p class="olho">Por pessoa</p>
+      <h2 id="pes-titulo">Quanto cada um colocou</h2>
+      <p>O percentual sai do que cada um depositou na conta conjunta. O que cada um pagou direto do próprio bolso aparece ao lado, à parte.</p>
+    </div>
+    <div class="pessoas" id="pes-cards"></div>
+    <div class="cartao" style="margin-top:16px">
+      <h3>Ano a ano</h3>
+      <p class="sub">Aportes na conta e pagamentos diretos de cada um, por ano.</p>
+      <div class="tabela"><table class="dados" id="t-pes"><thead><tr><th>Ano</th><th>Aporte Ale</th><th>Aporte Lia</th><th class="esq" style="min-width:180px">Divisão</th><th>Direto Ale</th><th>Direto Lia</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== categorias -->
+  <section class="bloco entra" id="categorias">
+    <div class="cab">
+      <p class="olho">Para onde vai</p>
+      <h2 id="cat-titulo">Gasto por categoria</h2>
+      <p>Clique numa categoria para ver os grupos dentro dela. A cor separa o essencial do estilo de vida.</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda"><span><i style="background:#6c8cff"></i>Gastos essenciais</span><span><i style="background:#ffb547"></i>Estilo de vida</span></div>
+      <div class="cats" id="cats"></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== resort -->
+  <section class="bloco entra" id="resort">
+    <div class="cab">
+      <p class="olho">Empreendimento Resort Vale Azul</p>
+      <h2 id="resort-titulo">Resort: pago e a pagar</h2>
+      <p>Todo o histórico, independente do período escolhido: corretagem, sinal, saldo, taxas e condomínio. "A pagar" inclui as parcelas futuras e as passadas ainda sem baixa.</p>
+    </div>
+    <div class="kpis" id="resort-kpis"></div>
+    <div class="cartao" style="margin-top:16px">
+      <div class="progresso" id="resort-prog"></div>
+      <p class="sub" id="resort-prog-sub">—</p>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Mês a mês, até a última parcela</h3>
+        <div class="legenda"><span><i style="background:#e9c46a"></i>Pago</span><span><i style="background:#e9c46a;opacity:.35"></i>A pagar</span><span><i style="background:#ff6f61"></i>Vencido sem baixa</span></div>
+        <div class="tela" id="g-resort"></div>
+      </div>
+      <div class="cartao">
+        <h3>Do que é feito</h3>
+        <div class="barras" id="resort-partes"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== futuro -->
+  <section class="bloco entra" id="futuro">
+    <div class="cab">
+      <p class="olho">Compromissos</p>
+      <h2 id="fut-titulo">O que já está a pagar</h2>
+      <p>Tudo o que está lançado e ainda não foi pago. Os próximos 12 meses aparecem contra o aporte de hoje dos dois.</p>
+    </div>
+    <div class="kpis" id="fut-kpis"></div>
+    <div class="cartao" style="margin-top:16px">
+      <h3>Próximos 12 meses</h3>
+      <p class="sub" id="fut-sub"></p>
+      <div class="legenda" id="leg-fut"></div>
+      <div class="tela" id="g-fut"></div>
+    </div>
+    <div class="cartao" style="margin-top:16px">
+      <h3>Vencidos sem baixa</h3>
+      <p class="sub" id="venc-sub">—</p>
+      <div class="tabela"><table class="dados" id="t-venc"><thead><tr><th>Data</th><th class="esq">Categoria</th><th class="esq">Grupo</th><th>Valor</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== projetos -->
+  <section class="bloco entra" id="projetos">
+    <div class="cab">
+      <p class="olho">Projetos</p>
+      <h2 id="proj-titulo">Quanto custou cada projeto</h2>
+      <p>Apartamentos e viagens, pelas marcações da planilha, em todo o histórico. Inclui o que cada um pagou direto.</p>
+    </div>
+    <div class="grade">
+      <div class="cartao"><h3>Apartamentos</h3><p class="sub" id="apto-sub">—</p><div class="barras" id="aptos"></div></div>
+      <div class="cartao"><h3>Viagens</h3><p class="sub" id="viag-sub">—</p><div class="barras" id="viagens"></div></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== simulador -->
+  <section class="bloco entra" id="simulador">
+    <div class="cab">
+      <p class="olho">Simulador</p>
+      <h2>Quanto cada um precisa depositar</h2>
+      <p>Comece de uma base, ajuste cada gasto e a reserva, e o simulador divide o total na proporção do que cada um deposita na conta. A base pode ser a média do passado ou o que já está lançado para o próximo mês.</p>
+    </div>
+    <div class="sim">
+      <div class="cartao">
+        <div class="segmento" role="group" aria-label="Base do simulador" id="s-bases"></div>
+        <div class="ctl forte" style="--cor-c:var(--ale)"><div class="topo"><label for="s-parte">Parte do Ale</label><b id="s-parte-v">—</b></div>
+          <input type="range" id="s-parte" min="0" max="100" step="0.1"><span class="base" id="s-parte-b">—</span></div>
+        <div class="ctl forte" style="--cor-c:var(--atencao)"><div class="topo"><label for="s-reserva">Reserva para imprevistos</label><b id="s-reserva-v">—</b></div>
+          <input type="range" id="s-reserva" min="0" max="30" step="1"><span class="base">por cima do total dos gastos</span></div>
+        <label class="chave" style="padding:10px 0 4px"><input type="checkbox" id="s-venc" checked> Contar vencidos sem baixa na média</label>
+        <span class="base" id="s-venc-n" style="font-size:12px;color:var(--apagada)"></span>
+        <div class="lista-sim" id="s-linhas"></div>
+        <button type="button" class="botao" id="s-volta" style="justify-self:start">Voltar à base</button>
+      </div>
+      <div style="display:grid;gap:16px;min-width:0">
+        <div class="placar" aria-live="polite">
+          <div class="placar-nums">
+            <div><span class="rotulo">Total por mês</span><div class="numero" id="s-total">—</div><span class="nota" id="s-total-n">—</span></div>
+            <div><span class="rotulo">Ale deposita</span><div class="numero" style="color:var(--ale)" id="s-ale">—</div><span class="nota" id="s-ale-n">—</span></div>
+            <div><span class="rotulo">Lia deposita</span><div class="numero" style="color:var(--lia)" id="s-lia">—</div><span class="nota" id="s-lia-n">—</span></div>
+          </div>
+          <div class="divisao" id="s-div"></div>
+          <p id="s-texto">—</p>
+        </div>
+        <div class="cartao">
+          <h3>Por categoria, quanto é de cada um</h3>
+          <div class="tabela"><table class="dados" id="t-sim"><thead><tr><th>Gasto</th><th>Por mês</th><th>Ale</th><th>Lia</th></tr></thead><tbody></tbody><tfoot></tfoot></table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="notas">
+    <h2>De onde vêm estes números</h2>
+    <ul>
+      <li><b>Fonte</b>: a planilha da conta família (<span id="n-linhas">—</span>, de <span id="n-ini">—</span> a <span id="n-fim">—</span>, incluindo o que já está lançado para o futuro).
+        Receita são os depósitos de cada um na conta conjunta; despesa é o gasto da casa, pago pela conta ou direto por um dos dois.</li>
+      <li><b>Histórico e categorias</b> contam até hoje, pela data do lançamento, pagos ou não. O que está lançado para depois de hoje entra só em "A pagar" e no simulador.</li>
+      <li><b>% por pessoa</b> sai do que cada um depositou de fato. No simulador, a divisão também: a parte de cada um é a proporção dos depósitos de Ale e Lia nos meses da base (<span id="n-regra">—</span> nos últimos 12 meses); na base "lançado", a proporção do aporte de hoje. O controle permite mudar à mão.</li>
+      <li><b>A pagar</b> é tudo que está marcado como não pago, inclusive lançamentos passados: alguns são parcelas previstas que ficaram ao lado da paga e podem só precisar de baixa na planilha.</li>
+      <li><b>Saldo da conta</b>: depósitos menos o que foi pago pela própria conta conjunta. Pagamentos diretos de cada um não passam por ela. O tracejado projeta o que já está lançado, até o último mês com as contas da casa na planilha.</li>
+      <li><b>Entrada do apartamento</b> (2024) é tudo de #Apartamento que não é parcela do financiamento; fica fora por padrão para não esconder o padrão do dia a dia.</li>
+      <li>Gerado em <span id="n-gerado">—</span> a partir do <i>db-demo</i>. Arquivo local, sem conexão com a internet.</li>
+    </ul>
+  </footer>
+</div>
+
+<div class="dica" id="dica" role="tooltip"></div>
+
+<script>
+const D = {"gerado":"13/11/2026 15:43","hoje":"2026-11-13","pessoas":["Ale","Lia","Conta","Outros"],"cats":["Alimentação","Aporte","Casa","Lazer","Moradia","Resort","Saúde"],"grupos":["Aporte","Cartório","Condomínio","Corretagem","Diarista","Entrada","Farmácia","Financiamento","Gás","Hospedagem","IPTU","ITBI","Internet","Janta","Luz","Mercado","Pet","Reforma","Saldo","Sinal","Taxas","Água"],"projs":["Compra do apartamento","Reforma da cozinha","Resort Vale Azul","Viagem · Natal Jul26","Viagem · PortoSeguro Out23"],"linhas":[["2023-01-03",-286.39,2,0,15,1,0,1,0,2],["2023-01-05",2966.45,0,1,0,1,0,0,0,2],["2023-01-06",2000.31,1,1,0,1,0,0,0,2],["2023-01-07",-190.0,2,2,4,1,0,0,0,2],["2023-01-10",-540.0,2,4,2,1,0,1,0,2],["2023-01-10",-218.74,2,0,15,1,0,1,0,2],["2023-01-15",-259.54,2,4,14,1,0,1,0,2],["2023-01-16",-95.84,2,4,21,1,0,1,0,2],["2023-01-18",-119.9,2,2,12,1,0,1,0,2],["2023-01-18",-268.14,0,0,15,1,0,1,0,2],["2023-01-20",-51.68,2,4,8,1,0,1,0,2],["2023-01-21",-190.0,2,2,4,1,0,0,0,2],["2023-01-26",-242.27,2,0,15,1,0,1,0,2],["2023-02-03",-225.41,2,0,15,1,0,1,0,2],["2023-02-05",2930.95,0,1,0,1,0,0,0,2],["2023-02-06",2012.22,1,1,0,1,0,0,0,2],["2023-02-07",-190.0,2,2,4,1,0,0,0,2],["2023-02-10",-540.0,2,4,2,1,0,1,0,2],["2023-02-10",-128.0,2,4,10,1,0,1,0,2],["2023-02-11",-273.2,2,0,15,1,0,1,0,2],["2023-02-13",-137.57,2,6,6,1,0,1,0,2],["2023-02-15",-243.85,2,4,14,1,0,1,0,2],["2023-02-16",-117.92,2,4,21,1,0,1,0,2],["2023-02-18",-203.1,1,0,15,1,0,1,0,2],["2023-02-18",-119.9,2,2,12,1,0,1,0,2],["2023-02-20",-57.74,2,4,8,1,0,1,0,2],["2023-02-21",-190.0,2,2,4,1,0,0,0,2],["2023-02-24",-327.87,0,0,15,1,0,1,0,2],["2023-03-04",-230.79,0,0,15,1,0,1,0,2],["2023-03-05",2986.11,0,1,0,1,0,0,0,2],["2023-03-06",2034.44,1,1,0,1,0,0,0,2],["2023-03-07",-190.0,2,2,4,1,0,0,0,2],["2023-03-10",-540.0,2,4,2,1,0,1,0,2],["2023-03-10",-128.0,2,4,10,1,0,1,0,2],["2023-03-12",-296.83,2,0,15,1,0,1,0,2],["2023-03-13",-87.95,2,6,6,1,0,1,0,2],["2023-03-15",-203.95,2,4,14,1,0,1,0,2],["2023-03-16",-112.99,2,4,21,1,0,1,0,2],["2023-03-18",-119.9,2,2,12,1,0,1,0,2],["2023-03-19",-312.78,1,0,15,1,0,1,0,2],["2023-03-20",-60.75,2,4,8,1,0,1,0,2],["2023-03-21",-190.0,2,2,4,1,0,0,0,2],["2023-03-23",-97.44,2,2,16,1,0,0,0,2],["2023-03-25",-207.23,2,0,15,1,0,1,0,2],["2023-04-03",-265.82,0,0,15,1,0,1,0,2],["2023-04-05",2971.28,0,1,0,1,0,0,0,2],["2023-04-06",1956.74,1,1,0,1,0,0,0,2],["2023-04-07",-190.0,2,2,4,1,0,0,0,2],["2023-04-10",-128.0,2,4,10,1,0,1,0,2],["2023-04-10",-540.0,2,4,2,1,0,1,0,2],["2023-04-12",-210.67,0,0,15,1,0,1,0,2],["2023-04-15",-215.69,2,4,14,1,0,1,0,2],["2023-04-16",-115.22,2,4,21,1,0,1,0,2],["2023-04-17",-275.62,2,0,15,1,0,1,0,2],["2023-04-18",-119.9,2,2,12,1,0,1,0,2],["2023-04-20",-59.97,2,4,8,1,0,1,0,2],["2023-04-21",-190.0,2,2,4,1,0,0,0,2],["2023-04-23",-118.68,2,2,16,1,0,0,0,2],["2023-04-24",-237.68,2,0,15,1,0,1,0,2],["2023-05-04",-222.45,2,0,15,1,0,1,0,2],["2023-05-05",2988.59,0,1,0,1,0,0,0,2],["2023-05-06",2066.44,1,1,0,1,0,0,0,2],["2023-05-07",-190.0,2,2,4,1,0,0,0,2],["2023-05-10",-540.0,2,4,2,1,0,1,0,2],["2023-05-10",-128.0,2,4,10,1,0,1,0,2],["2023-05-11",-274.95,1,0,15,1,0,1,0,2],["2023-05-15",-190.74,2,4,14,1,0,1,0,2],["2023-05-16",-113.69,2,4,21,1,0,1,0,2],["2023-05-18",-119.9,2,2,12,1,0,1,0,2],["2023-05-19",-291.92,2,0,15,1,0,1,0,2],["2023-05-20",-50.01,2,4,8,1,0,1,0,2],["2023-05-21",-190.0,2,2,4,1,0,0,0,2],["2023-05-23",-129.64,2,2,16,1,0,0,0,2],["2023-05-26",-337.61,1,0,15,1,0,1,0,2],["2023-06-03",-241.17,2,0,15,1,0,1,0,2],["2023-06-05",3055.35,0,1,0,1,0,0,0,2],["2023-06-06",2030.9,1,1,0,1,0,0,0,2],["2023-06-07",-190.0,2,2,4,1,0,0,0,2],["2023-06-10",-540.0,2,4,2,1,0,1,0,2],["2023-06-10",-128.0,2,4,10,1,0,1,0,2],["2023-06-12",-262.62,2,0,15,1,0,1,0,2],["2023-06-13",-81.81,2,6,6,1,0,1,0,2],["2023-06-15",-173.58,2,4,14,1,0,1,0,2],["2023-06-16",-100.52,2,4,21,1,0,1,0,2],["2023-06-17",-266.17,1,0,15,1,0,1,0,2],["2023-06-18",-119.9,2,2,12,1,0,1,0,2],["2023-06-20",-54.1,2,4,8,1,0,1,0,2],["2023-06-21",-190.0,2,2,4,1,0,0,0,2],["2023-06-23",-3600.0,2,3,9,1,0,0,0,4],["2023-06-25",-260.01,2,0,15,1,0,1,0,2],["2023-07-05",3083.18,0,1,0,1,0,0,0,2],["2023-07-05",-215.34,2,0,15,1,0,1,0,2],["2023-07-06",2070.37,1,1,0,1,0,0,0,2],["2023-07-07",-190.0,2,2,4,1,0,0,0,2],["2023-07-10",-540.0,2,4,2,1,0,1,0,2],["2023-07-10",-128.0,2,4,10,1,0,1,0,2],["2023-07-10",-295.96,2,0,15,1,0,1,0,2],["2023-07-15",-202.22,2,4,14,1,0,1,0,2],["2023-07-16",-100.14,2,4,21,1,0,1,0,2],["2023-07-18",-119.9,2,2,12,1,0,1,0,2],["2023-07-19",-247.69,1,0,15,1,0,1,0,2],["2023-07-20",-71.86,2,4,8,1,0,1,0,2],["2023-07-21",-190.0,2,2,4,1,0,0,0,2],["2023-07-23",-151.51,2,2,16,1,0,0,0,2],["2023-07-24",-338.57,2,0,15,1,0,1,0,2],["2023-08-05",3075.9,0,1,0,1,0,0,0,2],["2023-08-05",-207.15,2,0,15,1,0,1,0,2],["2023-08-06",2068.05,1,1,0,1,0,0,0,2],["2023-08-07",-190.0,2,2,4,1,0,0,0,2],["2023-08-10",-128.0,2,4,10,1,0,1,0,2],["2023-08-10",-261.32,2,0,15,1,0,1,0,2],["2023-08-10",-540.0,2,4,2,1,0,1,0,2],["2023-08-13",-72.08,2,6,6,1,0,1,0,2],["2023-08-15",-198.07,2,4,14,1,0,1,0,2],["2023-08-16",-110.15,2,4,21,1,0,1,0,2],["2023-08-17",-310.61,2,0,15,1,0,1,0,2],["2023-08-18",-119.9,2,2,12,1,0,1,0,2],["2023-08-20",-59.64,2,4,8,1,0,1,0,2],["2023-08-21",-190.0,2,2,4,1,0,0,0,2],["2023-08-23",-164.68,2,2,16,1,0,0,0,2],["2023-08-25",-322.96,0,0,15,1,0,1,0,2],["2023-09-05",-274.39,2,0,15,1,0,1,0,2],["2023-09-05",3109.53,0,1,0,1,0,0,0,2],["2023-09-06",2092.58,1,1,0,1,0,0,0,2],["2023-09-07",-190.0,2,2,4,1,0,0,0,2],["2023-09-10",-540.0,2,4,2,1,0,1,0,2],["2023-09-10",-128.0,2,4,10,1,0,1,0,2],["2023-09-12",-281.01,2,0,15,1,0,1,0,2],["2023-09-13",-157.98,2,6,6,1,0,1,0,2],["2023-09-15",-217.68,2,4,14,1,0,1,0,2],["2023-09-16",-114.46,2,4,21,1,0,1,0,2],["2023-09-18",-119.9,2,2,12,1,0,1,0,2],["2023-09-18",-282.26,2,0,15,1,0,1,0,2],["2023-09-20",-54.8,2,4,8,1,0,1,0,2],["2023-09-21",-190.0,2,2,4,1,0,0,0,2],["2023-09-23",-164.26,2,2,16,1,0,0,0,2],["2023-09-26",-293.5,2,0,15,1,0,1,0,2],["2023-10-05",3111.18,0,1,0,1,0,0,0,2],["2023-10-05",-215.97,1,0,15,1,0,1,0,2],["2023-10-06",2049.12,1,1,0,1,0,0,0,2],["2023-10-07",-190.0,2,2,4,1,0,0,0,2],["2023-10-10",-540.0,2,4,2,1,0,1,0,2],["2023-10-10",-128.0,2,4,10,1,0,1,0,2],["2023-10-12",-328.13,2,0,15,1,0,1,0,2],["2023-10-12",-286.4,0,0,13,1,0,0,0,4],["2023-10-15",-176.43,2,4,14,1,0,1,0,2],["2023-10-16",-97.78,2,4,21,1,0,1,0,2],["2023-10-18",-119.9,2,2,12,1,0,1,0,2],["2023-10-18",-259.01,2,0,15,1,0,1,0,2],["2023-10-20",-61.67,2,4,8,1,0,1,0,2],["2023-10-21",-190.0,2,2,4,1,0,0,0,2],["2023-10-26",-214.73,2,0,15,1,0,1,0,2],["2023-11-04",-315.83,2,0,15,1,0,1,0,2],["2023-11-05",3095.49,0,1,0,1,0,0,0,2],["2023-11-06",2128.3,1,1,0,1,0,0,0,2],["2023-11-07",-190.0,2,2,4,1,0,0,0,2],["2023-11-10",-540.0,2,4,2,1,0,1,0,2],["2023-11-10",-128.0,2,4,10,1,0,1,0,2],["2023-11-11",-243.26,1,0,15,1,0,1,0,2],["2023-11-15",-196.5,2,4,14,1,0,1,0,2],["2023-11-16",-109.52,2,4,21,1,0,1,0,2],["2023-11-17",-319.0,2,0,15,1,0,1,0,2],["2023-11-18",-119.9,2,2,12,1,0,1,0,2],["2023-11-20",-62.73,2,4,8,1,0,1,0,2],["2023-11-21",-190.0,2,2,4,1,0,0,0,2],["2023-11-24",-228.88,2,0,15,1,0,1,0,2],["2023-12-05",3127.75,0,1,0,1,0,0,0,2],["2023-12-05",-258.28,1,0,15,1,0,1,0,2],["2023-12-06",2046.12,1,1,0,1,0,0,0,2],["2023-12-07",-190.0,2,2,4,1,0,0,0,2],["2023-12-10",-540.0,2,4,2,1,0,1,0,2],["2023-12-11",-229.55,2,0,15,1,0,1,0,2],["2023-12-15",-230.42,2,4,14,1,0,1,0,2],["2023-12-16",-109.67,2,4,21,1,0,1,0,2],["2023-12-17",-259.68,2,0,15,1,0,1,0,2],["2023-12-18",-119.9,2,2,12,1,0,1,0,2],["2023-12-20",-62.96,2,4,8,1,0,1,0,2],["2023-12-21",-190.0,2,2,4,1,0,0,0,2],["2023-12-26",-295.79,0,0,15,1,0,1,0,2],["2024-01-05",3145.18,0,1,0,1,0,0,0,2],["2024-01-05",-316.93,2,0,15,1,0,1,0,2],["2024-01-06",2111.59,1,1,0,1,0,0,0,2],["2024-01-07",-190.0,2,2,4,1,0,0,0,2],["2024-01-10",-564.3,2,4,2,1,0,1,0,2],["2024-01-11",-231.97,1,0,15,1,0,1,0,2],["2024-01-13",-114.31,2,6,6,1,0,1,0,2],["2024-01-15",-262.46,2,4,14,1,0,1,0,2],["2024-01-16",-102.88,2,4,21,1,0,1,0,2],["2024-01-18",-119.9,2,2,12,1,0,1,0,2],["2024-01-18",-321.47,1,0,15,1,0,1,0,2],["2024-01-20",-72.92,2,4,8,1,0,1,0,2],["2024-01-21",-190.0,2,2,4,1,0,0,0,2],["2024-01-23",-212.12,2,2,16,1,0,0,0,2],["2024-01-25",-307.62,2,0,15,1,0,1,0,2],["2024-02-05",3125.31,0,1,0,1,0,0,0,2],["2024-02-05",-239.1,2,0,15,1,0,1,0,2],["2024-02-06",2072.09,1,1,0,1,0,0,0,2],["2024-02-07",-190.0,2,2,4,1,0,0,0,2],["2024-02-10",-564.3,2,4,2,1,0,1,0,2],["2024-02-10",-133.76,2,4,10,1,0,1,0,2],["2024-02-11",-277.52,0,0,15,1,0,1,0,2],["2024-02-15",-245.48,2,4,14,1,0,1,0,2],["2024-02-16",-126.6,2,4,21,1,0,1,0,2],["2024-02-17",-258.86,2,0,15,1,0,1,0,2],["2024-02-18",-119.9,2,2,12,1,0,1,0,2],["2024-02-20",-71.39,2,4,8,1,0,1,0,2],["2024-02-21",-190.0,2,2,4,1,0,0,0,2],["2024-02-21",30000.0,0,1,0,1,0,0,0,2],["2024-02-22",21000.0,1,1,0,1,0,0,0,2],["2024-02-23",-90.65,2,2,16,1,0,0,0,2],["2024-02-24",-313.49,2,0,15,1,0,1,0,2],["2024-02-26",-48000.0,2,4,5,1,0,1,1,0],["2024-03-04",-331.36,2,0,15,1,0,1,0,2],["2024-03-05",3177.22,0,1,0,1,0,0,0,2],["2024-03-06",2113.2,1,1,0,1,0,0,0,2],["2024-03-07",-190.0,2,2,4,1,0,0,0,2],["2024-03-10",-564.3,2,4,2,1,0,1,0,2],["2024-03-10",-133.76,2,4,10,1,0,1,0,2],["2024-03-10",-280.66,2,0,15,1,0,1,0,2],["2024-03-12",-3900.0,2,4,11,1,0,1,1,0],["2024-03-15",-190.98,2,4,14,1,0,1,0,2],["2024-03-16",-102.67,2,4,21,1,0,1,0,2],["2024-03-18",-119.9,2,2,12,1,0,1,0,2],["2024-03-19",-351.75,1,0,15,1,0,1,0,2],["2024-03-19",-1850.0,2,4,1,1,0,1,1,0],["2024-03-20",-62.04,2,4,8,1,0,1,0,2],["2024-03-21",-190.0,2,2,4,1,0,0,0,2],["2024-03-24",-319.76,0,0,15,1,0,1,0,2],["2024-04-05",3219.68,0,1,0,1,0,0,0,2],["2024-04-05",-240.71,2,0,15,1,0,1,0,2],["2024-04-06",2180.37,1,1,0,1,0,0,0,2],["2024-04-07",-190.0,2,2,4,1,0,0,0,2],["2024-04-08",-2380.0,2,4,7,1,0,1,0,0],["2024-04-10",-564.3,2,4,2,1,0,1,0,2],["2024-04-10",-133.76,2,4,10,1,0,1,0,2],["2024-04-10",-336.96,2,0,15,1,0,1,0,2],["2024-04-13",-41.29,2,6,6,1,0,1,0,2],["2024-04-15",-182.64,2,4,14,1,0,1,0,2],["2024-04-16",-100.82,2,4,21,1,0,1,0,2],["2024-04-18",-119.9,2,2,12,1,0,1,0,2],["2024-04-19",-323.72,2,0,15,1,0,1,0,2],["2024-04-20",-56.83,2,4,8,1,0,1,0,2],["2024-04-21",-190.0,2,2,4,1,0,0,0,2],["2024-04-23",-135.91,2,2,16,1,0,0,0,2],["2024-04-24",-231.09,0,0,15,1,0,1,0,2],["2024-05-04",-337.49,0,0,15,1,0,1,0,2],["2024-05-05",3182.26,0,1,0,1,0,0,0,2],["2024-05-06",2146.27,1,1,0,1,0,0,0,2],["2024-05-07",-190.0,2,2,4,1,0,0,0,2],["2024-05-08",-2380.0,2,4,7,1,0,1,0,0],["2024-05-10",-303.26,2,0,15,1,0,1,0,2],["2024-05-10",-133.76,2,4,10,1,0,1,0,2],["2024-05-10",-564.3,2,4,2,1,0,1,0,2],["2024-05-13",-131.18,2,6,6,1,0,1,0,2],["2024-05-14",-2600.0,2,2,17,1,0,0,0,1],["2024-05-15",-196.69,2,4,14,1,0,1,0,2],["2024-05-16",-121.39,2,4,21,1,0,1,0,2],["2024-05-17",-235.65,2,0,15,1,0,1,0,2],["2024-05-18",-119.9,2,2,12,1,0,1,0,2],["2024-05-20",-60.8,2,4,8,1,0,1,0,2],["2024-05-21",-190.0,2,2,4,1,0,0,0,2],["2024-05-23",-105.06,2,2,16,1,0,0,0,2],["2024-05-24",-249.16,2,0,15,1,0,1,0,2],["2024-06-03",-295.02,2,0,15,1,0,1,0,2],["2024-06-05",3189.8,0,1,0,1,0,0,0,2],["2024-06-06",2108.96,1,1,0,1,0,0,0,2],["2024-06-07",-190.0,2,2,4,1,0,0,0,2],["2024-06-08",-2380.0,2,4,7,1,0,1,0,0],["2024-06-10",-564.3,2,4,2,1,0,1,0,2],["2024-06-10",-133.76,2,4,10,1,0,1,0,2],["2024-06-11",-1900.0,2,2,17,1,0,0,0,1],["2024-06-12",-229.26,2,0,15,1,0,1,0,2],["2024-06-13",-55.1,2,6,6,1,0,1,0,2],["2024-06-15",-202.68,2,4,14,1,0,1,0,2],["2024-06-16",-104.34,2,4,21,1,0,1,0,2],["2024-06-18",-119.9,2,2,12,1,0,1,0,2],["2024-06-19",-300.25,2,0,15,1,0,1,0,2],["2024-06-20",-69.0,2,4,8,1,0,1,0,2],["2024-06-21",-190.0,2,2,4,1,0,0,0,2],["2024-06-26",-307.22,0,0,15,1,0,1,0,2],["2024-07-04",-273.02,2,0,15,1,0,1,0,2],["2024-07-05",3217.69,0,1,0,1,0,0,0,2],["2024-07-06",2143.7,1,1,0,1,0,0,0,2],["2024-07-07",-190.0,2,2,4,1,0,0,0,2],["2024-07-08",-2380.0,2,4,7,1,0,1,0,0],["2024-07-09",-3400.0,2,2,17,1,0,0,0,1],["2024-07-10",-564.3,2,4,2,1,0,1,0,2],["2024-07-10",-133.76,2,4,10,1,0,1,0,2],["2024-07-10",-273.05,2,0,15,1,0,1,0,2],["2024-07-15",-181.39,2,4,14,1,0,1,0,2],["2024-07-16",-103.69,2,4,21,1,0,1,0,2],["2024-07-17",-308.6,2,0,15,1,0,1,0,2],["2024-07-18",-119.9,2,2,12,1,0,1,0,2],["2024-07-20",-70.55,2,4,8,1,0,1,0,2],["2024-07-21",-190.0,2,2,4,1,0,0,0,2],["2024-07-25",-238.67,2,0,15,1,0,1,0,2],["2024-08-04",-270.42,1,0,15,1,0,1,0,2],["2024-08-05",3293.91,0,1,0,1,0,0,0,2],["2024-08-06",2219.12,1,1,0,1,0,0,0,2],["2024-08-07",-190.0,2,2,4,1,0,0,0,2],["2024-08-08",-2380.0,2,4,7,1,0,1,0,0],["2024-08-10",-133.76,2,4,10,1,0,1,0,2],["2024-08-10",-564.3,2,4,2,1,0,1,0,2],["2024-08-11",-287.81,1,0,15,1,0,1,0,2],["2024-08-15",-207.47,2,4,14,1,0,1,0,2],["2024-08-16",-127.94,2,4,21,1,0,1,0,2],["2024-08-17",-349.09,2,0,15,1,0,1,0,2],["2024-08-18",-119.9,2,2,12,1,0,1,0,2],["2024-08-20",-60.09,2,4,8,1,0,1,0,2],["2024-08-21",-190.0,2,2,4,1,0,0,0,2],["2024-08-23",-138.59,2,2,16,1,0,0,0,2],["2024-08-26",-245.52,2,0,15,1,0,1,0,2],["2024-09-05",3239.61,0,1,0,1,0,0,0,2],["2024-09-05",-299.36,2,0,15,1,0,1,0,2],["2024-09-06",2200.1,1,1,0,1,0,0,0,2],["2024-09-07",-190.0,2,2,4,1,0,0,0,2],["2024-09-08",-2380.0,2,4,7,1,0,1,0,0],["2024-09-10",-564.3,2,4,2,1,0,1,0,2],["2024-09-10",-133.76,2,4,10,1,0,1,0,2],["2024-09-11",-240.46,2,0,15,1,0,1,0,2],["2024-09-15",-184.6,2,4,14,1,0,1,0,2],["2024-09-16",-104.04,2,4,21,1,0,1,0,2],["2024-09-17",-242.92,2,0,15,1,0,1,0,2],["2024-09-18",-119.9,2,2,12,1,0,1,0,2],["2024-09-20",-76.72,2,4,8,1,0,1,0,2],["2024-09-21",-190.0,2,2,4,1,0,0,0,2],["2024-09-25",-284.28,2,0,15,1,0,1,0,2],["2024-10-05",-351.01,1,0,15,1,0,1,0,2],["2024-10-05",3323.96,0,1,0,1,0,0,0,2],["2024-10-06",2153.83,1,1,0,1,0,0,0,2],["2024-10-07",-190.0,2,2,4,1,0,0,0,2],["2024-10-08",-2380.0,2,4,7,1,0,1,0,0],["2024-10-10",-564.3,2,4,2,1,0,1,0,2],["2024-10-10",-133.76,2,4,10,1,0,1,0,2],["2024-10-12",-312.42,1,0,15,1,0,1,0,2],["2024-10-15",-218.01,2,4,14,1,0,1,0,2],["2024-10-16",-120.46,2,4,21,1,0,1,0,2],["2024-10-18",-119.9,2,2,12,1,0,1,0,2],["2024-10-19",-302.29,2,0,15,1,0,1,0,2],["2024-10-20",-53.6,2,4,8,1,0,1,0,2],["2024-10-21",-190.0,2,2,4,1,0,0,0,2],["2024-10-23",-115.52,2,2,16,1,0,0,0,2],["2024-10-25",-287.17,2,0,15,1,0,1,0,2],["2024-11-04",-318.33,0,0,15,1,0,1,0,2],["2024-11-05",3266.26,0,1,0,1,0,0,0,2],["2024-11-06",2235.1,1,1,0,1,0,0,0,2],["2024-11-07",-190.0,2,2,4,1,0,0,0,2],["2024-11-08",-2380.0,2,4,7,1,0,1,0,0],["2024-11-10",-564.3,2,4,2,1,0,1,0,2],["2024-11-10",-133.76,2,4,10,1,0,1,0,2],["2024-11-10",-256.64,2,0,15,1,0,1,0,2],["2024-11-15",-208.98,2,4,14,1,0,1,0,2],["2024-11-16",-128.41,2,4,21,1,0,1,0,2],["2024-11-18",-119.9,2,2,12,1,0,1,0,2],["2024-11-19",-335.49,2,0,15,1,0,1,0,2],["2024-11-20",-52.55,2,4,8,1,0,1,0,2],["2024-11-21",-190.0,2,2,4,1,0,0,0,2],["2024-11-25",-247.33,0,0,15,1,0,1,0,2],["2024-12-03",-236.35,2,0,15,1,0,1,0,2],["2024-12-05",3347.16,0,1,0,1,0,0,0,2],["2024-12-06",2226.22,1,1,0,1,0,0,0,2],["2024-12-07",-190.0,2,2,4,1,0,0,0,2],["2024-12-08",-2380.0,2,4,7,1,0,1,0,0],["2024-12-10",-564.3,2,4,2,1,0,1,0,2],["2024-12-11",-273.35,2,0,15,1,0,1,0,2],["2024-12-13",-102.15,2,6,6,1,0,1,0,2],["2024-12-15",-276.71,2,4,14,1,0,1,0,2],["2024-12-16",-125.41,2,4,21,1,0,1,0,2],["2024-12-18",-119.9,2,2,12,1,0,1,0,2],["2024-12-18",-255.4,2,0,15,1,0,1,0,2],["2024-12-20",-76.62,2,4,8,1,0,1,0,2],["2024-12-21",-190.0,2,2,4,1,0,0,0,2],["2024-12-23",-126.9,2,2,16,1,0,0,0,2],["2024-12-24",-209.18,2,0,15,1,0,1,0,2],["2025-01-03",-225.05,1,0,15,1,0,1,0,2],["2025-01-05",3312.84,0,1,0,1,0,0,0,2],["2025-01-06",2194.74,1,1,0,1,0,0,0,2],["2025-01-07",-190.0,2,2,4,1,0,0,0,2],["2025-01-08",-2380.0,2,4,7,1,0,1,0,0],["2025-01-10",-589.69,2,4,2,1,0,1,0,2],["2025-01-11",-224.83,2,0,15,1,0,1,0,2],["2025-01-15",-263.9,2,4,14,1,0,1,0,2],["2025-01-16",-120.73,2,4,21,1,0,1,0,2],["2025-01-18",-119.9,2,2,12,1,0,1,0,2],["2025-01-18",-259.46,0,0,15,1,0,1,0,2],["2025-01-20",-53.46,2,4,8,1,0,1,0,2],["2025-01-21",-190.0,2,2,4,1,0,0,0,2],["2025-01-23",-172.73,2,2,16,1,0,0,0,2],["2025-01-24",-302.34,0,0,15,1,0,1,0,2],["2025-02-04",-278.23,2,0,15,1,0,1,0,2],["2025-02-05",3381.06,0,1,0,1,0,0,0,2],["2025-02-06",2271.46,1,1,0,1,0,0,0,2],["2025-02-07",-190.0,2,2,4,1,0,0,0,2],["2025-02-08",-2380.0,2,4,7,1,0,1,0,0],["2025-02-10",-589.69,2,4,2,1,0,1,0,2],["2025-02-10",-139.78,2,4,10,1,0,1,0,2],["2025-02-10",-244.55,2,0,15,1,0,1,0,2],["2025-02-13",-114.24,2,6,6,1,0,1,0,2],["2025-02-15",-255.01,2,4,14,1,0,1,0,2],["2025-02-16",-104.9,2,4,21,1,0,1,0,2],["2025-02-18",-119.9,2,2,12,1,0,1,0,2],["2025-02-19",-355.93,2,0,15,1,0,1,0,2],["2025-02-20",-65.03,2,4,8,1,0,1,0,2],["2025-02-21",-190.0,2,2,4,1,0,0,0,2],["2025-02-23",-131.82,2,2,16,1,0,0,0,2],["2025-02-26",-298.89,0,0,15,1,0,1,0,2],["2025-03-03",-240.4,2,0,15,1,0,1,0,2],["2025-03-05",3388.35,0,1,0,1,0,0,0,2],["2025-03-06",2323.55,1,1,0,1,0,0,0,2],["2025-03-07",-190.0,2,2,4,1,0,0,0,2],["2025-03-08",-2380.0,2,4,7,1,0,1,0,0],["2025-03-10",-589.69,2,4,2,1,0,1,0,2],["2025-03-10",-139.78,2,4,10,1,0,1,0,2],["2025-03-11",-306.91,2,0,15,1,0,1,0,2],["2025-03-15",-1200.0,2,5,3,1,0,0,0,2],["2025-03-15",-189.31,2,4,14,1,0,1,0,2],["2025-03-16",-132.21,2,4,21,1,0,1,0,2],["2025-03-18",-119.9,2,2,12,1,0,1,0,2],["2025-03-18",-297.67,1,0,15,1,0,1,0,2],["2025-03-20",-71.49,2,4,8,1,0,1,0,2],["2025-03-21",-190.0,2,2,4,1,0,0,0,2],["2025-03-25",-255.98,1,0,15,1,0,1,0,2],["2025-03-25",-850.0,2,5,19,1,0,0,0,2],["2025-04-03",-293.58,2,0,15,1,0,1,0,2],["2025-04-05",3351.72,0,1,0,1,0,0,0,2],["2025-04-06",2227.73,1,1,0,1,0,0,0,2],["2025-04-07",-190.0,2,2,4,1,0,0,0,2],["2025-04-08",-2380.0,2,4,7,1,0,1,0,0],["2025-04-10",-589.69,2,4,2,1,0,1,0,2],["2025-04-10",-139.78,2,4,10,1,0,1,0,2],["2025-04-12",-220.94,1,0,15,1,0,1,0,2],["2025-04-13",-74.14,2,6,6,1,0,1,0,2],["2025-04-15",-218.87,2,4,14,1,0,1,0,2],["2025-04-15",-1200.0,2,5,3,1,0,0,0,2],["2025-04-16",-118.28,2,4,21,1,0,1,0,2],["2025-04-18",-119.9,2,2,12,1,0,1,0,2],["2025-04-19",-366.3,2,0,15,1,0,1,0,2],["2025-04-20",-51.13,2,4,8,1,0,1,0,2],["2025-04-21",-190.0,2,2,4,1,0,0,0,2],["2025-04-23",-197.15,2,2,16,1,0,0,0,2],["2025-04-25",-850.0,2,5,19,1,0,0,0,2],["2025-04-26",-319.44,1,0,15,1,0,1,0,2],["2025-05-03",-247.27,2,0,15,1,0,1,0,2],["2025-05-05",3361.32,0,1,0,1,0,0,0,2],["2025-05-06",2338.34,1,1,0,1,0,0,0,2],["2025-05-07",-190.0,2,2,4,1,0,0,0,2],["2025-05-08",-2380.0,2,4,7,1,0,1,0,0],["2025-05-10",-589.69,2,4,2,1,0,1,0,2],["2025-05-10",-139.78,2,4,10,1,0,1,0,2],["2025-05-10",-330.18,2,0,15,1,0,1,0,2],["2025-05-15",-199.44,2,4,14,1,0,1,0,2],["2025-05-15",-1200.0,2,5,3,1,0,0,0,2],["2025-05-16",-131.31,2,4,21,1,0,1,0,2],["2025-05-18",-119.9,2,2,12,1,0,1,0,2],["2025-05-18",-344.36,2,0,15,1,0,1,0,2],["2025-05-20",-60.54,2,4,8,1,0,1,0,2],["2025-05-21",-190.0,2,2,4,1,0,0,0,2],["2025-05-23",-176.3,2,2,16,1,0,0,0,2],["2025-05-25",-850.0,2,5,19,1,0,0,0,2],["2025-05-26",-287.72,2,0,15,1,0,1,0,2],["2025-06-03",-278.35,2,0,15,1,0,1,0,2],["2025-06-05",3432.15,0,1,0,1,0,0,0,2],["2025-06-06",2268.35,1,1,0,1,0,0,0,2],["2025-06-07",-190.0,2,2,4,1,0,0,0,2],["2025-06-08",-2380.0,2,4,7,1,0,1,0,0],["2025-06-10",-589.69,2,4,2,1,0,1,0,2],["2025-06-10",-139.78,2,4,10,1,0,1,0,2],["2025-06-12",-233.54,2,0,15,1,0,1,0,2],["2025-06-15",-179.24,2,4,14,1,0,1,0,2],["2025-06-16",-137.0,2,4,21,1,0,1,0,2],["2025-06-18",-119.9,2,2,12,1,0,1,0,2],["2025-06-18",-226.51,2,0,15,1,0,1,0,2],["2025-06-20",-62.61,2,4,8,1,0,1,0,2],["2025-06-21",-190.0,2,2,4,1,0,0,0,2],["2025-06-24",-340.86,2,0,15,1,0,1,0,2],["2025-06-25",-850.0,2,5,19,1,0,0,0,2],["2025-07-05",-261.56,0,0,15,1,0,1,0,2],["2025-07-05",3409.48,0,1,0,1,0,0,0,2],["2025-07-06",2312.41,1,1,0,1,0,0,0,2],["2025-07-07",-190.0,2,2,4,1,0,0,0,2],["2025-07-08",-2380.0,2,4,7,1,0,1,0,0],["2025-07-10",-589.69,2,4,2,1,0,1,0,2],["2025-07-10",-139.78,2,4,10,1,0,1,0,2],["2025-07-10",-366.15,2,0,15,1,0,1,0,2],["2025-07-15",-202.85,2,4,14,1,0,1,0,2],["2025-07-16",-137.5,2,4,21,1,0,1,0,2],["2025-07-18",-119.9,2,2,12,1,0,1,0,2],["2025-07-19",-278.21,2,0,15,1,0,1,0,2],["2025-07-20",-53.44,2,4,8,1,0,1,0,2],["2025-07-21",-190.0,2,2,4,1,0,0,0,2],["2025-07-23",-141.26,2,2,16,1,0,0,0,2],["2025-07-24",-246.97,2,0,15,1,0,1,0,2],["2025-07-25",-850.0,2,5,19,1,0,0,0,2],["2025-08-04",-292.27,1,0,15,1,0,1,0,2],["2025-08-05",3409.14,0,1,0,1,0,0,0,2],["2025-08-06",2325.6,1,1,0,1,0,0,0,2],["2025-08-07",-190.0,2,2,4,1,0,0,0,2],["2025-08-08",-2380.0,2,4,7,1,0,1,0,0],["2025-08-10",-589.69,2,4,2,1,0,1,0,2],["2025-08-10",-139.78,2,4,10,1,0,1,0,2],["2025-08-12",-243.85,2,0,15,1,0,1,0,2],["2025-08-13",-151.49,2,6,6,1,0,1,0,2],["2025-08-15",-202.37,2,4,14,1,0,1,0,2],["2025-08-16",-136.8,2,4,21,1,0,1,0,2],["2025-08-18",-119.9,2,2,12,1,0,1,0,2],["2025-08-18",-272.73,0,0,15,1,0,1,0,2],["2025-08-20",-61.11,2,4,8,1,0,1,0,2],["2025-08-21",-190.0,2,2,4,1,0,0,0,2],["2025-08-25",-850.0,2,5,19,1,0,0,0,2],["2025-08-26",-233.39,2,0,15,1,0,1,0,2],["2025-09-05",3500.13,0,1,0,1,0,0,0,2],["2025-09-05",-238.76,2,0,15,1,0,1,0,2],["2025-09-06",2345.01,1,1,0,1,0,0,0,2],["2025-09-07",-190.0,2,2,4,1,0,0,0,2],["2025-09-08",-2380.0,2,4,7,1,0,1,0,0],["2025-09-10",-139.78,2,4,10,1,0,1,0,2],["2025-09-10",-589.69,2,4,2,1,0,1,0,2],["2025-09-12",-336.5,2,0,15,1,0,1,0,2],["2025-09-15",-205.14,2,4,14,1,0,1,0,2],["2025-09-16",-98.87,2,4,21,1,0,1,0,2],["2025-09-18",-119.9,2,2,12,1,0,1,0,2],["2025-09-18",-330.8,1,0,15,1,0,1,0,2],["2025-09-20",-75.77,2,4,8,1,0,1,0,2],["2025-09-21",-190.0,2,2,4,1,0,0,0,2],["2025-09-25",-640.0,2,5,18,1,0,0,0,2],["2025-09-26",-257.78,2,0,15,1,0,1,0,2],["2025-10-03",-266.53,1,0,15,1,0,1,0,2],["2025-10-05",-420.0,2,5,20,1,0,0,0,2],["2025-10-05",3516.29,0,1,0,1,0,0,0,2],["2025-10-06",2353.14,1,1,0,1,0,0,0,2],["2025-10-07",-190.0,2,2,4,1,0,0,0,2],["2025-10-08",-2380.0,2,4,7,1,0,1,0,0],["2025-10-10",-589.69,2,4,2,1,0,1,0,2],["2025-10-10",-139.78,2,4,10,1,0,1,0,2],["2025-10-11",-314.14,2,0,15,1,0,1,0,2],["2025-10-13",-153.46,2,6,6,1,0,1,0,2],["2025-10-15",-224.49,2,4,14,1,0,1,0,2],["2025-10-16",-124.79,2,4,21,1,0,1,0,2],["2025-10-17",-340.39,1,0,15,1,0,1,0,2],["2025-10-18",-119.9,2,2,12,1,0,1,0,2],["2025-10-20",-65.18,2,4,8,1,0,1,0,2],["2025-10-21",-190.0,2,2,4,1,0,0,0,2],["2025-10-23",-104.34,2,2,16,1,0,0,0,2],["2025-10-25",-333.25,0,0,15,1,0,1,0,2],["2025-10-25",-640.0,2,5,18,1,0,0,0,2],["2025-11-03",-352.69,0,0,15,1,0,1,0,2],["2025-11-05",3510.24,0,1,0,1,0,0,0,2],["2025-11-06",2378.99,1,1,0,1,0,0,0,2],["2025-11-07",-190.0,2,2,4,1,0,0,0,2],["2025-11-08",-2380.0,2,4,7,1,0,1,0,0],["2025-11-10",-139.78,2,4,10,1,0,1,0,2],["2025-11-10",-589.69,2,4,2,1,0,1,0,2],["2025-11-10",-258.04,0,0,15,1,0,1,0,2],["2025-11-13",-89.29,2,6,6,1,0,1,0,2],["2025-11-15",-198.12,2,4,14,1,0,1,0,2],["2025-11-16",-107.6,2,4,21,1,0,1,0,2],["2025-11-18",-119.9,2,2,12,1,0,1,0,2],["2025-11-19",-230.72,2,0,15,1,0,1,0,2],["2025-11-20",-49.9,2,4,8,1,0,1,0,2],["2025-11-21",-190.0,2,2,4,1,0,0,0,2],["2025-11-25",-640.0,2,5,18,1,0,0,0,2],["2025-11-26",-314.84,2,0,15,1,0,1,0,2],["2025-12-05",3525.88,0,1,0,1,0,0,0,2],["2025-12-05",-242.15,0,0,15,1,0,1,0,2],["2025-12-06",2379.44,1,1,0,1,0,0,0,2],["2025-12-07",-190.0,2,2,4,1,0,0,0,2],["2025-12-08",-2380.0,2,4,7,1,0,1,0,0],["2025-12-10",-589.69,2,4,2,1,0,1,0,2],["2025-12-11",-287.76,0,0,15,1,0,1,0,2],["2025-12-13",-153.35,2,6,6,1,0,1,0,2],["2025-12-15",-235.75,2,4,14,1,0,1,0,2],["2025-12-16",-124.46,2,4,21,1,0,1,0,2],["2025-12-18",-119.9,2,2,12,1,0,1,0,2],["2025-12-19",-295.81,2,0,15,1,0,1,0,2],["2025-12-20",-55.11,2,4,8,1,0,1,0,2],["2025-12-21",-190.0,2,2,4,1,0,0,0,2],["2025-12-25",-322.96,0,0,15,1,0,1,0,2],["2025-12-25",-640.0,2,5,18,1,0,0,0,2],["2026-01-03",-246.64,2,0,15,1,0,1,0,2],["2026-01-05",3516.8,0,1,0,1,0,0,0,2],["2026-01-06",2410.84,1,1,0,1,0,0,0,2],["2026-01-07",-190.0,2,2,4,1,0,0,0,2],["2026-01-08",-2380.0,2,4,7,1,0,1,0,0],["2026-01-10",-616.23,2,4,2,1,0,1,0,2],["2026-01-11",-231.66,0,0,15,1,0,1,0,2],["2026-01-15",-294.18,2,4,14,1,0,1,0,2],["2026-01-16",-125.61,2,4,21,1,0,1,0,2],["2026-01-17",-242.36,0,0,15,1,0,1,0,2],["2026-01-17",-4200.0,2,3,9,1,0,0,0,3],["2026-01-18",-119.9,2,2,12,1,0,1,0,2],["2026-01-20",-70.43,2,4,8,1,0,1,0,2],["2026-01-21",-190.0,2,2,4,1,0,0,0,2],["2026-01-23",-200.64,2,2,16,1,0,0,0,2],["2026-01-25",-332.84,2,0,15,1,0,1,0,2],["2026-01-25",-640.0,2,5,18,1,0,0,0,2],["2026-02-03",-279.88,2,0,15,1,0,1,0,2],["2026-02-05",3569.46,0,1,0,1,0,0,0,2],["2026-02-06",2445.98,1,1,0,1,0,0,0,2],["2026-02-07",-190.0,2,2,4,1,0,0,0,2],["2026-02-08",-2380.0,2,4,7,1,0,1,0,0],["2026-02-10",-616.23,2,4,2,1,0,1,0,2],["2026-02-10",-146.07,2,4,10,1,0,1,0,2],["2026-02-10",-322.24,2,0,15,1,0,1,0,2],["2026-02-15",-242.5,2,4,14,1,0,1,0,2],["2026-02-16",-136.66,2,4,21,1,0,1,0,2],["2026-02-18",-119.9,2,2,12,1,0,1,0,2],["2026-02-19",-357.4,0,0,15,1,0,1,0,2],["2026-02-20",-58.18,2,4,8,1,0,1,0,2],["2026-02-21",-190.0,2,2,4,1,0,0,0,2],["2026-02-23",-195.37,2,2,16,1,0,0,0,2],["2026-02-25",-309.35,2,0,15,1,0,1,0,2],["2026-02-25",-640.0,2,5,18,1,0,0,0,2],["2026-03-04",-345.47,1,0,15,1,0,1,0,2],["2026-03-05",3541.95,0,1,0,1,0,0,0,2],["2026-03-06",2374.76,1,1,0,1,0,0,0,2],["2026-03-07",-190.0,2,2,4,1,0,0,0,2],["2026-03-08",-2380.0,2,4,7,1,0,1,0,0],["2026-03-10",-146.07,2,4,10,1,0,1,0,2],["2026-03-10",-616.23,2,4,2,1,0,1,0,2],["2026-03-12",-304.34,2,0,15,1,0,1,0,2],["2026-03-13",-155.67,2,6,6,1,0,1,0,2],["2026-03-15",-239.84,2,4,14,1,0,1,0,2],["2026-03-16",-121.7,2,4,21,1,0,1,0,2],["2026-03-17",-336.9,2,0,15,1,0,1,0,2],["2026-03-18",-119.9,2,2,12,1,0,1,0,2],["2026-03-20",-78.02,2,4,8,1,0,1,0,2],["2026-03-21",-190.0,2,2,4,1,0,0,0,2],["2026-03-25",-386.11,0,0,15,1,0,1,0,2],["2026-03-25",-640.0,2,5,18,1,0,0,0,2],["2026-04-05",-337.19,2,0,15,1,0,1,0,2],["2026-04-05",3599.98,0,1,0,1,0,0,0,2],["2026-04-06",2423.88,1,1,0,1,0,0,0,2],["2026-04-07",-190.0,2,2,4,1,0,0,0,2],["2026-04-08",-2380.0,2,4,7,1,0,1,0,0],["2026-04-10",-616.23,2,4,2,1,0,1,0,2],["2026-04-10",-146.07,2,4,10,1,0,1,0,2],["2026-04-12",-340.94,2,0,15,1,0,1,0,2],["2026-04-15",-227.38,2,4,14,1,0,1,0,2],["2026-04-16",-109.23,2,4,21,1,0,1,0,2],["2026-04-18",-119.9,2,2,12,1,0,1,0,2],["2026-04-19",-364.15,2,0,15,1,0,1,0,2],["2026-04-20",-56.54,2,4,8,1,0,1,0,2],["2026-04-21",-190.0,2,2,4,1,0,0,0,2],["2026-04-25",-640.0,2,5,18,1,0,0,0,2],["2026-04-26",-236.96,2,0,15,1,0,1,0,2],["2026-05-04",-256.13,2,0,15,1,0,1,0,2],["2026-05-05",3605.78,0,1,0,1,0,0,0,2],["2026-05-06",2409.87,1,1,0,1,0,0,0,2],["2026-05-07",-190.0,2,2,4,1,0,0,0,2],["2026-05-08",-2380.0,2,4,7,1,0,1,0,0],["2026-05-10",-616.23,2,4,2,1,0,1,0,2],["2026-05-10",-146.07,2,4,10,1,0,1,0,2],["2026-05-10",-301.16,1,0,15,1,0,1,0,2],["2026-05-15",-226.41,2,4,14,1,0,1,0,2],["2026-05-16",-131.51,2,4,21,1,0,1,0,2],["2026-05-17",-292.75,2,0,15,1,0,1,0,2],["2026-05-18",-119.9,2,2,12,1,0,1,0,2],["2026-05-20",-73.75,2,4,8,1,0,1,0,2],["2026-05-21",-190.0,2,2,4,1,0,0,0,2],["2026-05-24",-337.38,2,0,15,1,0,1,0,2],["2026-05-25",-640.0,2,5,18,1,0,0,0,2],["2026-06-04",-270.67,1,0,15,1,0,1,0,2],["2026-06-05",3581.82,0,1,0,1,0,0,0,2],["2026-06-06",2480.92,1,1,0,1,0,0,0,2],["2026-06-07",-190.0,2,2,4,1,0,0,0,2],["2026-06-08",-2380.0,2,4,7,1,0,1,0,0],["2026-06-10",-146.07,2,4,10,1,0,1,0,2],["2026-06-10",-616.23,2,4,2,1,0,1,0,2],["2026-06-11",-313.06,1,0,15,1,0,1,0,2],["2026-06-13",-115.92,2,6,6,1,0,1,0,2],["2026-06-15",-222.08,2,4,14,1,0,1,0,2],["2026-06-16",-119.32,2,4,21,1,0,1,0,2],["2026-06-17",-303.18,2,0,15,1,0,1,0,2],["2026-06-18",-119.9,2,2,12,1,0,1,0,2],["2026-06-20",-79.14,2,4,8,1,0,1,0,2],["2026-06-21",-190.0,2,2,4,1,0,0,0,2],["2026-06-25",-640.0,2,5,18,1,0,0,0,2],["2026-06-26",-241.04,1,0,15,1,0,1,0,2],["2026-07-05",-241.6,2,0,15,1,0,1,0,2],["2026-07-05",3648.79,0,1,0,1,0,0,0,2],["2026-07-06",2456.5,1,1,0,1,0,0,0,2],["2026-07-07",-190.0,2,2,4,1,0,0,0,2],["2026-07-08",-2380.0,2,4,7,1,0,1,0,0],["2026-07-10",-616.23,2,4,2,1,0,1,0,2],["2026-07-10",-146.07,2,4,10,1,0,1,0,2],["2026-07-11",-308.44,2,0,15,1,0,1,0,2],["2026-07-13",-119.82,2,6,6,1,0,1,0,2],["2026-07-15",-234.13,2,4,14,1,0,1,0,2],["2026-07-16",-125.66,2,4,21,1,0,1,0,2],["2026-07-18",-372.72,2,0,15,1,0,1,0,2],["2026-07-18",-119.9,2,2,12,1,0,1,0,2],["2026-07-20",-64.92,2,4,8,1,0,1,0,2],["2026-07-21",-190.0,2,2,4,1,0,0,0,2],["2026-07-23",-83.48,2,2,16,1,0,0,0,2],["2026-07-24",-340.36,2,0,15,1,0,1,0,2],["2026-07-25",-640.0,2,5,18,1,0,0,0,2],["2026-08-04",-236.81,2,0,15,1,0,1,0,2],["2026-08-05",3669.28,0,1,0,1,0,0,0,2],["2026-08-06",2409.06,1,1,0,1,0,0,0,2],["2026-08-07",-190.0,2,2,4,1,0,0,0,2],["2026-08-08",-2380.0,2,4,7,1,0,1,0,0],["2026-08-10",-146.07,2,4,10,1,0,1,0,2],["2026-08-10",-240.3,2,0,15,1,0,1,0,2],["2026-08-10",-616.23,2,4,2,1,0,1,0,2],["2026-08-13",-47.13,2,6,6,1,0,1,0,2],["2026-08-15",-197.59,2,4,14,1,0,1,0,2],["2026-08-16",-115.77,2,4,21,1,0,1,0,2],["2026-08-18",-119.9,2,2,12,1,0,1,0,2],["2026-08-19",-344.74,2,0,15,1,0,1,0,2],["2026-08-20",-79.65,2,4,8,1,0,1,0,2],["2026-08-21",-190.0,2,2,4,1,0,0,0,2],["2026-08-23",-185.68,2,2,16,1,0,0,0,2],["2026-08-25",-640.0,2,5,18,1,0,0,0,2],["2026-08-26",-267.0,2,0,15,1,0,1,0,2],["2026-09-04",-231.17,0,0,15,1,0,1,0,2],["2026-09-05",3643.73,0,1,0,1,0,0,0,2],["2026-09-06",2472.42,1,1,0,1,0,0,0,2],["2026-09-07",-190.0,2,2,4,1,0,0,0,2],["2026-09-08",-2380.0,2,4,7,1,0,1,0,0],["2026-09-10",-616.23,2,4,2,1,0,1,0,2],["2026-09-10",-146.07,2,4,10,1,0,1,0,2],["2026-09-11",-237.28,1,0,15,1,0,1,0,2],["2026-09-13",-70.87,2,6,6,1,0,1,0,2],["2026-09-15",-241.72,2,4,14,1,0,1,0,2],["2026-09-15",-205.4,2,4,14,0,0,1,0,2],["2026-09-16",-139.36,2,4,21,1,0,1,0,2],["2026-09-18",-119.9,2,2,12,1,0,1,0,2],["2026-09-19",-263.87,0,0,15,1,0,1,0,2],["2026-09-20",-79.41,2,4,8,1,0,1,0,2],["2026-09-21",-190.0,2,2,4,1,0,0,0,2],["2026-09-24",-272.31,2,0,15,1,0,1,0,2],["2026-09-25",-640.0,2,5,18,1,0,0,0,2],["2026-10-05",3694.82,0,1,0,1,0,0,0,2],["2026-10-05",-321.49,1,0,15,1,0,1,0,2],["2026-10-05",-420.0,2,5,20,1,0,0,0,2],["2026-10-06",2446.45,1,1,0,1,0,0,0,2],["2026-10-07",-190.0,2,2,4,1,0,0,0,2],["2026-10-08",-2380.0,2,4,7,1,0,1,0,0],["2026-10-10",-616.23,2,4,2,1,0,1,0,2],["2026-10-10",-146.07,2,4,10,1,0,1,0,2],["2026-10-10",-267.67,2,0,15,1,0,1,0,2],["2026-10-15",-239.74,2,4,14,1,0,1,0,2],["2026-10-16",-134.34,2,4,21,1,0,1,0,2],["2026-10-18",-119.9,2,2,12,1,0,1,0,2],["2026-10-18",-383.89,2,0,15,1,0,1,0,2],["2026-10-20",-76.27,2,4,8,1,0,1,0,2],["2026-10-21",-190.0,2,2,4,1,0,0,0,2],["2026-10-25",-293.49,2,0,15,1,0,1,0,2],["2026-10-25",-640.0,2,5,18,1,0,0,0,2],["2026-11-04",-381.49,0,0,15,1,0,1,0,2],["2026-11-05",3684.4,0,1,0,1,0,0,0,2],["2026-11-06",2468.98,1,1,0,1,0,0,0,2],["2026-11-07",-190.0,2,2,4,1,0,0,0,2],["2026-11-08",-2380.0,2,4,7,1,0,1,0,0],["2026-11-10",-146.07,2,4,10,1,0,1,0,2],["2026-11-10",-616.23,2,4,2,1,0,1,0,2],["2026-11-11",-283.73,2,0,15,1,0,1,0,2],["2026-11-15",-218.45,2,4,14,0,1,1,0,2],["2026-11-16",-106.23,2,4,21,0,1,1,0,2],["2026-11-18",-119.9,2,2,12,0,1,1,0,2],["2026-11-20",-70.28,2,4,8,0,1,1,0,2],["2026-11-25",-640.0,2,5,18,0,1,0,0,2],["2026-12-08",-2380.0,2,4,7,0,1,1,0,0],["2026-12-10",-616.23,2,4,2,0,1,1,0,2],["2026-12-15",-297.12,2,4,14,0,1,1,0,2],["2026-12-16",-135.54,2,4,21,0,1,1,0,2],["2026-12-18",-119.9,2,2,12,0,1,1,0,2],["2026-12-20",-74.93,2,4,8,0,1,1,0,2],["2026-12-25",-640.0,2,5,18,0,1,0,0,2],["2027-01-08",-2380.0,2,4,7,0,1,1,0,0],["2027-01-25",-640.0,2,5,18,0,1,0,0,2],["2027-02-08",-2380.0,2,4,7,0,1,1,0,0],["2027-02-25",-640.0,2,5,18,0,1,0,0,2],["2027-03-08",-2380.0,2,4,7,0,1,1,0,0],["2027-03-25",-640.0,2,5,18,0,1,0,0,2],["2027-04-08",-2380.0,2,4,7,0,1,1,0,0],["2027-04-25",-640.0,2,5,18,0,1,0,0,2],["2027-05-08",-2380.0,2,4,7,0,1,1,0,0],["2027-05-25",-640.0,2,5,18,0,1,0,0,2],["2027-06-08",-2380.0,2,4,7,0,1,1,0,0],["2027-06-25",-640.0,2,5,18,0,1,0,0,2],["2027-07-08",-2380.0,2,4,7,0,1,1,0,0],["2027-07-25",-640.0,2,5,18,0,1,0,0,2],["2027-08-08",-2380.0,2,4,7,0,1,1,0,0],["2027-08-25",-640.0,2,5,18,0,1,0,0,2],["2027-09-08",-2380.0,2,4,7,0,1,1,0,0],["2027-09-25",-640.0,2,5,18,0,1,0,0,2],["2027-10-05",-420.0,2,5,20,0,1,0,0,2],["2027-10-08",-2380.0,2,4,7,0,1,1,0,0],["2027-10-25",-640.0,2,5,18,0,1,0,0,2],["2027-11-08",-2380.0,2,4,7,0,1,1,0,0],["2027-11-25",-640.0,2,5,18,0,1,0,0,2],["2027-12-08",-2380.0,2,4,7,0,1,1,0,0],["2027-12-25",-640.0,2,5,18,0,1,0,0,2],["2028-01-08",-2380.0,2,4,7,0,1,1,0,0],["2028-01-25",-640.0,2,5,18,0,1,0,0,2],["2028-02-25",-640.0,2,5,18,0,1,0,0,2],["2028-03-25",-640.0,2,5,18,0,1,0,0,2],["2028-04-25",-640.0,2,5,18,0,1,0,0,2],["2028-05-25",-640.0,2,5,18,0,1,0,0,2],["2028-06-25",-640.0,2,5,18,0,1,0,0,2],["2028-07-25",-640.0,2,5,18,0,1,0,0,2],["2028-08-25",-640.0,2,5,18,0,1,0,0,2],["2028-09-25",-640.0,2,5,18,0,1,0,0,2],["2028-10-25",-640.0,2,5,18,0,1,0,0,2],["2028-11-25",-640.0,2,5,18,0,1,0,0,2]],"aporte_atual":{"Ale":3684.4,"Lia":2468.98},"aporte_mes":"2026-11"};
+
+(function () {
+  'use strict';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const num = (v, c) => v == null || isNaN(v) ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: c || 0, maximumFractionDigits: c || 0 });
+  const brl = (v, c) => (v < 0 ? '−' : '') + 'R$ ' + num(Math.abs(v), c);
+  const kbrl = (v) => (v < 0 ? '−' : '') + 'R$ ' + (Math.abs(v) >= 1e6 ? num(Math.abs(v) / 1e6, 1) + ' mi' : Math.abs(v) >= 1e4 ? num(Math.abs(v) / 1e3, 0) + ' mil' : Math.abs(v) >= 1e3 ? num(Math.abs(v) / 1e3, 1) + ' mil' : num(Math.abs(v), 0));
+  const pct = (v, c) => v == null || !isFinite(v) ? '—' : num(100 * v, c || 0) + '%';
+  const ts = (s) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+  const fd = (t) => { const d = new Date(t); return String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0') + '/' + d.getUTCFullYear(); };
+  const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const rotMes = (k) => MESES[+k.slice(5) - 1] + '/' + k.slice(2, 4);
+  const listaMeses = (a, b) => { const out = []; let [y, m] = a.split('-').map(Number); const [yb, mb] = b.split('-').map(Number);
+    while (y < yb || (y === yb && m <= mb)) { out.push(y + '-' + String(m).padStart(2, '0')); m++; if (m > 12) { m = 1; y++; } } return out; };
+  const somaMes = (k, n) => { let [y, m] = k.split('-').map(Number); m += n; while (m > 12) { m -= 12; y++; } while (m < 1) { m += 12; y--; } return y + '-' + String(m).padStart(2, '0'); };
+
+  const ALE = D.pessoas.indexOf('Ale'), LIA = D.pessoas.indexOf('Lia'), CONTA = D.pessoas.indexOf('Conta');
+  const COR_P = ['#6c8cff', '#ff7eb6', '#8fa8a5', '#5d7774'];
+  const HOJE = D.hoje, MES_HOJE = HOJE.slice(0, 7);
+  // [data, valor, pessoa, cat, grupo, pago, futuro, essencial, entrada, projeto]
+  const L = D.linhas.map((r) => ({ d: r[0], m: r[0].slice(0, 7), v: r[1], p: r[2], cat: D.cats[r[3]], gr: D.grupos[r[4]], pago: r[5], fut: r[6],
+    ess: r[7], ent: r[8], proj: r[9] >= 0 ? D.projs[r[9]] : null }));
+  // receita = tudo positivo (aportes, aluguel de garagem, venda); despesa = negativo
+  L.forEach((x) => { x.rec = x.v > 0; x.g = x.v < 0 ? -x.v : 0; });
+  const PASSADO = L.filter((x) => x.d <= HOJE);
+  const MES_INI = PASSADO[0].m;
+  const TODOS = listaMeses(MES_INI, MES_HOJE);
+
+  const dica = $('#dica');
+  function mostra(html, ev) {
+    dica.innerHTML = html; dica.style.opacity = '1';
+    const w = dica.offsetWidth, h = dica.offsetHeight;
+    let x = ev.clientX + 14, y = ev.clientY - h - 12;
+    if (x + w > window.innerWidth - 8) x = ev.clientX - w - 14;
+    if (y < 8) y = ev.clientY + 16;
+    dica.style.left = Math.max(8, x) + 'px'; dica.style.top = y + 'px';
+  }
+  const esconde = () => { dica.style.opacity = '0'; };
+  function anima(el, alvo, fmt) {
+    const de = el._v === undefined ? alvo : el._v;
+    el._v = alvo;
+    if (calmo || de === alvo) { el.textContent = fmt(alvo); return; }
+    const t0 = performance.now();
+    cancelAnimationFrame(el._raf);
+    const passo = (t) => { const p = Math.min(1, (t - t0) / 500), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(de + (alvo - de) * e); if (p < 1) el._raf = requestAnimationFrame(passo); };
+    el._raf = requestAnimationFrame(passo);
+  }
+  function barras(host, linhas, max) {
+    host.innerHTML = '';
+    linhas.forEach((l) => {
+      const d = document.createElement('div'); d.className = 'barra';
+      d.innerHTML = '<span class="n"><i></i><span></span></span><span class="trilho"><span></span></span><span class="v"><b></b><span></span></span>';
+      d.querySelector('.n i').style.background = l.cor; d.querySelector('.n span').textContent = l.nome; d.querySelector('.n span').title = l.nome;
+      const s = d.querySelector('.trilho span'); s.style.background = l.cor; s.style.width = Math.max(0, 100 * l.v / (max || 1)) + '%';
+      d.querySelector('.v b').textContent = l.txt; d.querySelector('.v span').textContent = l.nota ? ' ' + l.nota : '';
+      if (l.dica) d.addEventListener('mousemove', (ev) => mostra(l.dica, ev)), d.addEventListener('mouseleave', esconde);
+      host.appendChild(d);
+    });
+  }
+  function kpi(alvo, rot, valor, nota, cor, delta, cls) {
+    const d = document.createElement('div'); d.className = 'kpi'; d.style.setProperty('--cor-k', cor);
+    d.innerHTML = '<span class="rotulo"></span><span class="numero"></span><span class="nota"></span>';
+    d.children[0].textContent = rot; d.children[1].textContent = valor; d.children[2].innerHTML = nota;
+    if (cls) d.children[1].className = 'numero ' + cls;
+    if (delta) { const s = document.createElement('span'); s.className = 'delta ' + delta.cls; s.textContent = delta.txt; d.appendChild(s); }
+    alvo.appendChild(d);
+  }
+
+  // cores das categorias: as maiores do histórico ganham cor própria
+  const PALETA = ['#a68cff', '#e9c46a', '#6c8cff', '#4fd1a5', '#ffb547', '#3cc8ea', '#ff7eb6', '#ff8f6b'];
+  const RANK_CAT = (() => { const s = {}; PASSADO.forEach((x) => { if (x.g && !x.ent) s[x.cat] = (s[x.cat] || 0) + x.g; });
+    return Object.keys(s).sort((a, b) => s[b] - s[a]); })();
+  const CAT_COR = {}; RANK_CAT.forEach((c, i) => { CAT_COR[c] = i < PALETA.length ? PALETA[i] : '#5d7774'; });
+  const CATS_TOP = RANK_CAT.slice(0, PALETA.length);
+  const corCat = (c) => CAT_COR[c] || '#5d7774';
+  const nomeCat = (c) => CATS_TOP.includes(c) ? c : 'Outras';
+
+  // --------------------------------------------------------- períodos
+  const anoFim = +MES_HOJE.slice(0, 4);
+  const PERIODOS = [
+    { id: '12m', nome: 'Últimos 12 meses', meses: TODOS.slice(-12) },
+    { id: 'a0', nome: String(anoFim), meses: TODOS.filter((k) => k.startsWith(String(anoFim))) },
+    { id: 'a1', nome: String(anoFim - 1), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 1))) },
+    { id: 'a2', nome: String(anoFim - 2), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 2))) },
+    { id: 'a3', nome: String(anoFim - 3), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 3))) },
+    { id: 'tudo', nome: 'Tudo', meses: TODOS }
+  ].filter((p) => p.meses.length);
+  const est = { per: PERIODOS.find((p) => p.id === 'a0') || PERIODOS[0], entrada: false };
+  PERIODOS.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = p.nome; b.dataset.id = p.id;
+    b.setAttribute('aria-pressed', p === est.per);
+    b.addEventListener('click', () => { est.per = p; $$('#periodos button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.id === p.id)); recorte(); });
+    $('#periodos').appendChild(b);
+  });
+  $('#t-entrada').addEventListener('change', (e) => { est.entrada = e.target.checked; recorte(); });
+
+  function resumo(meses) {
+    const set = new Set(meses);
+    const sel = PASSADO.filter((x) => set.has(x.m) && (est.entrada || !x.ent));
+    const r = { n: meses.length, sel, rec: 0, desp: 0, ap: [0, 0, 0, 0], dir: [0, 0, 0, 0], cat: {} };
+    sel.forEach((x) => {
+      if (x.rec) { r.rec += x.v; r.ap[x.p] += x.v; }
+      else { r.desp += x.g; r.cat[x.cat] = (r.cat[x.cat] || 0) + x.g; if (x.p === ALE || x.p === LIA) r.dir[x.p] += x.g; }
+    });
+    r.saldo = r.rec - r.desp;
+    return r;
+  }
+  function anterior(p) {
+    const i = TODOS.indexOf(p.meses[0]);
+    return i - p.meses.length < 0 ? null : TODOS.slice(i - p.meses.length, i);
+  }
+  function variacao(a, b, maiorBom) {
+    if (b == null || !isFinite(b) || Math.abs(b) < 1) return null;
+    const v = (a - b) / Math.abs(b), bom = maiorBom ? v >= 0 : v <= 0;
+    return { txt: (v >= 0 ? '▲ ' : '▼ ') + pct(Math.abs(v)) + ' vs período anterior', cls: bom ? 'bom' : 'ruim' };
+  }
+
+  // a pagar: independe do período
+  const ABERTO = L.filter((x) => !x.pago && x.g > 0);
+  const VENCIDO = ABERTO.filter((x) => x.d < HOJE);
+  const somaG = (l) => l.reduce((s, x) => s + x.g, 0);
+
+  // --------------------------------------------------------- topo
+  function abertura(R, P) {
+    const n = R.n, apTot = R.ap[ALE] + R.ap[LIA];
+    $('#periodo-txt').textContent = est.per.nome + ' · ' + rotMes(est.per.meses[0]) + ' a ' + rotMes(est.per.meses[n - 1]);
+    $('#manchete').innerHTML = 'A casa gastou <em>' + kbrl(R.desp / n) + '</em> por mês' + (R.rec > 0 ? ' e recebeu ' + kbrl(R.rec / n) + '.' : '.');
+    const top = Object.keys(R.cat).sort((a, b) => R.cat[b] - R.cat[a]);
+    $('#tese').innerHTML = 'Em ' + n + (n === 1 ? ' mês' : ' meses') + ' saíram <b>' + kbrl(R.desp) + '</b>'
+      + (top.length ? ', ' + pct(R.cat[top[0]] / R.desp) + ' em <b>' + top[0].toLowerCase() + '</b>' : '') + '. '
+      + (apTot > 0 ? 'Dos depósitos, <b>' + pct(R.ap[ALE] / apTot) + ' vieram do Ale e ' + pct(R.ap[LIA] / apTot) + ' da Lia</b>. ' : '')
+      + 'Hoje há <b>' + kbrl(somaG(ABERTO)) + '</b> lançados a pagar, ' + kbrl(somaG(VENCIDO)) + ' já vencidos.';
+    const k = $('#kpis'); k.innerHTML = '';
+    kpi(k, 'Receita', kbrl(R.rec), brl(R.rec / n) + ' por mês', 'var(--bom)', P && variacao(R.rec, P.rec, true));
+    kpi(k, 'Despesa', kbrl(R.desp), brl(R.desp / n) + ' por mês', 'var(--ruim)', P && variacao(R.desp, P.desp, false));
+    kpi(k, 'Saldo', kbrl(R.saldo), brl(R.saldo / n) + ' por mês', R.saldo >= 0 ? 'var(--bom)' : 'var(--ruim)', null, R.saldo >= 0 ? 'bom' : 'ruim');
+    kpi(k, 'Ale', pct(apTot ? R.ap[ALE] / apTot : null), kbrl(R.ap[ALE]) + ' depositados', 'var(--ale)');
+    kpi(k, 'Lia', pct(apTot ? R.ap[LIA] / apTot : null), kbrl(R.ap[LIA]) + ' depositados', 'var(--lia)');
+    kpi(k, 'A pagar', kbrl(somaG(ABERTO)), '<span class="aviso">' + kbrl(somaG(VENCIDO)) + ' vencidos</span>', 'var(--atencao)');
+  }
+
+  // --------------------------------------------------------- histórico
+  function historico() {
+    const host = $('#g-hist'), meses = est.per.meses, porAno = meses.length > 36;
+    const chaves = porAno ? Array.from(new Set(meses.map((k) => k.slice(0, 4)))) : meses;
+    const dados = chaves.map((k) => { const ms = porAno ? meses.filter((x) => x.startsWith(k)) : [k]; return { k, r: resumo(ms), div: porAno ? ms.length : 1 }; });
+    const cats = CATS_TOP.concat(['Outras']);
+    const legP = [['Ale', COR_P[ALE]], ['Lia', COR_P[LIA]], ['Outros', COR_P[3]]];
+    $('#leg-hist').innerHTML = legP.map((l) => '<span><i style="background:' + l[1] + '"></i>' + l[0] + '</span>').join('')
+      + '<span style="margin-left:8px"></span>' + cats.map((c) => '<span><i style="background:' + (c === 'Outras' ? '#5d7774' : corCat(c)) + '"></i>' + c + '</span>').join('')
+      + '<span style="margin-left:8px"><i style="background:#fff;border-radius:50%"></i>Saldo</span>';
+    const W = Math.max(320, host.clientWidth), H = 300, m = { t: 16, r: 10, b: 30, l: 52 };
+    const vmax = Math.max(1, Math.max.apply(null, dados.map((d) => Math.max(d.r.rec, d.r.desp) / d.div))) * 1.08;
+    const vmin = Math.min(0, Math.min.apply(null, dados.map((d) => d.r.saldo / d.div)) * 1.1);
+    const Y = (v) => m.t + (vmax - v) * (H - m.t - m.b) / (vmax - vmin);
+    const bw = (W - m.l - m.r) / dados.length;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Receita, despesa e saldo">';
+    const amp = vmax - vmin, passoY = amp > 120000 ? 50000 : amp > 50000 ? 20000 : amp > 20000 ? 5000 : amp > 8000 ? 2000 : 1000;
+    for (let v = Math.ceil(vmin / passoY) * passoY; v <= vmax; v += passoY) s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"' + (v === 0 ? ' style="stroke:var(--linha-forte)"' : '') + '/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v / 1000) + 'k</text>';
+    const passoX = Math.max(1, Math.ceil(dados.length / Math.floor((W - m.l) / 46)));
+    const pts = [];
+    dados.forEach((d, i) => {
+      const x0 = m.l + i * bw, w = Math.max(2, bw * 0.36);
+      s += '<g class="col" data-i="' + i + '"><rect x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+      let acc = 0;
+      [ALE, LIA, 3].forEach((p) => { const v = d.r.ap[p] / d.div; if (v > 0) { s += '<rect x="' + (x0 + bw * 0.1) + '" y="' + Y(acc + v) + '" width="' + w + '" height="' + (Y(acc) - Y(acc + v)) + '" fill="' + COR_P[p] + '"/>'; acc += v; } });
+      acc = 0;
+      const porC = {}; Object.keys(d.r.cat).forEach((c) => { const k = nomeCat(c); porC[k] = (porC[k] || 0) + d.r.cat[c]; });
+      cats.forEach((c) => { const v = (porC[c] || 0) / d.div; if (v > 0) { s += '<rect x="' + (x0 + bw * 0.1 + w + 1) + '" y="' + Y(acc + v) + '" width="' + w + '" height="' + Math.max(0.5, Y(acc) - Y(acc + v)) + '" fill="' + (c === 'Outras' ? '#5d7774' : corCat(c)) + '"/>'; acc += v; } });
+      s += '</g>';
+      pts.push([x0 + bw / 2, Y(d.r.saldo / d.div), d.r.saldo]);
+      if (i % passoX === 0) s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + (porAno ? d.k : rotMes(d.k)) + '</text>';
+    });
+    s += '<path d="' + pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('') + '" fill="none" stroke="#e8f2f0" stroke-width="1.4" opacity=".5"/>';
+    pts.forEach((p) => { s += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.6" fill="' + (p[2] >= 0 ? '#4fd1a5' : '#ff6f61') + '" stroke="#071013" stroke-width="1.5"/>'; });
+    host.innerHTML = s + '</svg>';
+    $$('.col', host).forEach((g) => {
+      g.addEventListener('mousemove', (ev) => {
+        const d = dados[+g.dataset.i], r = d.r, dv = d.div;
+        let h = '<span class="q">' + (porAno ? d.k + ' · média por mês' : rotMes(d.k)) + '</span>';
+        if (r.ap[ALE]) h += '<i style="background:' + COR_P[ALE] + '"></i>Ale ' + brl(r.ap[ALE] / dv) + '<br>';
+        if (r.ap[LIA]) h += '<i style="background:' + COR_P[LIA] + '"></i>Lia ' + brl(r.ap[LIA] / dv) + '<br>';
+        h += '<b>Receita ' + brl(r.rec / dv) + '</b><br>';
+        Object.keys(r.cat).sort((a, b) => r.cat[b] - r.cat[a]).slice(0, 6).forEach((c) => { h += '<i style="background:' + corCat(c) + '"></i>' + c + ' ' + brl(r.cat[c] / dv) + '<br>'; });
+        h += '<b>Despesa ' + brl(r.desp / dv) + '</b><br><span class="' + (r.saldo >= 0 ? 'bom' : 'ruim') + '">Saldo ' + brl(r.saldo / dv) + '</span>';
+        mostra(h, ev);
+      });
+      g.addEventListener('mouseleave', esconde);
+    });
+    const R = resumo(meses), top = Object.keys(R.cat).sort((a, b) => R.cat[b] - R.cat[a]);
+    const neg = meses.filter((k) => resumo([k]).saldo < 0).length;
+    $('#hist-titulo').textContent = neg + ' de ' + meses.length + ' meses gastaram mais do que entrou';
+  }
+
+  // saldo acumulado da conta conjunta: o que entrou nela menos o que ela pagou
+  function saldoConta() {
+    const host = $('#g-saldo');
+    // a projeção vai só até onde as contas da casa estão lançadas: depois disso só há Resort,
+    // e somar o aporte sem as despesas faria o saldo subir sem fim
+    const comContas = L.filter((x) => x.d > HOJE && x.g > 0 && x.cat !== 'Resort').map((x) => x.m);
+    const fimProj = comContas.length ? comContas.sort()[comContas.length - 1] : MES_HOJE;
+    const meses = listaMeses(MES_INI, fimProj);
+    const porMes = {}; meses.forEach((k) => { porMes[k] = 0; });
+    L.forEach((x) => { if (!(x.m in porMes)) return; if (x.rec) porMes[x.m] += x.v; else if (x.p === CONTA) porMes[x.m] -= x.g; });
+    // meses futuros sem aporte lançado: assume o aporte de hoje
+    const apHoje = (D.aporte_atual.Ale || 0) + (D.aporte_atual.Lia || 0);
+    meses.filter((k) => k > MES_HOJE).forEach((k) => { if (!L.some((x) => x.m === k && x.rec)) porMes[k] += apHoje; });
+    let acc = 0; const serie = meses.map((k) => { acc += porMes[k]; return { k, v: acc, mov: porMes[k] }; });
+    const W = Math.max(320, host.clientWidth), H = 220, m = { t: 14, r: 12, b: 28, l: 56 };
+    const vmax = Math.max(0, Math.max.apply(null, serie.map((p) => p.v))), vmin = Math.min(0, Math.min.apply(null, serie.map((p) => p.v)));
+    const pad = (vmax - vmin) * 0.1 || 1000, lo = vmin - pad, hi = vmax + pad;
+    const X = (i) => m.l + i * (W - m.l - m.r) / Math.max(1, serie.length - 1), Y = (v) => m.t + (hi - v) * (H - m.t - m.b) / (hi - lo);
+    const iHoje = meses.indexOf(MES_HOJE);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Saldo acumulado da conta conjunta">';
+    const passo = (hi - lo) > 40000 ? 10000 : (hi - lo) > 15000 ? 5000 : 2000;
+    for (let v = Math.ceil(lo / passo) * passo; v <= hi; v += passo) s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"' + (v === 0 ? ' style="stroke:var(--linha-forte)"' : '') + '/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v / 1000) + 'k</text>';
+    meses.forEach((k, i) => { if (k.endsWith('-01')) s += '<text class="ax" x="' + X(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + k.slice(0, 4) + '</text>'; });
+    // período escolhido em destaque
+    const a = meses.indexOf(est.per.meses[0]), b = meses.indexOf(est.per.meses[est.per.meses.length - 1]);
+    if (a >= 0) s += '<rect x="' + X(a) + '" y="' + m.t + '" width="' + Math.max(2, X(b) - X(a)) + '" height="' + (H - m.t - m.b) + '" fill="#a68cff" opacity=".07"/>';
+    const caminho = (ini, fim) => serie.slice(ini, fim + 1).map((p, j) => (j ? 'L' : 'M') + X(ini + j).toFixed(1) + ',' + Y(p.v).toFixed(1)).join('');
+    s += '<path d="' + caminho(0, iHoje) + '" fill="none" stroke="#a68cff" stroke-width="2.4"/>'
+      + '<path d="' + caminho(iHoje, serie.length - 1) + '" fill="none" stroke="#a68cff" stroke-width="2" stroke-dasharray="5 5" opacity=".8"/>'
+      + '<circle cx="' + X(iHoje) + '" cy="' + Y(serie[iHoje].v) + '" r="4.5" fill="#a68cff" stroke="#071013" stroke-width="2"/>';
+    const px = (W - m.l - m.r) / Math.max(1, serie.length - 1);
+    serie.forEach((p, i) => { s += '<rect class="sl" data-i="' + i + '" x="' + (X(i) - px / 2) + '" y="' + m.t + '" width="' + px + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>'; });
+    host.innerHTML = s + '</svg>';
+    $$('.sl', host).forEach((r) => {
+      r.addEventListener('mousemove', (ev) => { const p = serie[+r.dataset.i]; mostra('<span class="q">' + rotMes(p.k) + (p.k > MES_HOJE ? ' · projeção' : '') + '</span>Saldo <b>' + brl(p.v) + '</b><br>No mês ' + brl(p.mov), ev); });
+      r.addEventListener('mouseleave', esconde);
+    });
+    const fim = serie[serie.length - 1], hoje = serie[iHoje];
+    const neg = serie.slice(iHoje + 1).filter((p) => p.mov < 0).length;
+    const vencConta = somaG(VENCIDO.filter((x) => x.p === CONTA));
+    $('#saldo-sub').innerHTML = 'Pelos lançamentos, a conta tem hoje <b>' + brl(hoje.v) + '</b> acumulados desde ' + rotMes(MES_INI)
+      + (vencConta ? ' (<span class="aviso">' + brl(vencConta) + ' disso são vencidos sem baixa; sem eles, ' + brl(hoje.v + vencConta) + '</span>)' : '')
+      + (fim.k > MES_HOJE ? '. Com o que já está lançado até ' + rotMes(fim.k) + ', chega a <b>' + brl(fim.v) + '</b>' : '')
+      + (neg ? '; <span class="aviso">' + neg + (neg === 1 ? ' mês' : ' meses') + ' da projeção saem mais do que entram</span>.' : '.')
+      + ' O trecho claro é o período escolhido.';
+  }
+
+  // --------------------------------------------------------- pessoas
+  function pessoas(R) {
+    const apTot = R.ap[ALE] + R.ap[LIA];
+    $('#pes-titulo').textContent = apTot ? 'Ale colocou ' + pct(R.ap[ALE] / apTot) + ', Lia ' + pct(R.ap[LIA] / apTot) : 'Quanto cada um colocou';
+    const host = $('#pes-cards'); host.innerHTML = '';
+    [[ALE, 'Ale'], [LIA, 'Lia']].forEach(([p, nome]) => {
+      const d = document.createElement('div'); d.className = 'pessoa'; d.style.setProperty('--cor-p', COR_P[p]);
+      d.innerHTML = '<span class="rotulo">' + nome + '</span><div class="numero">' + pct(apTot ? R.ap[p] / apTot : null) + '</div>'
+        + '<span class="nota"><b>' + kbrl(R.ap[p]) + '</b> depositados, ' + brl(R.ap[p] / R.n) + ' por mês</span>'
+        + '<span class="nota">Pagou direto do bolso: <b>' + kbrl(R.dir[p]) + '</b></span>';
+      host.appendChild(d);
+    });
+    const d = document.createElement('div'); d.className = 'pessoa'; d.style.setProperty('--cor-p', COR_P[CONTA]);
+    const pelaConta = R.sel.filter((x) => !x.rec && x.p === CONTA).reduce((s, x) => s + x.g, 0);
+    d.innerHTML = '<span class="rotulo">Conta conjunta pagou</span><div class="numero">' + pct(R.desp ? pelaConta / R.desp : null) + '</div>'
+      + '<span class="nota"><b>' + kbrl(pelaConta) + '</b> da despesa saiu da conta</span><span class="nota">o resto foi pago direto por um dos dois</span>';
+    host.appendChild(d);
+    const anos = Array.from(new Set(TODOS.map((k) => k.slice(0, 4)))).reverse();
+    $('#t-pes tbody').innerHTML = anos.map((a) => {
+      const r = resumo(TODOS.filter((k) => k.startsWith(a))), t = r.ap[ALE] + r.ap[LIA];
+      const pa = t ? r.ap[ALE] / t : 0;
+      return '<tr><td>' + a + '</td><td>' + brl(r.ap[ALE]) + '</td><td>' + brl(r.ap[LIA]) + '</td><td class="esq">'
+        + (t ? '<div class="divisao" style="height:10px"><span style="width:' + 100 * pa + '%;background:var(--ale)"></span><span style="width:' + 100 * (1 - pa) + '%;background:var(--lia)"></span></div><span class="nota">' + pct(pa) + ' / ' + pct(1 - pa) + '</span>' : '<span class="nota">sem depósitos</span>')
+        + '</td><td>' + brl(r.dir[ALE]) + '</td><td>' + brl(r.dir[LIA]) + '</td></tr>';
+    }).join('');
+  }
+
+  // --------------------------------------------------------- categorias
+  function categorias(R) {
+    const porCat = new Map();
+    R.sel.filter((x) => !x.rec).forEach((x) => {
+      const c = porCat.get(x.cat) || { cat: x.cat, total: 0, ess: 0, gr: new Map() };
+      c.total += x.g; c.ess += x.ess ? x.g : 0;
+      c.gr.set(x.gr, (c.gr.get(x.gr) || 0) + x.g); porCat.set(x.cat, c);
+    });
+    const lista = Array.from(porCat.values()).filter((c) => c.total > 1).sort((a, b) => b.total - a.total);
+    const max = lista.length ? lista[0].total : 1;
+    const ess = lista.reduce((s, c) => s + c.ess, 0);
+    $('#cat-titulo').textContent = lista.length > 1 ? lista[0].cat + ' e ' + lista[1].cat.toLowerCase() + ' são ' + pct((lista[0].total + lista[1].total) / R.desp) + ' do gasto; ' + pct(ess / R.desp) + ' é essencial' : 'Gasto por categoria';
+    const box = $('#cats'); box.innerHTML = '';
+    lista.forEach((c) => {
+      const el = document.createElement('div'); el.className = 'cat';
+      const bt = document.createElement('button'); bt.type = 'button'; bt.setAttribute('aria-expanded', 'false');
+      bt.innerHTML = '<span></span><span class="trilho"><span style="background:#6c8cff"></span><span style="background:#ffb547"></span></span><span class="v"><b></b><span></span></span>';
+      bt.children[0].textContent = c.cat;
+      bt.querySelectorAll('.trilho span')[0].style.width = (100 * c.ess / max) + '%';
+      bt.querySelectorAll('.trilho span')[1].style.width = (100 * (c.total - c.ess) / max) + '%';
+      bt.querySelector('.v b').textContent = brl(c.total / R.n) + '/mês';
+      bt.querySelector('.v span').textContent = ' · ' + pct(c.total / R.desp);
+      const gw = document.createElement('div'); gw.className = 'grupos';
+      Array.from(c.gr.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12).forEach(([g, v]) => {
+        const lin = document.createElement('div'); lin.className = 'gr';
+        lin.innerHTML = '<span></span><b></b><span></span>';
+        lin.children[0].textContent = g; lin.children[1].textContent = brl(v / R.n) + '/mês'; lin.children[2].textContent = kbrl(v) + ' no período';
+        gw.appendChild(lin);
+      });
+      bt.addEventListener('click', () => { el.classList.toggle('aberto'); bt.setAttribute('aria-expanded', el.classList.contains('aberto')); });
+      el.appendChild(bt); el.appendChild(gw); box.appendChild(el);
+    });
+  }
+
+  // --------------------------------------------------------- resort
+  function resort() {
+    const G = L.filter((x) => x.cat === 'Resort' && x.g > 0);
+    const pago = G.filter((x) => x.pago), aberto = G.filter((x) => !x.pago), venc = aberto.filter((x) => x.d < HOJE);
+    const vp = somaG(pago), va = somaG(aberto), ult = G[G.length - 1];
+    const parcelas = aberto.filter((x) => x.gr === 'Saldo' && x.d >= HOJE).length;
+    $('#resort-titulo').textContent = 'Resort: ' + pct(vp / (vp + va)) + ' pago, ' + kbrl(va) + ' a pagar até ' + rotMes(ult.m);
+    const k = $('#resort-kpis'); k.innerHTML = '';
+    kpi(k, 'Pago', kbrl(vp), pago.length + ' pagamentos desde ' + rotMes(G[0].m), 'var(--resort)');
+    kpi(k, 'A pagar', kbrl(va), aberto.length + ' lançamentos em aberto', 'var(--atencao)');
+    kpi(k, 'Parcelas futuras', num(parcelas), 'de ~' + brl(aberto.filter((x) => x.d >= HOJE && x.gr === 'Saldo')[0] ? aberto.filter((x) => x.d >= HOJE && x.gr === 'Saldo')[0].g : 0) + ' até ' + rotMes(ult.m), 'var(--resort)');
+    kpi(k, 'Vencido sem baixa', kbrl(somaG(venc)), venc.length + ' lançamentos antes de hoje', 'var(--ruim)', null, venc.length ? 'ruim' : '');
+    $('#resort-prog').innerHTML = '<span style="width:' + 100 * vp / (vp + va) + '%;background:var(--resort)"></span><span style="width:' + 100 * somaG(venc) / (vp + va) + '%;background:var(--ruim)"></span>';
+    $('#resort-prog-sub').innerHTML = '<b>' + kbrl(vp) + '</b> de ' + kbrl(vp + va) + ' no total lançado (' + pct(vp / (vp + va)) + '). '
+      + (venc.length ? '<span class="aviso">' + venc.length + ' parcelas previstas de ' + brl(venc[0].g, 2) + ' ficaram em aberto em meses que já têm parcela paga: provavelmente só falta dar baixa (ou apagar) na planilha.</span>' : '');
+    // gráfico mensal
+    const host = $('#g-resort'), meses = listaMeses(G[0].m, ult.m);
+    const porM = {}; meses.forEach((x) => { porM[x] = { p: 0, a: 0, v: 0 }; });
+    G.forEach((x) => { const o = porM[x.m]; if (x.pago) o.p += x.g; else if (x.d < HOJE) o.v += x.g; else o.a += x.g; });
+    const W = Math.max(320, host.clientWidth), H = 200, m = { t: 12, r: 8, b: 26, l: 44 };
+    const vmax = Math.max.apply(null, meses.map((x) => porM[x].p + porM[x].a + porM[x].v)) * 1.08;
+    const Y = (v) => m.t + (vmax - v) * (H - m.t - m.b) / vmax, bw = (W - m.l - m.r) / meses.length;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Pagamentos do Resort por mês">';
+    [0, 500, 1000, 1500, 2000].filter((v) => v < vmax).forEach((v) => { s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v) + '</text>'; });
+    meses.forEach((x, i) => {
+      const o = porM[x], x0 = m.l + i * bw; let acc = 0;
+      [['p', '#e9c46a', 1], ['v', '#ff6f61', 1], ['a', '#e9c46a', 0.35]].forEach(([c, cor, op]) => { if (o[c] > 0) { s += '<rect x="' + (x0 + bw * 0.12) + '" y="' + Y(acc + o[c]) + '" width="' + Math.max(1, bw * 0.76) + '" height="' + (Y(acc) - Y(acc + o[c])) + '" fill="' + cor + '" opacity="' + op + '"/>'; acc += o[c]; } });
+      if (x.endsWith('-01')) s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + x.slice(0, 4) + '</text>';
+      s += '<rect class="gm" data-k="' + x + '" x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+    });
+    host.innerHTML = s + '</svg>';
+    $$('.gm', host).forEach((r) => {
+      r.addEventListener('mousemove', (ev) => { const o = porM[r.dataset.k];
+        mostra('<span class="q">' + rotMes(r.dataset.k) + '</span>' + (o.p ? 'Pago ' + brl(o.p, 2) + '<br>' : '') + (o.v ? '<span class="ruim">Vencido sem baixa ' + brl(o.v, 2) + '</span><br>' : '') + (o.a ? 'A pagar ' + brl(o.a, 2) : ''), ev); });
+      r.addEventListener('mouseleave', esconde);
+    });
+    const partes = {}; G.forEach((x) => { const p = partes[x.gr] || { p: 0, a: 0 }; if (x.pago) p.p += x.g; else p.a += x.g; partes[x.gr] = p; });
+    const lp = Object.entries(partes).sort((a, b) => (b[1].p + b[1].a) - (a[1].p + a[1].a));
+    barras($('#resort-partes'), lp.map(([n, o]) => ({ nome: n, cor: '#e9c46a', v: o.p + o.a, txt: brl(o.p + o.a), nota: o.a ? '· ' + brl(o.a) + ' a pagar' : '· pago' })), lp.length ? lp[0][1].p + lp[0][1].a : 1);
+  }
+
+  // --------------------------------------------------------- futuro
+  function futuro() {
+    const apHoje = (D.aporte_atual.Ale || 0) + (D.aporte_atual.Lia || 0);
+    const prox = listaMeses(somaMes(MES_HOJE, 1), somaMes(MES_HOJE, 12));
+    const fut = ABERTO.filter((x) => x.d >= HOJE);
+    const k = $('#fut-kpis'); k.innerHTML = '';
+    const m1 = fut.filter((x) => x.m === prox[0]), v1 = somaG(m1);
+    kpi(k, 'A pagar no total', kbrl(somaG(ABERTO)), 'até ' + rotMes(L[L.length - 1].m), 'var(--atencao)');
+    kpi(k, 'Em ' + rotMes(prox[0]), brl(v1), 'já lançado para o mês', 'var(--casa)');
+    kpi(k, 'Comprometido', pct(apHoje ? v1 / apHoje : null), 'do aporte de hoje (' + brl(apHoje) + ')', v1 > apHoje ? 'var(--ruim)' : 'var(--casa)', null, v1 > apHoje * 0.9 ? 'ruim' : '');
+    kpi(k, 'Sobra no mês', brl(apHoje - v1), 'para mercado, lazer e o resto', apHoje - v1 >= 0 ? 'var(--bom)' : 'var(--ruim)', null, apHoje - v1 < 500 ? 'ruim' : 'bom');
+    $('#fut-titulo').textContent = 'Em ' + rotMes(prox[0]) + ' já estão lançados ' + brl(v1) + ': ' + pct(apHoje ? v1 / apHoje : null) + ' do aporte';
+    const soGav = prox.filter((mm) => { const l = fut.filter((x) => x.m === mm); return l.length && l.every((x) => x.cat === 'Resort'); });
+    $('#fut-sub').textContent = soGav.length ? 'A partir de ' + rotMes(soGav[0]) + ' só o Resort está lançado; as contas da casa entram na planilha mês a mês.' : '';
+    // gráfico 12 meses
+    const host = $('#g-fut');
+    const grs = {}; fut.filter((x) => prox.includes(x.m)).forEach((x) => { const g = x.cat === 'Moradia' ? x.gr : x.cat; grs[g] = (grs[g] || 0) + x.g; });
+    const ordem = Object.keys(grs).sort((a, b) => grs[b] - grs[a]);
+    const PAL = ['#a68cff', '#ff7eb6', '#e9c46a', '#6c8cff', '#4fd1a5', '#ffb547', '#3cc8ea', '#ff8f6b'];
+    const cor = (g) => g === 'Resort' ? '#e9c46a' : PAL[ordem.filter((x) => x !== 'Resort').indexOf(g) % PAL.length];
+    $('#leg-fut').innerHTML = ordem.map((g) => '<span><i style="background:' + cor(g) + '"></i>' + g + '</span>').join('') + '<span><i style="background:#4fd1a5;height:2px"></i>Aporte de hoje</span>';
+    const W = Math.max(320, host.clientWidth), H = 240, m = { t: 14, r: 10, b: 28, l: 52 };
+    const porM = prox.map((mm) => { const o = {}; fut.filter((x) => x.m === mm).forEach((x) => { const g = x.cat === 'Moradia' ? x.gr : x.cat; o[g] = (o[g] || 0) + x.g; }); return { mm, o, t: Object.values(o).reduce((a, b) => a + b, 0) }; });
+    const vmax = Math.max(apHoje, Math.max.apply(null, porM.map((p) => p.t))) * 1.1;
+    const Y = (v) => m.t + (vmax - v) * (H - m.t - m.b) / vmax, bw = (W - m.l - m.r) / prox.length;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="A pagar nos próximos 12 meses">';
+    for (let v = 0; v <= vmax; v += 2000) s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v / 1000) + 'k</text>';
+    porM.forEach((p, i) => {
+      const x0 = m.l + i * bw; let acc = 0;
+      ordem.forEach((g) => { const v = p.o[g] || 0; if (v > 0) { s += '<rect x="' + (x0 + bw * 0.18) + '" y="' + Y(acc + v) + '" width="' + bw * 0.64 + '" height="' + (Y(acc) - Y(acc + v)) + '" fill="' + cor(g) + '"/>'; acc += v; } });
+      s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + rotMes(p.mm) + '</text>'
+        + '<rect class="fm" data-i="' + i + '" x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+    });
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(apHoje) + '" y2="' + Y(apHoje) + '" stroke="#4fd1a5" stroke-width="1.6" stroke-dasharray="6 4"/>';
+    host.innerHTML = s + '</svg>';
+    $$('.fm', host).forEach((r) => {
+      r.addEventListener('mousemove', (ev) => { const p = porM[+r.dataset.i];
+        mostra('<span class="q">' + rotMes(p.mm) + '</span>' + ordem.filter((g) => p.o[g]).map((g) => '<i style="background:' + cor(g) + '"></i>' + g + ' ' + brl(p.o[g], 2)).join('<br>') + '<br><b>Total ' + brl(p.t, 2) + '</b>' + (p.t ? '' : 'nada lançado'), ev); });
+      r.addEventListener('mouseleave', esconde);
+    });
+    // vencidos
+    $('#venc-sub').innerHTML = VENCIDO.length ? '<b>' + VENCIDO.length + ' lançamentos</b> com data anterior a hoje, somando <b>' + brl(somaG(VENCIDO), 2) + '</b>, estão como não pagos. '
+      + 'Se já foram pagos, é só dar baixa na planilha; se são previsões duplicadas, apagar.' : 'Nenhum lançamento vencido em aberto.';
+    $('#t-venc tbody').innerHTML = VENCIDO.slice().sort((a, b) => a.d < b.d ? 1 : -1).map((x) => '<tr><td>' + fd(ts(x.d)) + '</td><td class="esq">' + x.cat + '</td><td class="esq">' + x.gr + '</td><td><b>' + brl(x.g, 2) + '</b></td></tr>').join('');
+  }
+
+  // --------------------------------------------------------- projetos
+  function projetos() {
+    const por = {};
+    L.filter((x) => x.proj && x.g > 0 && x.d <= HOJE).forEach((x) => { const o = por[x.proj] || { v: 0, ini: x.d, fim: x.d, p: [0, 0, 0, 0] }; o.v += x.g; o.fim = x.d; o.p[x.p] += x.g; por[x.proj] = o; });
+    const dicaP = (n, o) => '<span class="q">' + n + ' · ' + fd(ts(o.ini)) + ' a ' + fd(ts(o.fim)) + '</span>' + ['Ale', 'Lia', 'Conta'].map((nm, i) => o.p[i] ? nm + ' ' + brl(o.p[i]) : '').filter(Boolean).join('<br>');
+    const aptos = Object.entries(por).filter(([n]) => n.startsWith('Apartamento') || n.startsWith('Compra')).sort((a, b) => b[1].v - a[1].v);
+    barras($('#aptos'), aptos.map(([n, o]) => ({ nome: n, cor: '#a68cff', v: o.v, txt: kbrl(o.v), nota: '· ' + o.ini.slice(0, 4) + (o.fim.slice(0, 4) !== o.ini.slice(0, 4) ? '–' + o.fim.slice(2, 4) : ''), dica: dicaP(n, o) })), aptos.length ? aptos[0][1].v : 1);
+    const tA = aptos.reduce((s, a) => s + a[1].v, 0);
+    $('#apto-sub').innerHTML = '<b>' + kbrl(tA) + '</b> em apartamentos até hoje, entre entrada, financiamento, reforma e contas. Passe o mouse para ver quem pagou.';
+    const viag = Object.entries(por).filter(([n]) => n.startsWith('Viagem')).sort((a, b) => b[1].v - a[1].v);
+    barras($('#viagens'), viag.slice(0, 14).map(([n, o]) => ({ nome: n.replace('Viagem · ', ''), cor: '#ff7eb6', v: o.v, txt: brl(o.v), nota: '· ' + rotMes(o.ini.slice(0, 7)), dica: dicaP(n, o) })), viag.length ? viag[0][1].v : 1);
+    const tV = viag.reduce((s, a) => s + a[1].v, 0);
+    $('#viag-sub').innerHTML = '<b>' + viag.length + ' viagens</b> marcadas, <b>' + kbrl(tV) + '</b> no total, ' + brl(tV / Math.max(1, viag.length)) + ' em média.';
+    $('#proj-titulo').textContent = 'Apartamentos custaram ' + kbrl(tA) + '; viagens, ' + kbrl(tV);
+  }
+
+  // --------------------------------------------------------- simulador
+  // linha do simulador: moradia por grupo (financiamento, condomínio...), Resort, o resto por categoria
+  const chaveSim = (x) => x.cat === 'Moradia' ? 'Moradia · ' + x.gr : x.cat;
+  const BASES = [
+    { id: 'm12', nome: 'Média 12 meses', meses: TODOS.slice(-12) },
+    { id: 'm6', nome: 'Média 6 meses', meses: TODOS.slice(-6) },
+    { id: 'prox', nome: 'Lançado p/ ' + rotMes(somaMes(MES_HOJE, 1)), meses: [somaMes(MES_HOJE, 1)], fut: true },
+  ];
+  // parte do Ale = proporção dos depósitos de Ale e Lia nos meses da base (ou do aporte de hoje, na base "lançado")
+  function parteDe(b) {
+    let a = 0, j = 0;
+    if (b.fut) { a = D.aporte_atual.Ale || 0; j = D.aporte_atual.Lia || 0; }
+    else { const set = new Set(b.meses); PASSADO.forEach((x) => { if (x.rec && set.has(x.m)) { if (x.p === ALE) a += x.v; else if (x.p === LIA) j += x.v; } }); }
+    return { pct: a + j > 0 ? Math.round(1000 * a / (a + j)) / 10 : 50, a, j };
+  }
+  const sim = { base: BASES[0], parte: parteDe(BASES[0]).pct, reserva: 0, venc: true, v: {}, b: {} };
+  // vencido sem baixa: data passada e não pago (parcela prevista ao lado da paga, financiamento em dobro)
+  const ehVenc = (x) => !x.pago && x.d < HOJE;
+  function baseDe(b) {
+    const set = new Set(b.meses), o = {};
+    L.filter((x) => set.has(x.m) && x.g > 0 && !x.ent && (b.fut || x.d <= HOJE) && (sim.venc || !ehVenc(x)))
+      .forEach((x) => { const k = chaveSim(x); o[k] = (o[k] || 0) + x.g / b.meses.length; });
+    const nv = L.filter((x) => set.has(x.m) && x.g > 0 && ehVenc(x));
+    $('#s-venc-n').textContent = nv.length ? nv.length + ' lançamentos vencidos sem baixa nesta base, ' + brl(somaG(nv) / b.meses.length) + ' por mês na média' : 'nenhum vencido sem baixa nesta base';
+    return o;
+  }
+  $('#s-venc').addEventListener('change', (e) => { sim.venc = e.target.checked; montaSim(); });
+  BASES.forEach((b) => {
+    const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = b.nome; bt.dataset.id = b.id;
+    bt.setAttribute('aria-pressed', b === sim.base);
+    bt.addEventListener('click', () => { sim.base = b; $$('#s-bases button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.id === b.id)); montaSim(); });
+    $('#s-bases').appendChild(bt);
+  });
+  const rParte = $('#s-parte'), rRes = $('#s-reserva');
+  rParte.value = sim.parte; rRes.value = sim.reserva;
+  rParte.addEventListener('input', () => { sim.parte = +rParte.value; simula(); });
+  rRes.addEventListener('input', () => { sim.reserva = +rRes.value; simula(); });
+  $('#s-volta').addEventListener('click', montaSim);
+
+  function montaSim() {
+    sim.b = baseDe(sim.base); sim.v = Object.assign({}, sim.b);
+    sim.parte = parteDe(sim.base).pct; rParte.value = sim.parte;
+    const host = $('#s-linhas'); host.innerHTML = '';
+    Object.keys(sim.b).sort((a, b) => sim.b[b] - sim.b[a]).forEach((k) => {
+      const d = document.createElement('div'); d.className = 'ctl';
+      d.style.setProperty('--cor-c', k === 'Resort' ? '#e9c46a' : k.startsWith('Moradia') ? '#a68cff' : '#6c8cff');
+      d.innerHTML = '<div class="topo"><label></label><b></b></div><input type="range"><span class="base"></span>';
+      d.querySelector('label').textContent = k;
+      const r = d.querySelector('input'), base = sim.b[k];
+      r.min = 0; r.max = Math.max(500, Math.ceil(base * 2 / 50) * 50); r.step = base > 1000 ? 50 : 10; r.value = base;
+      r.setAttribute('aria-label', k);
+      d.querySelector('.base').textContent = 'base: ' + brl(base) + '/mês';
+      r.addEventListener('input', () => { sim.v[k] = +r.value; simula(); });
+      d.dataset.k = k; host.appendChild(d);
+    });
+    simula();
+  }
+  function simula() {
+    const pe = parteDe(sim.base);
+    $('#s-parte-v').textContent = num(sim.parte, 1) + '% / ' + num(100 - sim.parte, 1) + '%';
+    $('#s-parte-b').textContent = (sim.base.fut ? 'pelo aporte de hoje: ' + brl(pe.a) + ' Ale, ' + brl(pe.j) + ' Lia → '
+      : 'pelos depósitos da base: ' + kbrl(pe.a) + ' Ale, ' + kbrl(pe.j) + ' Lia → ') + num(pe.pct, 1) + '% / ' + num(100 - pe.pct, 1) + '%'
+      + (Math.abs(sim.parte - pe.pct) >= 0.1 ? ' (ajustado à mão)' : '');
+    $('#s-reserva-v').textContent = sim.reserva + '%';
+    $$('#s-linhas .ctl').forEach((d) => { d.querySelector('.topo b').textContent = brl(sim.v[d.dataset.k]); });
+    const gastos = Object.values(sim.v).reduce((a, b) => a + b, 0), res = gastos * sim.reserva / 100, tot = gastos + res;
+    const pa = sim.parte / 100, ale = tot * pa, lia = tot * (1 - pa);
+    const atA = D.aporte_atual.Ale || 0, atJ = D.aporte_atual.Lia || 0;
+    anima($('#s-total'), tot, (v) => brl(v));
+    anima($('#s-ale'), ale, (v) => brl(v));
+    anima($('#s-lia'), lia, (v) => brl(v));
+    const dif = (a, b) => (a - b >= 0 ? '+' : '−') + brl(Math.abs(a - b)) + ' vs hoje (' + brl(b) + ')';
+    $('#s-total-n').textContent = (res ? brl(gastos) + ' de gastos + ' + brl(res) + ' de reserva' : 'sem reserva');
+    $('#s-ale-n').textContent = dif(ale, atA); $('#s-lia-n').textContent = dif(lia, atJ);
+    $('#s-div').innerHTML = '<span style="width:' + 100 * pa + '%;background:var(--ale)"></span><span style="width:' + 100 * (1 - pa) + '%;background:var(--lia)"></span>';
+    const falta = tot - (atA + atJ);
+    $('#s-texto').innerHTML = Math.abs(falta) < 50 ? 'O aporte de hoje (' + brl(atA + atJ) + ', ' + rotMes(D.aporte_mes) + ') <b>cobre exatamente</b> este cenário.'
+      : falta > 0 ? 'O aporte de hoje (' + brl(atA + atJ) + ') <b class="ruim">fica ' + brl(falta) + ' curto</b> por mês para este cenário: são ' + brl(falta * pa) + ' a mais do Ale e ' + brl(falta * (1 - pa)) + ' da Lia.'
+        : 'O aporte de hoje (' + brl(atA + atJ) + ') <b class="bom">sobra ' + brl(-falta) + '</b> por mês neste cenário: daria para depositar ' + brl(-falta * pa) + ' a menos (Ale) e ' + brl(-falta * (1 - pa)) + ' a menos (Lia), ou guardar.';
+    const linhas = Object.keys(sim.v).filter((k) => sim.v[k] > 0).sort((a, b) => sim.v[b] - sim.v[a]);
+    $('#t-sim tbody').innerHTML = linhas.map((k) => '<tr><td>' + k + '</td><td>' + brl(sim.v[k]) + '</td><td>' + brl(sim.v[k] * pa) + '</td><td>' + brl(sim.v[k] * (1 - pa)) + '</td></tr>').join('')
+      + (res ? '<tr><td>Reserva (' + sim.reserva + '%)</td><td>' + brl(res) + '</td><td>' + brl(res * pa) + '</td><td>' + brl(res * (1 - pa)) + '</td></tr>' : '');
+    $('#t-sim tfoot').innerHTML = '<tr><td><b>Total</b></td><td><b>' + brl(tot) + '</b></td><td><b>' + brl(ale) + '</b></td><td><b>' + brl(lia) + '</b></td></tr>';
+  }
+
+  // --------------------------------------------------------- montagem
+  $('#n-linhas').textContent = num(L.length) + ' lançamentos';
+  $('#n-ini').textContent = fd(ts(L[0].d)); $('#n-fim').textContent = fd(ts(L[L.length - 1].d));
+  const p12 = parteDe(BASES[0]).pct;
+  $('#n-regra').textContent = num(p12, 1) + '% Ale / ' + num(100 - p12, 1) + '% Lia';
+  $('#n-gerado').textContent = D.gerado;
+
+  const obs = 'IntersectionObserver' in window ? new IntersectionObserver((ents) => {
+    ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visto'); obs.unobserve(e.target); } });
+  }, { threshold: 0.05 }) : null;
+  $$('.entra').forEach((s) => { if (obs) obs.observe(s); else s.classList.add('visto'); });
+
+  function recorte() {
+    const R = resumo(est.per.meses), ant = anterior(est.per);
+    abertura(R, ant ? resumo(ant) : null);
+    historico(); saldoConta(); pessoas(R); categorias(R);
+  }
+  recorte(); resort(); futuro(); projetos(); montaSim();
+  let tm;
+  window.addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(() => { historico(); saldoConta(); resort(); futuro(); }, 150); });
+})();
+</script>
+</body>
+</html>

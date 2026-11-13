@@ -1,0 +1,49 @@
+/// Eixo do bloco de composição. DESCONECTADA de propósito: o bloco põe medidas diferentes na mesma coluna.
+table Composicao
+	lineageTag: eda52ac6-9bb4-5468-a9c9-e459b16c0fd0
+
+	column Ordem
+		dataType: int64
+		isHidden
+		lineageTag: c8791edd-1d57-5cb6-9a34-998708011a3e
+		summarizeBy: none
+		sourceColumn: Ordem
+
+		annotation SummarizationSetBy = Automatic
+
+	column Fluxo
+		dataType: string
+		lineageTag: c500d144-a285-5934-aaa5-55f193ebe997
+		summarizeBy: none
+		sourceColumn: Fluxo
+
+		annotation SummarizationSetBy = Automatic
+
+	column Item
+		dataType: string
+		lineageTag: d4ae07db-71c0-55b0-a1e4-624cdabcde2a
+		summarizeBy: none
+		sourceColumn: Item
+		sortByColumn: Ordem
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Composicao = m
+		mode: import
+		source =
+				let
+				    // Eixo de quatro linhas, DESCONECTADO de proposito: o bloco poe
+				    // medidas DIFERENTES na mesma coluna, e isso nao e dimensao.
+				    T = #table(
+				        type table [Ordem = Int64.Type, Fluxo = text, Item = text],
+				        {
+				            {1, "Receita", "Receita Salário"},
+				            {2, "Receita", "Outras Receitas"},
+				            {3, "Despesa", "Despesas Essenciais"},
+				            {4, "Despesa", "Despesas Outras (Não Essenciais)"}
+				        })
+				in
+				    T
+
+	annotation PBI_ResultType = Table
+

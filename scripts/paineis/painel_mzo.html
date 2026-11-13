@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MZO Analytics</title>
+<style>
+  /* Shell do MZO Analytics: o mesmo mundo escuro dos painéis. Cada área tem
+     uma cor de identidade (não é cor de dado): saúde coral, relacionamento
+     rosa, finanças menta, investimentos ouro, a cor da marca. */
+  :root {
+    color-scheme: dark;
+    --bg: #071013;
+    --bg-alto: #0a171b;
+    --painel: #0e1d21;
+    --painel-2: #12262b;
+    --linha: #1d343a;
+    --linha-forte: #2a4a51;
+    --tinta: #e8f2f0;
+    --fraca: #8fa8a5;
+    --apagada: #5d7774;
+    --ouro: #e9c46a;
+    --bom: #4fd1a5;
+    --ruim: #ff6f61;
+    --a-saude: #ff8f6b;
+    --a-financas: #4fd1a5;
+    --a-investimentos: #e9c46a;
+    --a-carro: #3cc8ea;
+    --a-familia: #a68cff;
+    --a-cartao: #b8e05a;
+    --a-patrimonio: #7aa2ff;
+    --a-viagens: #ffa552;
+    --lado: 272px;
+    --raio: 16px;
+    --display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    --texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.5;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; overflow: hidden; }
+  /*__MZO_CSS__*/
+
+  /* ------------------------------------------------ barra lateral */
+  .lado { position: fixed; inset: 0 auto 0 0; width: var(--lado); display: flex; flex-direction: column; gap: 6px; padding: 26px 16px 18px;
+    background: linear-gradient(180deg, #0b1a1e 0%, #081316 100%); border-right: 1px solid var(--linha); z-index: 20; }
+  .lado .topo { padding: 0 8px 22px; border-bottom: 1px solid var(--linha); margin-bottom: 14px; }
+  .lado .topo .mzo-txt b { font-size: 21px; }
+  .lado .topo .mzo-txt small { font-size: 9.5px; }
+  .lado .dono { margin: 14px 0 0; font-size: 12px; color: var(--apagada); letter-spacing: .02em; }
+  .lado .grupo { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--apagada); font-weight: 600; padding: 10px 10px 4px; }
+  .item { display: grid; grid-template-columns: 38px 1fr; gap: 12px; align-items: center; padding: 9px 10px; border-radius: 12px;
+    color: var(--fraca); text-decoration: none; border: 1px solid transparent; transition: background .15s, border-color .15s, color .15s; }
+  .item:hover { background: var(--painel); color: var(--tinta); }
+  .item:focus-visible { outline: 2px solid var(--cor-a, var(--ouro)); outline-offset: 1px; }
+  .item[aria-current="page"] { background: var(--painel-2); border-color: var(--linha-forte); color: var(--tinta);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.02), 0 8px 24px rgba(0,0,0,.25); }
+  .item .ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+    background: color-mix(in srgb, var(--cor-a, var(--ouro)) 13%, transparent); color: var(--cor-a, var(--ouro)); transition: background .15s; }
+  .item[aria-current="page"] .ic { background: var(--cor-a, var(--ouro)); color: #071013; }
+  .item .ic svg { width: 20px; height: 20px; }
+  .item .t { display: grid; line-height: 1.25; min-width: 0; }
+  .item .t b { font-weight: 600; font-size: 14.5px; color: inherit; }
+  .item[aria-current="page"] .t b { color: var(--tinta); }
+  .lado .pe { margin-top: auto; padding: 14px 10px 0; border-top: 1px solid var(--linha); font-size: 12px; color: var(--apagada); display: grid; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--fraca); border: 1px solid var(--linha-forte); border-radius: 99px; padding: 3px 10px; width: max-content; }
+  .chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--bom); box-shadow: 0 0 0 3px rgba(79, 209, 165, .18); }
+
+  /* ------------------------------------------------ área principal */
+  main { position: fixed; inset: 0 0 0 var(--lado); overflow: hidden; }
+  .vista { position: absolute; inset: 0; display: none; }
+  .vista.ativa { display: block; }
+  .vista iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--bg); }
+  #inicio { overflow-y: auto; }
+  .carregando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--apagada); font-size: 14px; pointer-events: none; }
+
+  /* ------------------------------------------------ início */
+  .ini { max-width: 1180px; margin: 0 auto; padding: 44px 36px 72px; }
+  .ini-hero { display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; padding: 8px 0 34px; }
+  .ini-hero .mzo-selo { filter: drop-shadow(0 16px 40px rgba(233, 196, 106, .28)); }
+  .olho { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--ouro); font-weight: 600; margin: 0 0 8px; }
+  .ini h1 { font-family: var(--display); font-weight: 600; font-stretch: 85%; font-size: clamp(32px, 4.6vw, 58px); line-height: 1.02; letter-spacing: -.015em; margin: 0; text-wrap: balance; }
+  .ini h1 span { color: var(--fraca); }
+  .ini .lead { color: var(--fraca); font-size: 17px; margin: 14px 0 0; max-width: 64ch; text-wrap: pretty; }
+  .ini .lead b { color: var(--tinta); font-weight: 600; }
+
+  .areas { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 470px), 1fr)); }
+  .area { position: relative; display: grid; gap: 16px; padding: 22px 22px 18px; border-radius: var(--raio); text-decoration: none; color: inherit;
+    border: 1px solid var(--linha); overflow: hidden; min-width: 0;
+    background: radial-gradient(520px 220px at 100% 0%, color-mix(in srgb, var(--cor-a) 13%, transparent), transparent 70%), linear-gradient(180deg, var(--painel-2), var(--painel));
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), border-color .2s, box-shadow .25s; }
+  .area:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--cor-a) 45%, var(--linha)); box-shadow: 0 18px 44px rgba(0,0,0,.35); }
+  .area:focus-visible { outline: 2px solid var(--cor-a); outline-offset: 2px; }
+  .area .cab { display: flex; align-items: center; gap: 12px; }
+  .area .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--cor-a); color: #071013; flex: none; }
+  .area .ic svg { width: 21px; height: 21px; }
+  .area .cab b { font-size: 17px; font-weight: 600; display: block; line-height: 1.2; }
+  .area .cab small { font-size: 12.5px; color: var(--fraca); }
+  .area .abrir { margin-left: auto; font-size: 13px; color: var(--fraca); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; transition: color .2s, gap .2s; }
+  .area:hover .abrir { color: var(--cor-a); gap: 10px; }
+  .area .meio { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: end; }
+  .area .rot { font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); font-weight: 600; }
+  .area .big { font-family: var(--display); font-weight: 600; font-size: clamp(34px, 3.6vw, 46px); line-height: 1.02; letter-spacing: -.01em; margin-top: 4px; white-space: nowrap; }
+  .area .delta { font-size: 13px; font-weight: 600; margin-top: 4px; }
+  .area .delta span { color: var(--apagada); font-weight: 400; }
+  .area .mini { display: grid; gap: 8px; }
+  .area .mini div { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--fraca); border-bottom: 1px solid var(--linha); padding-bottom: 6px; }
+  .area .mini div:last-child { border-bottom: 0; padding-bottom: 0; }
+  .area .mini b { color: var(--tinta); font-weight: 600; white-space: nowrap; }
+  .area .spark svg { display: block; width: 100%; height: 64px; overflow: visible; }
+  .area .pe { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--apagada); flex-wrap: wrap; }
+  @media (max-width: 560px) { .area .meio { grid-template-columns: 1fr; } }
+  .bom { color: var(--bom); }
+  .ruim { color: var(--ruim); }
+  .ini .rodape { margin-top: 36px; font-size: 13px; color: var(--apagada); max-width: 80ch; }
+  .ini .rodape + .rodape { margin-top: 10px; }
+  .aviso-demo { display: grid; gap: 4px; margin: 0 0 22px; padding: 12px 16px; border-radius: 12px; font-size: 13.5px; color: var(--fraca);
+    border: 1px dashed color-mix(in srgb, var(--ouro) 55%, transparent); background: color-mix(in srgb, var(--ouro) 8%, transparent); }
+  .aviso-demo b { color: var(--ouro); font-weight: 600; }
+  .chip.demo i { background: var(--ouro); box-shadow: 0 0 0 3px rgba(233, 196, 106, .2); }
+
+  /* ------------------------------------------------ mobile */
+  .barra-mob { display: none; }
+  .veu { display: none; }
+  @media (max-width: 900px) {
+    .barra-mob { display: flex; position: fixed; inset: 0 0 auto 0; height: 56px; align-items: center; justify-content: space-between; padding: 0 12px 0 16px;
+      background: #0b1a1e; border-bottom: 1px solid var(--linha); z-index: 25; }
+    .barra-mob button { font: inherit; color: var(--tinta); background: var(--painel-2); border: 1px solid var(--linha-forte); border-radius: 10px; width: 42px; height: 38px; display: grid; place-items: center; cursor: pointer; }
+    .barra-mob button:focus-visible { outline: 2px solid var(--ouro); }
+    .lado { transform: translateX(-100%); transition: transform .28s cubic-bezier(.2,.8,.2,1); width: min(86vw, 300px); top: 0; box-shadow: 24px 0 60px rgba(0,0,0,.5); z-index: 40; }
+    body.menu .lado { transform: none; }
+    .veu { display: block; position: fixed; inset: 0; background: rgba(3, 8, 10, .6); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 30; }
+    body.menu .veu { opacity: 1; pointer-events: auto; }
+    main { inset: 56px 0 0 0; }
+    .ini { padding: 26px 16px 56px; }
+    .ini-hero { grid-template-columns: 1fr; gap: 14px; padding-bottom: 24px; }
+    .ini-hero .mzo-selo { width: 48px; height: 48px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition-duration: 0s !important; } .area:hover { transform: none; } }
+</style>
+</head>
+<body>
+
+<header class="barra-mob">
+  <!--__LOGO_MOB__-->
+  <button type="button" id="abre-menu" aria-label="Abrir menu" aria-expanded="false" aria-controls="lado">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+</header>
+<div class="veu" id="veu"></div>
+
+<aside class="lado" id="lado" aria-label="Menu">
+  <div class="topo">
+    <!--__LOGO__-->
+    <p class="dono">Projeto pessoal de Alexandre Manzo</p>
+  </div>
+  <nav id="nav" aria-label="Áreas"></nav>
+  <div class="pe">
+    <span class="chip demo"><i></i>Demonstração · dados fictícios</span>
+    <span id="gerado">—</span>
+  </div>
+</aside>
+
+<main id="principal">
+  <section class="vista" id="inicio" aria-label="Visão geral">
+    <div class="ini">
+      <aside class="aviso-demo" role="note">
+        <b>Versão de demonstração</b> · todos os números são fictícios, gerados para mostrar o projeto. Nenhum dado real.
+        <span lang="en"><b>Demo version</b> · every number is fictional, generated to showcase the project. No real data.</span>
+      </aside>
+      <div class="ini-hero">
+        <!--__SELO__-->
+        <div>
+          <p class="olho" id="ini-data">—</p>
+          <h1>Sua vida em dados, <span>num lugar só.</span></h1>
+          <p class="lead" id="ini-lead">—</p>
+        </div>
+      </div>
+      <div class="areas" id="areas"></div>
+      <p class="rodape">Cada painel tem as próprias seções: analítica, diagnóstica e simulador. Os números desta página são os mesmos que você encontra dentro deles.
+        Tudo é gerado do <i>db-demo</i> e fica neste arquivo, sem conexão com a internet.</p>
+      <p class="rodape" lang="en">Every panel has its own analytical, diagnostic and simulation sections. The numbers on this page match the ones inside each panel.
+        Everything is generated from <i>db-demo</i> and lives in this single file, with no internet connection.</p>
+    </div>
+  </section>
+</main>
+
+<!--__PAINEIS__-->
+
+<script>
+const HUB = /*__HUB__*/null;
+
+(function () {
+  'use strict';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const num = (v, c) => v == null || isNaN(v) ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: c || 0, maximumFractionDigits: c || 0 });
+  const brl = (v) => (v < 0 ? '−' : '') + 'R$ ' + num(Math.abs(v));
+  const kbrl = (v) => (v < 0 ? '−' : '') + 'R$ ' + (Math.abs(v) >= 1e6 ? num(Math.abs(v) / 1e6, 1) + ' mi' : Math.abs(v) >= 1e4 ? num(Math.abs(v) / 1e3, 0) + ' mil' : Math.abs(v) >= 1e3 ? num(Math.abs(v) / 1e3, 1) + ' mil' : num(Math.abs(v), 0));
+  const FMT = {
+    pct1: (v) => num(v, 1) + '%', kg: (v) => num(v, 1) + ' kg', n1: (v) => num(v, 1), int: (v) => num(v),
+    dias: (v) => num(v, 1) + ' dias', brl: brl, kbrl: kbrl, brl2: (v) => 'R$ ' + num(v, 2), pct0: (v) => num(v) + '%',
+  };
+  const UNID_DELTA = { pct1: ' pp', kg: ' kg', int: '', n1: '', brl: '', kbrl: '', brl2: '', pct0: ' pp' };
+  const fmt = (k, v, sinal) => (sinal && v > 0 ? '+' : '') + FMT[k](v);
+  const ICONES = {
+    inicio: '<svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.9"/><rect x="13.5" y="3.5" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.9"/><rect x="3.5" y="13.5" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.9"/><rect x="13.5" y="13.5" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.9"/></svg>',
+    saude: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 12.5h4l2.2-5 4.2 10.5 2.4-5.5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    financas: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 17.5 9.5 12l3.5 3 7-7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7.5h5v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    investimentos: '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="13" width="4" height="7" rx="1.2" fill="currentColor" opacity=".55"/><rect x="10" y="9" width="4" height="11" rx="1.2" fill="currentColor" opacity=".8"/><rect x="16" y="4" width="4" height="16" rx="1.2" fill="currentColor"/></svg>',
+    carro: '<svg viewBox="0 0 24 24" fill="none"><path d="M4.5 14 6.4 8.7A2.2 2.2 0 0 1 8.5 7.2h7a2.2 2.2 0 0 1 2.1 1.5L19.5 14" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><rect x="3" y="13.6" width="18" height="4.6" rx="1.8" stroke="currentColor" stroke-width="1.9"/><circle cx="7.5" cy="18.6" r="1.7" fill="currentColor"/><circle cx="16.5" cy="18.6" r="1.7" fill="currentColor"/></svg>',
+    familia: '<svg viewBox="0 0 24 24" fill="none"><path d="M3.5 11.5 12 4.5l8.5 7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9.5h12V10" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><circle cx="10" cy="14" r="1.6" fill="currentColor"/><circle cx="14" cy="14" r="1.6" fill="currentColor"/></svg>',
+    patrimonio: '<svg viewBox="0 0 24 24" fill="none"><path d="M3.5 20h17" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M6.5 16.5v-4M11 16.5V9M15.5 16.5v-5.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M5 10.5 10.5 6l3.5 2.5L19.5 4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="19.5" cy="4" r="1.6" fill="currentColor"/></svg>',
+    viagens: '<svg viewBox="0 0 24 24" fill="none"><path d="M3.5 13.6 20 6.9c.9-.4 1.7.7 1 1.4l-4.6 4.6-1 6c-.1.8-1.1.9-1.5.2l-2.6-4.4-3.7 2.6.4-4-4.4-1.2c-.5-.1-.5-.8-.1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 13.3 16.4 8.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    cartao: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5.5" width="18" height="13" rx="2.4" stroke="currentColor" stroke-width="1.9"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.9"/><path d="M6.5 15h4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
+  };
+  const seta = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  // ------------------------------------------------ menu
+  const nav = $('#nav');
+  const itens = [{ id: 'inicio', nome: 'Visão geral' }].concat(HUB.areas.map((a) => ({ id: a.id, nome: a.nome })));
+  nav.innerHTML = itens.map((it, i) => (i === 1 ? '<div class="grupo">Painéis</div>' : '')
+    + '<a class="item" href="#' + it.id + '" data-id="' + it.id + '" style="--cor-a:var(--a-' + it.id + ', var(--ouro))"><span class="ic">' + ICONES[it.id]
+    + '</span><span class="t"><b>' + it.nome + '</b></span></a>').join('');
+  $('#gerado').textContent = 'Gerado em ' + HUB.gerado;
+
+  // ------------------------------------------------ início
+  const hoje = HUB.gerado.slice(0, 10);
+  $('#ini-data').textContent = 'MZO Analytics · ' + hoje;
+  const inv = HUB.areas.find((a) => a.id === 'investimentos'), fin = HUB.areas.find((a) => a.id === 'financas');
+  $('#ini-lead').innerHTML = 'Saúde, família, finanças, patrimônio, investimentos, cartão, carro e viagens, cruzados a partir de um lake pessoal. Hoje: <b>' + kbrl(inv.resumo.principal.v)
+    + '</b> investidos, <b>' + fmt(fin.resumo.principal.fmt, fin.resumo.principal.v, true) + '</b> de saldo em 12 meses e ' + inv.resumo.texto.toLowerCase();
+
+  function spark(r, cor, W) {
+    const H = 64, s = r.spark, n = s.length; if (!n) return '';
+    const mn = Math.min.apply(null, s), mx = Math.max.apply(null, s);
+    // série com negativos ancora no zero; série positiva usa a própria faixa, com folga
+    const lo = mn < 0 ? mn : mn - (mx - mn) * 0.25, hi = mx, amp = (hi - lo) || 1;
+    const X = (i) => 4 + i * (W - 8) / Math.max(1, n - 1), Y = (v) => 6 + (hi - v) * (H - 14) / amp;
+    let out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + r.spark_rot + '"><defs><linearGradient id="sp-' + cor.slice(1) + '" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="' + cor + '" stop-opacity=".35"/><stop offset="1" stop-color="' + cor + '" stop-opacity="0"/></linearGradient></defs>';
+    if (r.spark2) {   // barras de fundo (segunda serie) + linha (primeira)
+      const h2 = Math.max.apply(null, r.spark2) || 1, bw = (W - 8) / n;
+      r.spark2.forEach((v, i) => { const h = v / h2 * (H - 20); out += '<rect x="' + (4 + i * bw + bw * 0.2 - bw / 2 + bw / 2) + '" y="' + (H - 2 - h) + '" width="' + (bw * 0.6) + '" height="' + h + '" rx="2" fill="#ff6f61" opacity=".45"/>'; });
+    }
+    const neg = mn < 0;
+    if (neg) out += '<line x1="4" x2="' + (W - 4) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="#2a4a51" stroke-dasharray="3 3"/>';
+    if (neg) {   // saldo: barras acima/abaixo de zero
+      const bw = (W - 8) / n;
+      s.forEach((v, i) => { const y = Math.min(Y(v), Y(0)), h = Math.max(1.5, Math.abs(Y(v) - Y(0))); out += '<rect x="' + (4 + i * bw + bw * 0.15) + '" y="' + y + '" width="' + (bw * 0.7) + '" height="' + h + '" rx="2" fill="' + (v >= 0 ? '#4fd1a5' : '#ff6f61') + '"/>'; });
+    } else {
+      const d = s.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join('');
+      out += '<path d="' + d + 'L' + X(n - 1) + ',' + H + 'L' + X(0) + ',' + H + 'Z" fill="url(#sp-' + cor.slice(1) + ')"/><path d="' + d + '" fill="none" stroke="' + cor + '" stroke-width="2.2" stroke-linejoin="round"/>'
+        + '<circle cx="' + X(n - 1) + '" cy="' + Y(s[n - 1]) + '" r="3.8" fill="' + cor + '" stroke="#0e1d21" stroke-width="2"/>';
+    }
+    return out + '</svg>';
+  }
+  const COR = { saude: '#ff8f6b', financas: '#4fd1a5', investimentos: '#e9c46a', carro: '#3cc8ea', familia: '#a68cff', cartao: '#b8e05a', patrimonio: '#7aa2ff', viagens: '#ffa552' };
+  function cartoes() {
+    const box = $('#areas');
+    box.innerHTML = HUB.areas.map((a) => {
+      const r = a.resumo, p = r.principal;
+      let delta = '';
+      if (p.delta != null) {
+        const melhor = p.bom === 'maior' ? p.delta > 0 : p.delta < 0;
+        delta = '<div class="delta ' + (p.delta === 0 ? '' : melhor ? 'bom' : 'ruim') + '">' + (p.delta > 0 ? '+' : p.delta < 0 ? '−' : '') + FMT[p.fmt](Math.abs(p.delta)).replace('%', '') + (UNID_DELTA[p.fmt] || '')
+          + ' <span>' + (p.desde ? 'desde ' + p.desde.slice(5, 7) + '/' + p.desde.slice(2, 4) : 'vs 12 meses anteriores') + '</span></div>';
+      } else if (p.nota) delta = '<div class="delta"><span>' + p.nota + '</span></div>';
+      const big = fmt(p.fmt, p.v, p.sinal), corBig = p.sinal ? (p.v >= 0 ? 'bom' : 'ruim') : '';
+      const mini = r.kpis.map((k) => {
+        let v = fmt(k.fmt, k.v, k.sinal), cls = k.sinal ? (k.v >= 0 ? 'bom' : 'ruim') : '';
+        if (k.delta != null) { const melhor = k.bom === 'maior' ? k.delta > 0 : k.delta < 0; v += ' <small class="' + (k.delta === 0 ? '' : melhor ? 'bom' : 'ruim') + '">(' + (k.delta > 0 ? '+' : k.delta < 0 ? '−' : '') + FMT[k.fmt](Math.abs(k.delta)) + ')</small>'; }
+        return '<div><span>' + k.rot + (k.nota ? ' <small>· ' + k.nota + '</small>' : '') + '</span><b class="' + cls + '">' + v + '</b></div>';
+      }).join('');
+      return '<a class="area" href="#' + a.id + '" style="--cor-a:' + COR[a.id] + '"><div class="cab"><span class="ic">' + ICONES[a.id] + '</span><div><b>' + a.nome + '</b><small>' + a.sub
+        + '</small></div><span class="abrir">Abrir painel ' + seta + '</span></div><div class="meio"><div><div class="rot">' + p.rot + '</div><div class="big ' + corBig + '">' + big + '</div>' + delta
+        + '</div><div class="mini">' + mini + '</div></div><div class="spark" data-id="' + a.id + '"></div><div class="pe"><span>' + r.texto + '</span><span>' + r.spark_rot + '</span></div></a>';
+    }).join('');
+    document.querySelectorAll('.spark').forEach((el) => { const a = HUB.areas.find((x) => x.id === el.dataset.id); el.innerHTML = spark(a.resumo, COR[a.id], Math.max(240, el.clientWidth)); });
+  }
+
+  // ------------------------------------------------ navegação
+  const principal = $('#principal');
+  const vistas = {};
+  function abre(id) {
+    if (id !== 'inicio' && !HUB.areas.some((a) => a.id === id)) id = 'inicio';
+    if (!vistas[id] && id !== 'inicio') {
+      const v = document.createElement('section'); v.className = 'vista'; v.id = 'v-' + id;
+      v.innerHTML = '<div class="carregando">Abrindo…</div>';
+      const f = document.createElement('iframe');
+      f.title = HUB.areas.find((a) => a.id === id).nome;
+      v.appendChild(f); principal.appendChild(v); vistas[id] = v;
+      v.classList.add('ativa');   // visível antes de carregar: os gráficos medem a largura certa
+      f.srcdoc = JSON.parse(document.getElementById('pn-' + id).textContent);
+      f.addEventListener('load', () => { const c = v.querySelector('.carregando'); if (c) c.remove(); });
+    }
+    document.querySelectorAll('.vista').forEach((v) => v.classList.toggle('ativa', v === (id === 'inicio' ? $('#inicio') : vistas[id])));
+    document.querySelectorAll('.item').forEach((a) => { if (a.dataset.id === id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    const area = HUB.areas.find((a) => a.id === id);
+    document.title = area ? area.nome + ' · MZO Analytics' : 'MZO Analytics';
+    document.body.classList.remove('menu'); $('#abre-menu').setAttribute('aria-expanded', 'false');
+    if (id === 'inicio') cartoes();
+  }
+  window.addEventListener('hashchange', () => abre(location.hash.slice(1) || 'inicio'));
+  $('#abre-menu').addEventListener('click', () => { const on = document.body.classList.toggle('menu'); $('#abre-menu').setAttribute('aria-expanded', String(on)); });
+  $('#veu').addEventListener('click', () => { document.body.classList.remove('menu'); $('#abre-menu').setAttribute('aria-expanded', 'false'); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { document.body.classList.remove('menu'); } });
+  let tm;
+  window.addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(() => { if ($('#inicio').classList.contains('ativa')) cartoes(); }, 150); });
+  abre(location.hash.slice(1) || 'inicio');
+})();
+</script>
+</body>
+</html>

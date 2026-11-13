@@ -1,0 +1,41 @@
+/// Categoria do lançamento — o eixo do top 5.
+table dCategoria
+	lineageTag: 2c9f37ed-fb78-50d6-aafe-f3d0346c0190
+
+	column SK_CATEGORIA_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: 7ce1cb5e-1532-56f5-9b1a-a472cc8f77fc
+		summarizeBy: none
+		sourceColumn: SK_CATEGORIA_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_CATEGORIA
+		dataType: string
+		lineageTag: ea7ce0ce-7bec-509e-b6c6-9568f78f5ff7
+		summarizeBy: none
+		sourceColumn: NM_CATEGORIA
+
+		annotation SummarizationSetBy = Automatic
+
+	column FL_CLASSIFICADO
+		dataType: string
+		isHidden
+		lineageTag: 6d40c83f-1737-5ef7-b96d-8da8c057f2f0
+		summarizeBy: none
+		sourceColumn: FL_CLASSIFICADO
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dCategoria = m
+		mode: import
+		source = ```
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_categoria_financ"]}[Data]
+				in
+				    Tabela
+				```
+
+	annotation PBI_ResultType = Table

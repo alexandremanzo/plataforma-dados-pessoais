@@ -1,0 +1,11 @@
+/// Servidor do SQL Server. Único ponto a mudar se o banco se mover.
+expression pServidor = "localhost" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 8b9da42d-d75b-581c-abe8-05eddc309f8c
+
+/// Banco de dados.
+expression pBanco = "db-manzo" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 8b56339e-c646-5ae9-86fc-ed46b065515f
+
+/// Fração do gasto não essencial suposta cortada (0,5 = metade).
+expression pCorte = 0.5 meta [IsParameterQuery=true, Type="Number", IsParameterQueryRequired=true]
+	lineageTag: 3470edce-5170-5a56-bcbc-00798d3eafef

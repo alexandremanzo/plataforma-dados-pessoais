@@ -1,0 +1,32 @@
+/// Área do orçamento.
+table dArea
+	lineageTag: fb602694-cd9c-5d08-8858-65354de2bf3a
+
+	column SK_AREA_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: 97e1937c-ce5e-5286-9105-5a29d0547848
+		summarizeBy: none
+		sourceColumn: SK_AREA_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_AREA
+		dataType: string
+		lineageTag: 124e3d0f-7c87-5673-9066-8b9a9ab4f7cd
+		summarizeBy: none
+		sourceColumn: NM_AREA
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dArea = m
+		mode: import
+		source = ```
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_area_financ"]}[Data]
+				in
+				    Tabela
+				```
+
+	annotation PBI_ResultType = Table

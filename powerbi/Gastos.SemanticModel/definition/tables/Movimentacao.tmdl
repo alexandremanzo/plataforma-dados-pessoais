@@ -1,0 +1,145 @@
+/// Fato: um lançamento por linha. SINTETICO (pagamento de fatura) fica de fora para não contar o cartão duas vezes.
+table Movimentacao
+	lineageTag: 30ed6045-de91-539b-b857-6a4685863a1b
+
+	column SK_DATA
+		dataType: int64
+		isHidden
+		lineageTag: 4b8ca811-7d22-5bec-9fa7-52a38ec9acf0
+		summarizeBy: none
+		sourceColumn: SK_DATA
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_DATA_FATURA
+		dataType: int64
+		isHidden
+		lineageTag: 4366ca9b-3442-5d1f-b8a8-fba45f58a53b
+		summarizeBy: none
+		sourceColumn: SK_DATA_FATURA
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_ORIGEM
+		dataType: int64
+		isHidden
+		lineageTag: 1fe5a22a-c0a3-5e1d-a1b5-6164399e61c5
+		summarizeBy: none
+		sourceColumn: SK_ORIGEM
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_AREA_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: cf3c8c16-a22f-5081-ab25-658b7151322c
+		summarizeBy: none
+		sourceColumn: SK_AREA_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_CATEGORIA_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: 20497781-9f4d-598e-9536-2c4f8ddc81fe
+		summarizeBy: none
+		sourceColumn: SK_CATEGORIA_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column SK_GRUPO_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: e124eeae-b729-5485-a9cf-55ad5c2e0f3e
+		summarizeBy: none
+		sourceColumn: SK_GRUPO_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column VL_TRANSACAO
+		dataType: decimal
+		formatString: "R$" #,0.00
+		isHidden
+		lineageTag: 0988c770-53e1-5ad1-a8f2-79ad3e95766d
+		summarizeBy: none
+		sourceColumn: VL_TRANSACAO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Despesa positiva; receita zerada.
+	column VL_GASTO
+		dataType: decimal
+		formatString: "R$" #,0.00
+		isHidden
+		lineageTag: 81272829-fefb-586a-8c45-ab88affbdb41
+		summarizeBy: none
+		sourceColumn: VL_GASTO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// DESPESA ou RECEITA.
+	column DS_TIPO_FLUXO
+		dataType: string
+		lineageTag: e39f99e5-4660-5557-8fbf-da2eccaf05b8
+		summarizeBy: none
+		sourceColumn: DS_TIPO_FLUXO
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_PARCELA
+		dataType: int64
+		formatString: #,0
+		lineageTag: 520a25f0-3fde-5f79-8248-884775afc5d3
+		summarizeBy: none
+		sourceColumn: NR_PARCELA
+
+		annotation SummarizationSetBy = Automatic
+
+	/// S quando o lançamento é parcela de uma compra maior.
+	column FL_PARCELADO
+		dataType: string
+		lineageTag: 8859bcc7-6d4f-5193-a0a8-4accab716c39
+		summarizeBy: none
+		sourceColumn: FL_PARCELADO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Descrição como veio da origem.
+	column DS_DETALHE_ORIGINAL
+		dataType: string
+		lineageTag: 8c4a1b0d-6392-531c-8701-28052910cdf0
+		summarizeBy: none
+		sourceColumn: DS_DETALHE_ORIGINAL
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Movimentacao = m
+		mode: import
+		source = ```
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="fato_movto_financ"]}[Data],
+
+				    // SINTETICO e PAGAMENTO DE FATURA: o total do cartao saindo da conta.
+				    // Mantido fora daqui porque somar junto com as transacoes do cartao
+				    // contaria o mesmo gasto duas vezes — e o erro nao se denuncia, so
+				    // dobra o numero.
+				    Analitico = Table.SelectRows(Tabela, each [DS_NIVEL] = "ANALITICO"),
+
+				    // Parcela marcada como flag: DAX filtra por valor com folga, e
+				    // "nao e nulo" como filtro de CALCULATE e desconfortavel.
+				    Parcela = Table.AddColumn(Analitico, "FL_PARCELADO",
+				                  each if [NR_PARCELA] = null then "N" else "S", type text),
+				    Valor   = Table.AddColumn(Parcela, "VL_GASTO",
+				                  each if [DS_TIPO_FLUXO] = "DESPESA" then -[VL_TRANSACAO] else 0,
+				                  type number),
+				    Final   = Table.SelectColumns(Valor, {
+				                  "SK_DATA", "SK_DATA_FATURA", "SK_ORIGEM", "SK_AREA_FINANC",
+				                  "SK_CATEGORIA_FINANC", "SK_GRUPO_FINANC", "VL_TRANSACAO",
+				                  "VL_GASTO", "DS_TIPO_FLUXO", "NR_PARCELA", "FL_PARCELADO",
+				                  "DS_DETALHE_ORIGINAL"}, MissingField.UseNull)
+				in
+				    Final
+				```
+
+	annotation PBI_ResultType = Table

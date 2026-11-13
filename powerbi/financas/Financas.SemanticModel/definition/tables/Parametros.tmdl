@@ -1,0 +1,26 @@
+/// Traz o parâmetro de corte para dentro do modelo, para o DAX lê-lo.
+table Parametros
+	isHidden
+	lineageTag: aa2e3cb6-5ede-59ef-a144-62e099720055
+
+	column 'Corte alvo'
+		dataType: double
+		isHidden
+		lineageTag: cb06e0c2-0d0f-5871-a8d8-45b155afb639
+		summarizeBy: none
+		sourceColumn: Corte alvo
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Parametros = m
+		mode: import
+		source = ```
+				let
+				    Tabela = #table(
+				        type table [#"Corte alvo" = number],
+				        {{pCorte}})
+				in
+				    Tabela
+				```
+
+	annotation PBI_ResultType = Table

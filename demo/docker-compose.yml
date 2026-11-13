@@ -1,0 +1,42 @@
+# Demonstracao completa em um comando:
+#
+#   docker compose -f demo/docker-compose.yml up --build --abort-on-container-exit
+#
+# Sobe um SQL Server 2022 vazio, cria o banco db-demo com a estrutura da
+# camada gold, gera os dados ficticios e escreve o site em ../site
+# (index.html = hub; painel-*.html = paineis avulsos). O banco fica
+# exposto em localhost:14333 enquanto o compose estiver de pe.
+name: paineis-demo
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Demo#Paineis2026"
+      MSSQL_PID: "Developer"
+    ports:
+      - "14333:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  gerador:
+    build:
+      context: ..
+      dockerfile: demo/Dockerfile
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      DB_SERVER: "sqlserver,1433"
+      DB_DATABASE: "db-demo"
+      DB_DRIVER: "ODBC Driver 18 for SQL Server"
+      DB_USER: "sa"
+      DB_PASSWORD: "Demo#Paineis2026"
+      TZ: "America/Sao_Paulo"
+    volumes:
+      - ../site:/app/site
+      - ./dados:/app/demo/dados

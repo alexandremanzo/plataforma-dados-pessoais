@@ -1,0 +1,1777 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Corpo e Hábitos</title>
+<style>
+  /* Mesmo mundo do painel do condomínio: escuro, Bahnschrift nos números.
+     Coral = % de gordura, menta = massa muscular; cada hábito tem a sua cor. */
+  :root {
+    color-scheme: dark;
+    --bg: #071013;
+    --bg-alto: #0a171b;
+    --painel: #0e1d21;
+    --painel-2: #12262b;
+    --linha: #1d343a;
+    --linha-forte: #2a4a51;
+    --tinta: #e8f2f0;
+    --fraca: #8fa8a5;
+    --apagada: #5d7774;
+    --gordura: #ff8f6b;
+    --musculo: #4fd1a5;
+    --treino: #a68cff;
+    --cardio: #ff8fab;
+    --agua: #3cc8ea;
+    --jaca: #ffb547;
+    --plano: #c6e26a;
+    --bom: #4fd1a5;
+    --ruim: #ff6f61;
+    --raio: 14px;
+    --display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    --texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 560px at 6% -10%, rgba(255, 143, 107, .11), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(79, 209, 165, .09), transparent 60%),
+      var(--bg);
+    color: var(--tinta);
+    font-family: var(--texto);
+    font-size: 16px;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 80px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px 96px; } }
+
+  .barra-topo {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 20px 0; border-bottom: 1px solid var(--linha);
+    font-size: 13px; color: var(--fraca); flex-wrap: wrap;
+  }
+  .marca { display: flex; align-items: center; gap: 10px; color: var(--tinta); font-weight: 600; letter-spacing: .02em; }
+  .marca svg { width: 26px; height: 26px; }
+  .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav a { color: var(--fraca); text-decoration: none; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid transparent; transition: color .15s, border-color .15s; }
+  .nav a:hover, .nav a:focus-visible { color: var(--tinta); border-color: var(--linha-forte); outline: none; }
+  .nav a.cta { color: var(--bg); background: var(--musculo); font-weight: 600; }
+
+  .hero { padding: 56px 0 40px; display: grid; gap: 40px; }
+  .olho { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--gordura); font-weight: 600; margin: 0 0 14px; }
+  .hero h1 { font-family: var(--display); font-weight: 600; font-stretch: 85%;
+    font-size: clamp(34px, 5.6vw, 68px); line-height: 1.04; letter-spacing: -.015em; margin: 0; max-width: 24ch; text-wrap: balance; }
+  .hero h1 .g { color: var(--gordura); }
+  .hero h1 .m { color: var(--musculo); }
+  .hero .tese { max-width: 64ch; color: var(--fraca); font-size: 18px; margin: 20px 0 0; text-wrap: pretty; }
+  .hero .tese b { color: var(--tinta); font-weight: 600; }
+
+  .periodos { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .periodos > *, .hero > *, .grade > *, .sim > *, .metas > * { min-width: 0; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; }
+  .kpis-hab { margin-top: -28px; }
+  .kpi { background: linear-gradient(180deg, var(--painel-2), var(--painel)); border: 1px solid var(--linha);
+    border-radius: var(--raio); padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .kpi.cor { border-top: 2px solid var(--cor-k); }
+  .rotulo { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); font-weight: 600; }
+  .numero { font-family: var(--display); font-weight: 600; font-size: 34px; line-height: 1.1; letter-spacing: -.01em; }
+  .nota { font-size: 13px; color: var(--fraca); }
+  .bom { color: var(--bom); }
+  .ruim { color: var(--ruim); }
+
+  section.bloco { padding: 56px 0 0; scroll-margin-top: 16px; }
+  .cab { display: grid; gap: 8px; margin-bottom: 24px; max-width: 74ch; }
+  .cab h2 { font-family: var(--display); font-weight: 600; font-stretch: 90%;
+    font-size: clamp(26px, 3.4vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .cab p { margin: 0; color: var(--fraca); text-wrap: pretty; }
+  .cab p b { color: var(--tinta); font-weight: 600; }
+  .cab .olho { margin: 0; }
+
+  .grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+  .grade-4 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+  .cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio);
+    padding: 22px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+  .cartao h3 { margin: 0; font-size: 17px; font-weight: 600; }
+  .cartao .sub { margin: 0; color: var(--fraca); font-size: 14px; }
+  .tela { width: 100%; position: relative; }
+  .tela svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg .grid { stroke: var(--linha); stroke-width: 1; }
+  svg .ax { fill: var(--apagada); font-size: 11px; font-family: var(--texto); }
+  svg .guia { stroke: var(--linha-forte); stroke-dasharray: 3 3; }
+  svg .marcador { stroke: var(--linha-forte); stroke-width: 1; stroke-dasharray: 2 4; }
+
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--fraca); }
+  .legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .legenda i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .legenda i.oco { background: transparent !important; border: 2px solid var(--fraca); }
+
+  /* tabelas */
+  .tabela { width: 100%; overflow-x: auto; }
+  table.dados { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+  table.dados th, table.dados td { padding: 9px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--linha); }
+  table.dados th { color: var(--fraca); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+    position: sticky; top: 0; background: var(--painel); }
+  table.dados th:first-child, table.dados td:first-child { text-align: left; }
+  table.dados tbody tr:hover td { background: var(--painel-2); }
+  table.dados td.calor { border-radius: 6px; }
+  table.dados td .fraco { color: var(--apagada); }
+  .selo { font-size: 11px; letter-spacing: .04em; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid var(--linha-forte); color: var(--fraca); display: inline-block; margin-left: 4px; }
+  .selo.aviso { color: var(--jaca); border-color: color-mix(in srgb, var(--jaca) 50%, transparent); }
+  .selo.bom { color: var(--bom); border-color: color-mix(in srgb, var(--bom) 50%, transparent); }
+  .selo.ruim { color: var(--ruim); border-color: color-mix(in srgb, var(--ruim) 50%, transparent); }
+
+  /* controles */
+  .controles-barra { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin-bottom: 16px; }
+  /* por membro: braços nos cantos de cima, pernas nos de baixo, tronco no meio */
+  .corpo { display: grid; gap: 10px; grid-template-columns: 1fr 1.25fr 1fr; grid-template-areas: "be tr bd" "pe tr pd"; }
+  @media (max-width: 560px) { .corpo { grid-template-columns: 1fr 1fr; grid-template-areas: "be bd" "tr tr" "pe pd"; } }
+  .membro { background: var(--bg-alto); border: 1px solid var(--linha); border-top: 2px solid var(--cor-s); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .membro .numero { font-size: 24px; }
+  .membro .padrao { height: 6px; border-radius: 99px; background: var(--painel-2); overflow: hidden; margin-top: 6px; }
+  .membro .padrao span { display: block; height: 100%; background: var(--cor-s); }
+  .aviso { color: var(--jaca); }
+  .lados { display: grid; gap: 16px; }
+  .lado { display: grid; gap: 6px; }
+  .lado .barra2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; height: 14px; }
+  .lado .barra2 span { display: block; height: 100%; }
+  .lado .barra2 .e { justify-self: end; border-radius: 99px 0 0 99px; }
+  .lado .barra2 .d { border-radius: 0 99px 99px 0; }
+  .segmento { display: inline-grid; grid-auto-flow: column; padding: 4px; gap: 4px; max-width: 100%; overflow-x: auto;
+    background: var(--bg-alto); border: 1px solid var(--linha); border-radius: 12px; }
+  .segmento button { font: inherit; font-size: 13px; color: var(--fraca); background: transparent; border: 0;
+    border-radius: 9px; padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+  .segmento button[aria-pressed="true"] { background: var(--painel-2); color: var(--tinta); box-shadow: 0 0 0 1px var(--linha-forte); }
+  .segmento button:focus-visible { outline: 2px solid var(--agua); outline-offset: 1px; }
+  .chave { display: inline-flex; gap: 10px; align-items: center; cursor: pointer; font-size: 14px; color: var(--fraca); }
+  .chave input { appearance: none; flex: none; width: 38px; height: 22px; border-radius: 99px; margin: 0;
+    background: var(--linha-forte); position: relative; cursor: pointer; transition: background .2s; }
+  .chave input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--tinta); transition: transform .2s; }
+  .chave input:checked { background: var(--musculo); }
+  .chave input:checked::after { transform: translateX(16px); }
+  .chave input:focus-visible { outline: 2px solid var(--agua); outline-offset: 2px; }
+
+  /* refeições */
+  .ref-cards { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+  .refc { background: var(--bg-alto); border: 1px solid var(--linha); border-top: 2px solid var(--cor-s); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .refc .numero { font-size: 28px; }
+  .pilha { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--painel-2); margin-top: 8px; }
+  .pilha span { display: block; height: 100%; }
+  .mini5 { display: inline-flex; gap: 2px; vertical-align: middle; }
+  .mini5 i { width: 11px; height: 14px; border-radius: 3px; display: block; }
+  /* exame */
+  .ib-tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr)); }
+  .ibt { font: inherit; color: var(--tinta); text-align: left; background: var(--bg-alto); border: 1px solid var(--linha); border-radius: 12px;
+    padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; min-width: 0; cursor: pointer; }
+  .ibt:hover { border-color: var(--linha-forte); }
+  .ibt[aria-pressed="true"] { border-color: var(--tinta); box-shadow: 0 0 0 1px var(--tinta); }
+  .ibt:focus-visible { outline: 2px solid var(--agua); outline-offset: 2px; }
+  .ibt .numero { font-size: 24px; }
+  .ibt .selo { margin-left: 0; }
+  /* rotina */
+  table.dados td.rc { line-height: 1.25; }
+  table.dados td.rc b { display: block; font-family: var(--display); font-size: 15px; font-weight: 600; }
+  table.dados td.rc small { display: block; color: var(--apagada); font-size: 12px; }
+  table.dados td.rc em { display: block; font-style: normal; font-size: 11.5px; font-weight: 600; }
+  table.dados td.sig-bom { background: rgba(79, 209, 165, .12); }
+  table.dados td.sig-bom em { color: var(--bom); }
+  table.dados td.sig-ruim { background: rgba(255, 111, 97, .12); }
+  table.dados td.sig-ruim em { color: var(--ruim); }
+
+  /* diagnóstico */
+  .veredito { border-radius: var(--raio); padding: 20px 22px; border: 1px solid color-mix(in srgb, var(--jaca) 40%, var(--linha));
+    background: linear-gradient(180deg, rgba(255, 181, 71, .07), transparent), var(--painel); display: grid; gap: 6px; }
+  .veredito h3 { margin: 0; font-size: 18px; }
+  .veredito p { margin: 0; color: var(--fraca); font-size: 14px; max-width: 90ch; }
+  .veredito p b { color: var(--tinta); }
+  .ranking { display: grid; gap: 10px; }
+  .rk { display: grid; grid-template-columns: minmax(140px, 200px) 1fr 140px; gap: 12px; align-items: center; font-size: 14px; }
+  .rk .eixo { position: relative; height: 22px; }
+  .rk .eixo::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--linha-forte); }
+  .rk .lim { position: absolute; top: 2px; bottom: 2px; border-left: 1px dashed var(--apagada); border-right: 1px dashed var(--apagada);
+    background: rgba(143, 168, 165, .05); }
+  .rk .barra { position: absolute; top: 5px; height: 12px; border-radius: 4px; transition: all .5s cubic-bezier(.2,.8,.2,1); }
+  .rk .v { text-align: right; color: var(--fraca); font-size: 13px; }
+  .rk .v b { color: var(--tinta); font-family: var(--display); font-size: 16px; }
+  @media (max-width: 560px) { .rk { grid-template-columns: 1fr auto; } .rk .eixo { grid-column: 1 / -1; grid-row: 2; } }
+
+  /* simulador */
+  .sim { display: grid; gap: 16px; grid-template-columns: minmax(0, 430px) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 1020px) { .sim { grid-template-columns: 1fr; } }
+  .sim .col { display: grid; gap: 16px; min-width: 0; }
+  .agora { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .agora div { background: var(--bg-alto); border: 1px solid var(--linha); border-radius: 10px; padding: 9px 10px; min-width: 0; }
+  .agora b { display: block; font-family: var(--display); font-size: 20px; font-weight: 600; line-height: 1.15; }
+  .agora span { font-size: 11px; color: var(--fraca); letter-spacing: .06em; text-transform: uppercase; }
+  .ctl { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--linha); }
+  .ctl:last-child { border-bottom: 0; padding-bottom: 0; }
+  .ctl .topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .ctl .topo .t { font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+  .ctl .topo .t i { width: 10px; height: 10px; border-radius: 3px; background: var(--cor-h); }
+  .ctl .topo b { font-family: var(--display); font-size: 22px; font-weight: 600; color: var(--cor-h); white-space: nowrap; }
+  .ctl input[type="range"] { width: 100%; margin: 0; accent-color: var(--cor-h); height: 22px; cursor: pointer; background: transparent; }
+  .ctl input[type="range"]:focus-visible { outline: 2px solid var(--agua); outline-offset: 2px; border-radius: 6px; }
+  .ctl .diz { font-size: 12.5px; color: var(--fraca); margin: 0; }
+  .ctl .diz b { color: var(--tinta); font-weight: 600; }
+  .alvo-txt { margin: 4px 0 0; font-size: 13.5px; color: var(--fraca); }
+  .alvo-txt b { color: var(--tinta); }
+  .botao { font: inherit; font-size: 13px; color: var(--fraca); background: var(--bg-alto); border: 1px solid var(--linha);
+    border-radius: 10px; padding: 7px 12px; cursor: pointer; }
+  .botao:hover { color: var(--tinta); border-color: var(--linha-forte); }
+  .botao:focus-visible { outline: 2px solid var(--agua); outline-offset: 2px; }
+
+  .placar { border-radius: var(--raio); padding: 24px; border: 1px solid var(--linha-forte);
+    background: radial-gradient(560px 240px at 100% 0, rgba(79, 209, 165, .13), transparent 70%), linear-gradient(180deg, var(--painel-2), var(--painel));
+    display: grid; gap: 18px; }
+  .placar .chegada { display: grid; gap: 4px; }
+  .placar .chegada .numero { font-size: clamp(36px, 4vw, 52px); }
+  .placar p { margin: 0; font-size: 14px; color: var(--fraca); }
+  .placar p b { color: var(--tinta); font-weight: 600; }
+  .metas { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
+  .metas div { background: var(--bg-alto); border: 1px solid var(--linha); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
+  .metas .numero { font-size: 22px; }
+  .metas small { font-size: 12px; color: var(--apagada); }
+  .sugestoes { display: grid; gap: 8px; }
+  .sug { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 9px 12px; border-radius: 10px;
+    background: var(--bg-alto); border: 1px solid var(--linha); font-size: 13.5px; color: var(--fraca); }
+  .sug b { color: var(--tinta); }
+  .sug.nao { opacity: .6; }
+  details.premissas { border: 1px solid var(--linha); border-radius: var(--raio); padding: 14px 18px; background: var(--painel); }
+  details.premissas summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+  details.premissas p { color: var(--fraca); font-size: 13.5px; margin: 10px 0; max-width: 90ch; }
+
+  .notas { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--fraca);
+    display: grid; gap: 12px; max-width: 84ch; }
+  .notas h2 { font-size: 15px; color: var(--tinta); margin: 0; font-weight: 600; }
+  .notas ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .notas b { color: var(--tinta); font-weight: 600; }
+
+  .dica { position: fixed; z-index: 20; pointer-events: none; opacity: 0; transition: opacity .12s;
+    background: #0b1a1e; border: 1px solid var(--linha-forte); border-radius: 10px; padding: 8px 12px;
+    font-size: 13px; color: var(--tinta); box-shadow: 0 12px 30px rgba(0,0,0,.45); white-space: nowrap; }
+  .dica .q { color: var(--fraca); display: block; font-size: 12px; margin-bottom: 2px; }
+  .dica i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+
+  .entra { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .entra.visto { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .entra { opacity: 1; transform: none; transition: none; }
+    * { transition-duration: 0s !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="barra-topo">
+    <div class="marca">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M4 17h5l3-7 5 14 3-7h8" stroke="#ff8f6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Corpo e Hábitos
+    </div>
+    <nav class="nav" aria-label="Seções">
+      <a href="#trajetoria">Trajetória</a>
+      <a href="#membros">Por membro</a>
+      <a href="#refeicoes">Refeições</a>
+      <a href="#exame">Exame</a>
+      <a href="#rotina">Rotina</a>
+      <a href="#periodos">Período a período</a>
+      <a href="#diagnostico">Diagnóstico</a>
+      <a href="#simulador" class="cta">Simulador</a>
+    </nav>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="olho" id="periodo">—</p>
+      <h1 id="manchete">—</h1>
+      <p class="tese" id="tese">—</p>
+    </div>
+    <div class="periodos">
+      <span class="rotulo">Período</span>
+      <div class="segmento" role="group" aria-label="Período" id="periodos"></div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="kpis kpis-hab" id="kpis-hab"></div>
+  </header>
+
+  <!-- ===================================================== trajetória -->
+  <section class="bloco entra" id="trajetoria">
+    <div class="cab">
+      <p class="olho">Analítica</p>
+      <h2>A trajetória do corpo e dos hábitos</h2>
+      <p>Cada ponto é uma avaliação. Ponto cheio é exame InBody; ponto vazado veio só da planilha,
+        medido de outro jeito, e não se compara ao centavo com o vizinho.</p>
+    </div>
+    <div class="grade">
+      <div class="cartao">
+        <h3>% de gordura</h3>
+        <div class="legenda"><span><i style="background:var(--gordura)"></i>InBody</span><span><i class="oco"></i>Planilha</span></div>
+        <div class="tela" id="g-gordura"></div>
+      </div>
+      <div class="cartao">
+        <h3>Massa muscular (kg)</h3>
+        <div class="legenda"><span><i style="background:var(--musculo)"></i>InBody</span><span><i class="oco"></i>Planilha</span></div>
+        <div class="tela" id="g-musculo"></div>
+      </div>
+    </div>
+    <div class="cartao" style="margin-top:16px">
+      <h3>Do que o peso é feito</h3>
+      <p class="sub">Cada barra é uma avaliação: massa magra embaixo, gordura em cima. A altura total é o peso.</p>
+      <div class="legenda"><span><i style="background:var(--musculo);border-radius:3px"></i>Massa magra</span><span><i style="background:var(--gordura);border-radius:3px"></i>Gordura</span></div>
+      <div class="tela" id="g-comp"></div>
+    </div>
+
+    <div class="cab" style="margin-top:40px">
+      <h2 style="font-size:clamp(22px,2.6vw,28px)">Hábitos semana a semana</h2>
+      <p>Média móvel de 4 semanas. As linhas tracejadas verticais são as datas das avaliações.</p>
+    </div>
+    <div class="grade-4" id="habitos-sem"></div>
+
+    <div class="cartao" style="margin-top:16px">
+      <h3>Ano a ano</h3>
+      <div class="tabela">
+        <table class="dados" id="t-anual">
+          <thead><tr><th>Ano</th><th>Dias registrados</th><th>Treinos/sem</th><th>Cardios/sem</th><th>Água/dia</th><th>Dias na meta de água</th><th>Jaca/dia</th><th>Refeições no plano</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== por membro -->
+  <section class="bloco entra" id="membros">
+    <div class="cab">
+      <p class="olho">Por membro</p>
+      <h2 id="mem-titulo">Braços, tronco e pernas</h2>
+      <p>O InBody mede a massa magra e a gordura de cada braço, do tronco (onde fica o abdômen) e de cada perna.
+        Aqui a primeira e a última avaliação do período. A barrinha é o membro em relação ao padrão do aparelho.</p>
+    </div>
+    <div class="controles-barra">
+      <div class="segmento" role="group" aria-label="Medida por membro" id="mem-met"></div>
+    </div>
+    <div class="grade">
+      <div class="cartao">
+        <h3>Membro a membro</h3>
+        <p class="sub" id="mem-sub">—</p>
+        <div class="corpo" id="mem-corpo"></div>
+      </div>
+      <div class="cartao">
+        <h3>Ao longo do tempo, em % do padrão</h3>
+        <p class="sub">Em % do padrão, braço de 3 kg e tronco de 27 kg cabem no mesmo gráfico. A linha tracejada é 100%.</p>
+        <div class="legenda" id="mem-leg"></div>
+        <div class="tela" id="g-mem"></div>
+      </div>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Lado direito × lado esquerdo</h3>
+        <p class="sub" id="mem-lado-sub">—</p>
+        <div class="lados" id="mem-lados"></div>
+      </div>
+      <div class="cartao">
+        <h3>Medidas com fita: braço, abdômen, coxa</h3>
+        <p class="sub" id="fita-sub">—</p>
+        <div class="tabela"><table class="dados" id="t-fita"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== refeições -->
+  <section class="bloco entra" id="refeicoes">
+    <div class="cab">
+      <p class="olho">Alimentação</p>
+      <h2 id="ref-titulo">Refeição por refeição</h2>
+      <p>O formulário marca cada refeição do dia como <b>no plano</b>, <b>jaca</b> (fora do plano) ou <b>não fiz</b>.
+        Aqui a adesão de cada uma no período, mês a mês e por dia da semana, e como ela anda junto com o que as avaliações mostraram.</p>
+    </div>
+    <div class="ref-cards" id="ref-cards"></div>
+    <div class="legenda" style="margin-top:10px"><span><i style="background:var(--plano);border-radius:3px"></i>No plano</span><span><i style="background:var(--jaca);border-radius:3px"></i>Jaca</span><span><i style="background:var(--linha-forte);border-radius:3px"></i>Não fiz</span></div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Mês a mês, % no plano</h3>
+        <p class="sub">Meses com menos de 10 dias respondidos ficam de fora. Passe o mouse para ver as cinco refeições do mês.</p>
+        <div class="legenda" id="ref-leg"></div>
+        <div class="tela" id="g-ref"></div>
+      </div>
+      <div class="cartao">
+        <h3>Por dia da semana, % no plano</h3>
+        <p class="sub" id="ref-sem-sub">—</p>
+        <div class="tabela"><table class="dados" id="t-ref-sem"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="veredito" id="ref-aval" style="margin-top:16px"></div>
+  </section>
+
+  <!-- ===================================================== exame -->
+  <section class="bloco entra" id="exame">
+    <div class="cab">
+      <p class="olho">Exame</p>
+      <h2 id="ib-titulo">O que mais o InBody mede</h2>
+      <p>Além de gordura e músculo, o exame traz gordura visceral, metabolismo basal, água, proteína, minerais, relação cintura-quadril e a
+        pontuação geral. Cada quadro mostra a última medida do período, a variação desde a primeira e se está na faixa de referência. Clique num quadro para ver a série.</p>
+    </div>
+    <div class="ib-tiles" id="ib-tiles"></div>
+    <div class="cartao" style="margin-top:16px">
+      <h3 id="ib-nome">—</h3>
+      <p class="sub" id="ib-sub">—</p>
+      <div class="legenda"><span><i id="ib-leg-cor"></i>InBody</span><span><i class="oco"></i>Planilha</span><span><i style="background:rgba(79,209,165,.18);border-radius:3px"></i>Faixa de referência</span></div>
+      <div class="tela" id="g-ib"></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== rotina -->
+  <section class="bloco entra" id="rotina">
+    <div class="cab">
+      <p class="olho">Rotina</p>
+      <h2 id="rot-titulo">Como a rotina do dia anda junto com os hábitos</h2>
+      <p>Cada linha compara os dias com a condição contra os dias sem ela, no período escolhido: dia produtivo, dia de trabalho, Nina em casa,
+        fim de semana e feriado. Diferença em destaque passou no teste (p &lt; 0,05); o resto pode ser acaso. É o que <b>anda junto</b>, não o que causa:
+        feriado pode ser viagem, trabalho pode ser rotina mais organizada.</p>
+    </div>
+    <div class="veredito" id="rot-ver"></div>
+    <div class="cartao" style="margin-top:16px">
+      <div class="tabela"><table class="dados" id="t-rotina"><thead></thead><tbody></tbody></table></div>
+      <p class="nota" style="margin:0">Em cada célula: dias com a condição, em cima; dias sem, embaixo. Treino, cardio e meta de água em % dos dias;
+        refeições no plano em % das 5 do dia.</p>
+    </div>
+  </section>
+
+  <!-- ================================================== período a período -->
+  <section class="bloco entra" id="periodos">
+    <div class="cab">
+      <p class="olho">Período a período</p>
+      <h2>Como estavam os hábitos entre uma avaliação e a seguinte</h2>
+      <p>Uma linha por intervalo entre avaliações. As variações estão <b>por 30 dias</b>, porque os
+        intervalos vão de 4 semanas a 6 meses. Quanto mais forte a cor do hábito, mais alto em relação aos outros períodos.</p>
+    </div>
+    <div class="cartao">
+      <div class="tabela">
+        <table class="dados" id="t-periodos">
+          <thead><tr>
+            <th>Período</th><th>Dias</th><th>Treinos/sem</th><th>Cardios/sem</th><th>Água/dia</th><th>Jaca/dia</th><th>No plano</th><th title="Café, almoço, lanche, janta e ceia: quanto mais forte, mais no plano">Por refeição</th>
+            <th>Δ gordura /30d</th><th>Δ músculo /30d</th><th>Observação</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== diagnóstico -->
+  <section class="bloco entra" id="diagnostico">
+    <div class="cab">
+      <p class="olho">Diagnóstica</p>
+      <h2>O que se move junto com o corpo</h2>
+      <p>Cada hábito contra a variação da métrica em cada período. Correlação não é causa, e com
+        <b id="d-n">—</b> períodos só uma relação forte passaria do acaso.</p>
+    </div>
+    <div class="controles-barra">
+      <div class="segmento" role="group" aria-label="Métrica">
+        <button type="button" data-met="gordura" aria-pressed="true">% de gordura</button>
+        <button type="button" data-met="musculo" aria-pressed="false">Massa muscular</button>
+      </div>
+      <label class="chave"><input type="checkbox" class="t-confiaveis"> Só períodos confiáveis (mesmo aparelho, dias registrados)</label>
+    </div>
+
+    <div class="veredito" id="veredito"></div>
+
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Força de cada relação</h3>
+        <p class="sub">Barra para a esquerda: o hábito anda junto com queda da métrica; para a direita, com alta.
+          A faixa tracejada é a zona do acaso para este número de períodos.</p>
+        <div class="ranking" id="ranking"></div>
+      </div>
+      <div class="cartao">
+        <h3>Melhores × piores períodos</h3>
+        <p class="sub" id="tercis-sub">—</p>
+        <div class="tabela">
+          <table class="dados" id="t-tercis">
+            <thead><tr><th>Hábito</th><th>Melhores</th><th>Piores</th><th>Diferença</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="grade-4" id="dispersoes" style="margin-top:16px"></div>
+  </section>
+
+  <!-- ======================================================= simulador -->
+  <section class="bloco entra" id="simulador">
+    <div class="cab">
+      <p class="olho">Simulador</p>
+      <h2>Escolha o corpo que você quer e ajuste os hábitos até chegar lá</h2>
+      <p>O objetivo é uma composição: % de gordura e massa magra, que juntas definem o peso. Os hábitos começam no seu ritmo
+        dos últimos 30 dias; mexa neles e veja em quanto tempo o objetivo chega, e o que falta para caber no prazo.
+        É uma estimativa: a fisiologia dá o tamanho de cada efeito e os seus dados desde 2024 ajustam.</p>
+    </div>
+    <div class="sim">
+      <div class="col">
+        <div class="cartao">
+          <h3>Onde você está</h3>
+          <div class="agora" id="s-agora"></div>
+          <p class="nota" id="s-agora-data">—</p>
+        </div>
+        <div class="cartao" id="s-objetivo"><h3>Objetivo</h3></div>
+        <div class="cartao" id="s-fatores">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <h3>Hábitos</h3><button type="button" class="botao" id="s-reset">Voltar aos últimos 30 dias</button>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="placar" aria-live="polite">
+          <div class="chegada">
+            <span class="rotulo" id="s-cheg-rot">—</span>
+            <div class="numero" id="s-cheg">—</div>
+            <p id="s-cheg-txt">—</p>
+          </div>
+          <div class="metas" id="s-ritmos"></div>
+          <div>
+            <span class="rotulo" id="s-prazo-rot">—</span>
+            <div class="metas" id="s-prazo" style="margin-top:8px"></div>
+          </div>
+          <div id="s-fecha"></div>
+          <p id="s-aviso" class="nota"></p>
+        </div>
+        <div class="cartao">
+          <h3>% de gordura projetada</h3>
+          <p class="sub">Linha: o caminho com os hábitos escolhidos. Faixa: do cenário otimista ao pessimista. Tracejado: o objetivo.</p>
+          <div class="tela" id="g-sim-pct"></div>
+        </div>
+        <div class="cartao">
+          <h3>Gordura e massa magra mês a mês</h3>
+          <p class="sub">Cada uma no seu eixo, com o objetivo tracejado. Passe o mouse para ver o valor de cada mês.</p>
+          <div class="grade" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))">
+            <div><span class="rotulo" style="color:var(--gordura)">Gordura (kg)</span><div class="tela" id="g-sim-g"></div></div>
+            <div><span class="rotulo" style="color:var(--musculo)">Massa magra (kg)</span><div class="tela" id="g-sim-m"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <details class="premissas" style="margin-top:16px">
+      <summary>Como o simulador calcula</summary>
+      <p>Cada hábito tem um efeito por mês em gordura e em massa magra. O ponto de partida é a fisiologia: cardio queima
+        ~300 kcal por sessão, treino de força ~200, uma refeição jaca traz ~500 kcal a mais que a do plano, e 1 kg de gordura
+        são ~7.700 kcal. Na projeção, a perda de gordura desacelera conforme ela diminui (é proporcional à gordura que resta). Depois os seus períodos entre avaliações puxam esse número para o que aconteceu com você, com
+        peso proporcional à precisão: quanto mais a medida oscila, menos ela puxa. O nível é calibrado para que, nos seus
+        hábitos médios desde 2024, o simulador devolva o ritmo que de fato aconteceu (<span id="s-base">—</span>).</p>
+      <div class="tabela"><table class="dados" id="t-efeitos"><thead><tr><th>Hábito (+1 unidade)</th><th>Fisiologia</th><th>Seus dados</th><th>Usado</th><th>Peso dos dados</th><th>Massa magra (usado)</th></tr></thead><tbody></tbody></table></div>
+      <p>A faixa otimista/pessimista soma a incerteza de cada efeito. Entre dois exames a um mês de distância, a gordura já oscila
+        <span id="s-ruido-g">—</span> e a massa magra <span id="s-ruido-m">—</span> (água no corpo, horário, refeição antes): o exame
+        de um mês pode desmentir a tendência sem que ela esteja errada.</p>
+    </details>
+  </section>
+
+  <footer class="notas">
+    <h2>De onde vêm estes números</h2>
+    <ul id="notas">
+      <li><b>Hábitos</b>: formulário diário (<span id="n-dias">—</span>). Treino e cardio são sim/não, a água é em litros
+        e cada refeição é SIM, NÃO ou JACA (fora do plano). Não há carga, volume, distância, calorias nem sono no lake.</li>
+      <li><b>Lacuna</b>: o formulário ficou sem registro por algumas semanas no começo de 2024. Período com menos de 70% dos dias registrados sai marcado.</li>
+      <li><b>Avaliações</b>: só as feitas desde 04/2024 têm hábito para cruzar. As que vieram só da planilha, sem exame,
+        marcam o período que as liga a um exame InBody como <i>aparelho misto</i>. Avaliação sem massa muscular é pulada no período de músculo.</li>
+      <li><b>Ruído</b>: entre duas avaliações a um mês de distância, a variação típica já é de <span id="n-ruido-g">—</span> de gordura
+        e <span id="n-ruido-m">—</span> de músculo, sem nenhuma mudança real necessária. Água no corpo, horário e refeição antes do exame mexem nisso.</li>
+      <li><b>Período</b>: o filtro do topo recorta avaliações, hábitos e diagnóstico. Um período entre avaliações pertence ao ano da
+        avaliação que o fecha. Com poucos períodos no recorte, o diagnóstico avisa em vez de inventar relação.</li>
+      <li><b>Composição</b>: massa magra = peso − massa de gordura do exame. O simulador usa todos os períodos desde 2024, seja qual
+        for o filtro, e parte sempre da última avaliação.</li>
+      <li><b>Por que o simulador não é uma regressão pura</b>: com 17 períodos ela errava mais do que prever a média. Por isso a
+        fisiologia dá o tamanho dos efeitos e os dados só ajustam.</li>
+      <li><b>Refeições</b>: cada uma das 5 é SIM (no plano), JACA ou NÃO. "No plano" é a parte dos dias respondidos em que ela foi SIM;
+        a ceia pulada conta como fora do plano. As refeições entram no diagnóstico, mas <b>não no simulador</b>: "jaca por dia" já leva a
+        alimentação para ele, e separar por refeição com 17 períodos só somaria ruído (não há fisiologia por refeição para ancorar o efeito).</li>
+      <li><b>Exame</b>: a faixa de referência vem do próprio exame quando ele traz uma plausível (água corporal, proteína, minerais); alguns exames imprimem a de proteína em outra escala, e esses ficam de fora. Para gordura visceral (1 a 9),
+        relação cintura-quadril (0,80 a 0,90), pontuação (80+) e IMC (18,5 a 25) é a faixa usual do InBody.</li>
+      <li><b>Rotina</b>: dia produtivo, trabalho e Nina em casa vêm do formulário; feriado, do calendário. Proporções pelo teste de duas proporções e médias
+        por Welch, as duas na aproximação normal: com dezenas de dias por grupo é suficiente, com feriado (poucos dias) o teste fica conservador.</li>
+      <li><b>Meta de água</b> (2 L) foi batida em <span id="n-meta">—</span>.</li>
+      <li>Gerado em <span id="n-gerado">—</span> a partir do <i>db-demo</i>. Arquivo local, sem conexão com a internet.</li>
+    </ul>
+  </footer>
+</div>
+
+<div class="dica" id="dica" role="tooltip"></div>
+
+<script>
+const D = /*__DADOS__*/null;
+
+(function () {
+  'use strict';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const num = (v, c) => v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c });
+  const sinal = (v, c) => v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + num(Math.abs(v), c);
+  const dt = (s) => { const [a, m, d] = s.split('-'); return d + '/' + m + '/' + a.slice(2); };
+  const ts = (s) => new Date(s + 'T00:00:00').getTime();
+
+  const HAB = {
+    treino_sem: { nome: 'Treinos por semana', curto: 'Treino', cor: 'var(--treino)', hex: '#a68cff', fmt: (v) => num(v, 1), unid: '/sem', min: 0, max: 7, passo: 0.1, sentido: 1 },
+    cardio_sem: { nome: 'Cardios por semana', curto: 'Cardio', cor: 'var(--cardio)', hex: '#ff8fab', fmt: (v) => num(v, 1), unid: '/sem', min: 0, max: 7, passo: 0.1, sentido: 1 },
+    agua_l: { nome: 'Água por dia', curto: 'Água', cor: 'var(--agua)', hex: '#3cc8ea', fmt: (v) => num(v, 2) + ' L', unid: ' L', min: 0.5, max: 3.5, passo: 0.05, sentido: 1 },
+    jaca_dia: { nome: 'Refeições jaca por dia', curto: 'Jaca', cor: 'var(--jaca)', hex: '#ffb547', fmt: (v) => num(v, 2), unid: '/dia', min: 0, max: 2, passo: 0.05, sentido: -1 },
+    plano_pct: { nome: 'Refeições no plano', curto: 'No plano', cor: 'var(--plano)', hex: '#c6e26a', fmt: (v) => num(v, 0) + '%', unid: '%', min: 0, max: 100, passo: 1, sentido: 1 }
+  };
+  // cada refeição no plano (% dos dias): entra no diagnóstico, não no simulador
+  [['cafe', '#f6d365'], ['almoco', '#8fd694'], ['lanche', '#6fb7ff'], ['janta', '#e58fff'], ['ceia', '#c9a27e']].forEach(([k, hex]) => {
+    HAB[k + '_pct'] = { nome: D.refeicoes[k] + ' no plano', curto: D.refeicoes[k], cor: hex, hex, fmt: (v) => num(v, 0) + '%', unid: '%', min: 0, max: 100, passo: 1, sentido: 1 };
+  });
+  const SIM_HAB = ['treino_sem', 'cardio_sem', 'agua_l', 'jaca_dia'];
+  const MET = {
+    gordura: { cor: 'var(--gordura)', hex: '#ff8f6b', fmt: (v) => num(v, 1) + '%', dfmt: (v) => sinal(v, 2) + ' pp', bomSe: -1 },
+    musculo: { cor: 'var(--musculo)', hex: '#4fd1a5', fmt: (v) => num(v, 1) + ' kg', dfmt: (v) => sinal(v, 2) + ' kg', bomSe: 1 }
+  };
+  const estado = { met: 'gordura', confiaveis: false, v: {} };
+
+  // ------------------------------------------------------------ dica
+  const dica = $('#dica');
+  function mostra(html, ev) {
+    dica.innerHTML = html;
+    dica.style.opacity = '1';
+    const w = dica.offsetWidth, h = dica.offsetHeight;
+    let x = ev.clientX + 14, y = ev.clientY - h - 12;
+    if (x + w > window.innerWidth - 8) x = ev.clientX - w - 14;
+    if (y < 8) y = ev.clientY + 16;
+    dica.style.left = Math.max(8, x) + 'px';
+    dica.style.top = y + 'px';
+  }
+  const esconde = () => { dica.style.opacity = '0'; };
+
+  function anima(el, alvo, fmt) {
+    const de = el._v === undefined ? alvo : el._v;
+    el._v = alvo;
+    if (calmo || de === alvo) { el.textContent = fmt(alvo); return; }
+    const t0 = performance.now(), dur = 500;
+    cancelAnimationFrame(el._raf);
+    const passo = (t) => {
+      const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(de + (alvo - de) * e);
+      if (p < 1) el._raf = requestAnimationFrame(passo);
+    };
+    el._raf = requestAnimationFrame(passo);
+  }
+
+  // ------------------------------------------------- gráfico no tempo
+  // x em milissegundos (datas de verdade, porque os intervalos entre
+  // avaliações vão de 3 semanas a 6 meses e espaçar por índice mentiria)
+  let uid = 0;
+  function tempo(host, cfg) {
+    const W = Math.max(280, host.clientWidth), H = cfg.altura || 240;
+    const m = { t: 14, r: 14, b: 26, l: 40 };
+    const pts = cfg.pontos.filter((p) => p.y != null);
+    const xs = pts.map((p) => p.x);
+    const x0 = cfg.x0 || Math.min.apply(null, xs), x1 = cfg.x1 || Math.max.apply(null, xs);
+    const ys = pts.map((p) => p.y);
+    let lo = cfg.lo != null ? cfg.lo : Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+    const folga = (hi - lo) * 0.14 || 1;
+    if (cfg.lo == null) lo -= folga;
+    hi += folga;
+    const X = (v) => m.l + (v - x0) * (W - m.l - m.r) / Math.max(1, x1 - x0);
+    const Y = (v) => m.t + (hi - v) * (H - m.t - m.b) / (hi - lo);
+    const id = 't' + (++uid);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + cfg.aria + '">'
+      + '<defs><linearGradient id="' + id + '" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="' + cfg.hex
+      + '" stop-opacity=".28"/><stop offset="1" stop-color="' + cfg.hex + '" stop-opacity="0"/></linearGradient></defs>';
+    for (let k = 0; k <= 3; k++) {
+      const v = lo + (hi - lo) * k / 3, y = Y(v);
+      s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y + '" y2="' + y + '"/>'
+        + '<text class="ax" x="' + (m.l - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + cfg.fmtY(v) + '</text>';
+    }
+    // um rótulo por ano no eixo x
+    const a0 = new Date(x0).getFullYear(), a1 = new Date(x1).getFullYear();
+    for (let a = a0; a <= a1 + 1; a++) {
+      const t = new Date(a, 0, 1).getTime();
+      if (t < x0 || t > x1) continue;
+      s += '<line class="grid" x1="' + X(t) + '" x2="' + X(t) + '" y1="' + m.t + '" y2="' + (H - m.b) + '"/>'
+        + '<text class="ax" x="' + (X(t) + 4) + '" y="' + (H - 8) + '">' + a + '</text>';
+    }
+    if (cfg.faixa) {
+      const fy0 = Y(Math.min(hi, Math.max(lo, cfg.faixa[1]))), fy1 = Y(Math.max(lo, Math.min(hi, cfg.faixa[0])));
+      if (fy1 - fy0 > 0.5) s += '<rect x="' + m.l + '" y="' + fy0 + '" width="' + (W - m.l - m.r) + '" height="' + (fy1 - fy0) + '" fill="rgba(79,209,165,.10)"/>';
+      cfg.faixa.forEach((v) => { if (v > lo && v < hi) s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="rgba(79,209,165,.45)" stroke-dasharray="4 3"/>'; });
+    }
+    (cfg.marcas || []).forEach((t) => {
+      if (t >= x0 && t <= x1) s += '<line class="marcador" x1="' + X(t) + '" x2="' + X(t) + '" y1="' + m.t + '" y2="' + (H - m.b) + '"/>';
+    });
+    let d = '';
+    pts.forEach((p, i) => { d += (i ? 'L' : 'M') + X(p.x).toFixed(1) + ',' + Y(p.y).toFixed(1); });
+    if (cfg.area && pts.length) {
+      s += '<path d="' + d + 'L' + X(pts[pts.length - 1].x) + ',' + Y(lo) + 'L' + X(pts[0].x) + ',' + Y(lo) + 'Z" fill="url(#' + id + ')"/>';
+    }
+    s += '<path class="traco" d="' + d + '" fill="none" stroke="' + cfg.hex + '" stroke-width="' + (cfg.w || 2.2) + '" stroke-linejoin="round" stroke-linecap="round"/>';
+    if (cfg.bolinhas) pts.forEach((p, i) => {
+      s += '<circle data-i="' + i + '" cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="4.5" fill="' + (p.oco ? 'var(--painel)' : cfg.hex)
+        + '" stroke="' + cfg.hex + '" stroke-width="2"/>';
+    });
+    s += '<line class="guia" x1="0" x2="0" y1="' + m.t + '" y2="' + (H - m.b) + '" opacity="0"/>';
+    s += '<rect x="' + m.l + '" y="' + m.t + '" width="' + (W - m.l - m.r) + '" height="' + (H - m.t - m.b) + '" fill="transparent"/></svg>';
+    host.innerHTML = s;
+    const svg = host.querySelector('svg'), guia = host.querySelector('.guia');
+    if (!calmo && !host._feito) {
+      host._feito = true;
+      $$('.traco', svg).forEach((p) => {
+        const L = p.getTotalLength();
+        p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+        p.getBoundingClientRect();
+        p.style.transition = 'stroke-dashoffset 1.3s cubic-bezier(.4,.1,.2,1)';
+        p.style.strokeDashoffset = '0';
+      });
+    }
+    svg.addEventListener('mousemove', (ev) => {
+      const r = svg.getBoundingClientRect();
+      const vx = (ev.clientX - r.left) * W / r.width;
+      let melhor = 0;
+      pts.forEach((p, i) => { if (Math.abs(X(p.x) - vx) < Math.abs(X(pts[melhor].x) - vx)) melhor = i; });
+      guia.setAttribute('x1', X(pts[melhor].x)); guia.setAttribute('x2', X(pts[melhor].x)); guia.setAttribute('opacity', 1);
+      mostra(cfg.dica(pts[melhor]), ev);
+    });
+    svg.addEventListener('mouseleave', () => { guia.setAttribute('opacity', 0); esconde(); });
+  }
+
+  // ------------------------------------------------------- dispersão
+  function dispersao(host, cfg) {
+    const W = Math.max(240, host.clientWidth), H = 200;
+    const m = { t: 10, r: 10, b: 30, l: 42 };
+    const xs = cfg.pontos.map((p) => p.x), ys = cfg.pontos.map((p) => p.y);
+    const pad = (a, f) => { const lo = Math.min.apply(null, a), hi = Math.max.apply(null, a); const d = (hi - lo) * f || 1; return [lo - d, hi + d]; };
+    const [x0, x1] = pad(xs, 0.08), [y0, y1] = pad(ys, 0.12);
+    const X = (v) => m.l + (v - x0) * (W - m.l - m.r) / (x1 - x0);
+    const Y = (v) => m.t + (y1 - v) * (H - m.t - m.b) / (y1 - y0);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + cfg.aria + '">';
+    for (let k = 0; k <= 2; k++) {
+      const v = y0 + (y1 - y0) * k / 2;
+      s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/>'
+        + '<text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + sinal(v, 1) + '</text>';
+    }
+    if (y0 < 0 && y1 > 0) s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="var(--linha-forte)"/>';
+    for (let k = 0; k <= 2; k++) {
+      const v = x0 + (x1 - x0) * k / 2;
+      s += '<text class="ax" x="' + X(v) + '" y="' + (H - 10) + '" text-anchor="middle">' + cfg.fmtX(v) + '</text>';
+    }
+    s += '<line x1="' + X(x0) + '" x2="' + X(x1) + '" y1="' + Y(cfg.inter + cfg.incl * x0) + '" y2="' + Y(cfg.inter + cfg.incl * x1)
+      + '" stroke="' + cfg.hex + '" stroke-width="1.6" stroke-dasharray="5 4" opacity=".8"/>';
+    cfg.pontos.forEach((p, i) => {
+      s += '<circle data-i="' + i + '" cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="5.5" fill="' + (p.oco ? 'var(--painel)' : cfg.hex)
+        + '" fill-opacity="' + (p.oco ? 1 : 0.85) + '" stroke="' + cfg.hex + '" stroke-width="1.6" style="cursor:pointer"/>';
+    });
+    s += '</svg>';
+    host.innerHTML = s;
+    $$('circle[data-i]', host).forEach((c) => {
+      c.addEventListener('mousemove', (ev) => mostra(cfg.dica(cfg.pontos[+c.dataset.i]), ev));
+      c.addEventListener('mouseleave', esconde);
+    });
+  }
+
+  // ------------------------------------------------------------ estatística
+  const media = (a) => a.reduce((s, v) => s + v, 0) / a.length;
+  const dp = (a) => { const m = media(a); return Math.sqrt(media(a.map((v) => (v - m) * (v - m)))); };
+  function pearson(x, y) {
+    const mx = media(x), my = media(y);
+    let sxy = 0, sxx = 0, syy = 0;
+    x.forEach((v, i) => { sxy += (v - mx) * (y[i] - my); sxx += (v - mx) * (v - mx); syy += (y[i] - my) * (y[i] - my); });
+    return sxx && syy ? sxy / Math.sqrt(sxx * syy) : 0;
+  }
+  function reta(x, y) {
+    const mx = media(x), my = media(y);
+    let sxy = 0, sxx = 0;
+    x.forEach((v, i) => { sxy += (v - mx) * (y[i] - my); sxx += (v - mx) * (v - mx); });
+    const b = sxx ? sxy / sxx : 0;
+    return [b, my - b * mx];
+  }
+  function postos(a) {   // postos com empate pela média, como o pandas
+    const ord = a.map((v, i) => [v, i]).sort((p, q) => p[0] - q[0]), r = new Array(a.length);
+    for (let i = 0; i < ord.length;) {
+      let j = i; while (j + 1 < ord.length && ord[j + 1][0] === ord[i][0]) j++;
+      for (let k = i; k <= j; k++) r[ord[k][1]] = (i + j) / 2 + 1;
+      i = j + 1;
+    }
+    return r;
+  }
+  function forca(r, n) {   // limiar de significância a 5% ≈ 2/√n
+    const lim = 2 / Math.sqrt(Math.max(n, 3)), a = Math.abs(r);
+    if (a < lim) return 'fraca';
+    return a >= Math.max(0.6, lim + 0.15) ? 'forte' : 'moderada';
+  }
+  function analisa(per, melhor) {
+    const y = per.map((p) => p.delta30), corr = [];
+    Object.keys(HAB).forEach((k) => {
+      const x = per.map((p) => p[k]);
+      if (x.length < 4 || dp(x) === 0) return;
+      const r = pearson(x, y), [b, a] = reta(x, y);
+      corr.push({ habito: k, n: x.length, pearson: r, spearman: pearson(postos(x), postos(y)), forca: forca(r, x.length), incl: b, inter: a });
+    });
+    corr.sort((a, b) => Math.abs(b.pearson) - Math.abs(a.pearson));
+    const ordem = per.slice().sort((a, b) => melhor === 'maior' ? b.delta30 - a.delta30 : a.delta30 - b.delta30);
+    const t = Math.max(1, Math.floor(ordem.length / 3));
+    const med = (g, k) => media(g.map((p) => p[k]));
+    const grupo = (g) => { const o = { delta30: med(g, 'delta30') }; Object.keys(HAB).forEach((k) => { o[k] = med(g, k); }); return o; };
+    const dist = {};
+    Object.keys(HAB).forEach((k) => { const x = per.map((p) => p[k]); dist[k] = { media: media(x), desvio: dp(x) || 1 }; });
+    const curtos = per.filter((p) => p.dias <= 35).map((p) => p.delta);
+    dist.ruido = curtos.length > 1 ? dp(curtos) : null;
+    return { corr, tercis: { n: t, melhores: grupo(ordem.slice(0, t)), piores: grupo(ordem.slice(-t)) }, dist };
+  }
+
+  // ------------------------------------------------------------ período
+  const DIA = 864e5;
+  const AVS = D.avaliacoes;
+  const DIAS = D.dias.map((r) => ({ t: ts(r[0]), treino: r[1], cardio: r[2], agua: r[3], jaca: r[4], feitas: r[5],
+    refs: r[6], prod: r[7], trab: r[8], nina: r[9], fer: r[10], meta: r[11] }));
+  const FIM = Math.max(DIAS[DIAS.length - 1].t, ts(AVS[AVS.length - 1].data));
+  const anoFim = new Date(FIM).getFullYear();
+  const PERIODOS = [
+    { id: 'tudo', nome: 'Tudo', ini: -Infinity, fim: Infinity },
+    { id: '12m', nome: 'Últimos 12 meses', ini: FIM - 365 * DIA, fim: Infinity },
+    { id: 'ano', nome: String(anoFim), ini: ts(anoFim + '-01-01'), fim: ts(anoFim + '-12-31') },
+    { id: 'ano1', nome: String(anoFim - 1), ini: ts((anoFim - 1) + '-01-01'), fim: ts((anoFim - 1) + '-12-31') },
+    { id: 'ano2', nome: String(anoFim - 2), ini: ts((anoFim - 2) + '-01-01'), fim: ts((anoFim - 2) + '-12-31') }
+  ].filter((p) => p.fim >= ts(AVS[0].data));
+  let per = PERIODOS.find((p) => p.id === 'ano') || PERIODOS[0];   // padrão: o ano atual
+  const dentro = (t) => t >= per.ini && t <= per.fim;
+  const avNo = () => AVS.filter((a) => dentro(ts(a.data)));
+  // um período entre avaliações pertence ao recorte da avaliação que o fecha
+  const periodosNo = (met) => D.metricas[met].periodos.filter((p) => dentro(ts(p.fim)));
+  function habitosNo() {
+    const sel = DIAS.filter((d) => dentro(d.t));
+    if (!sel.length) return null;
+    const m = (f) => { const v = sel.map(f).filter((x) => x != null); return v.length ? media(v) : null; };
+    return { n: sel.length, ini: sel[0].t, fim: sel[sel.length - 1].t, treino_sem: 7 * m((d) => d.treino), cardio_sem: 7 * m((d) => d.cardio),
+      agua_l: m((d) => d.agua), jaca_dia: m((d) => d.jaca) };
+  }
+  PERIODOS.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = p.nome; b.dataset.id = p.id;
+    b.setAttribute('aria-pressed', p === per);
+    b.addEventListener('click', () => {
+      per = p;
+      $$('#periodos button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.id === p.id));
+      recorte();
+    });
+    $('#periodos').appendChild(b);
+  });
+
+  // ------------------------------------------------------------ abertura
+  function abertura() {
+    const AV = avNo(), H = habitosNo();
+    const comG = AV.filter((a) => a.gordura_kg != null), comM = AV.filter((a) => a.musculo != null);
+    $('#periodo').textContent = per.nome + ' · ' + AV.length + (AV.length === 1 ? ' avaliação' : ' avaliações') + ' · '
+      + (H ? H.n + ' dias de hábitos' : 'sem hábitos registrados') + (AV.length ? ' · ' + dt(AV[0].data) + ' a ' + dt(AV[AV.length - 1].data) : '');
+    if (comG.length < 2) {
+      $('#manchete').textContent = AV.length ? 'Uma avaliação só neste período: escolha um recorte maior para ver a variação.' : 'Nenhuma avaliação neste período.';
+      $('#tese').textContent = '';
+    } else {
+      const g0 = comG[0], g1 = comG[comG.length - 1], m0 = comM[0], m1 = comM[comM.length - 1];
+      const meses = Math.max(1, Math.round((ts(g1.data) - ts(g0.data)) / (30.44 * DIA)));
+      const dg = g1.gordura_kg - g0.gordura_kg, dm = m1 && m0 ? m1.musculo - m0.musculo : null;
+      $('#manchete').innerHTML = 'Em ' + meses + (meses === 1 ? ' mês' : ' meses') + ', <span class="g">' + sinal(dg, 1) + ' kg de gordura</span>'
+        + (dm != null ? ' e <span class="m">' + sinal(dm, 1) + ' kg de músculo</span>' : '') + '.';
+      $('#tese').innerHTML = 'De <b>' + num(g0.gordura_kg, 1) + ' kg</b> (' + num(g0.gordura, 1) + '%) para <b>' + num(g1.gordura_kg, 1) + ' kg</b> ('
+        + num(g1.gordura, 1) + '%) de gordura' + (dm != null ? ', e de <b>' + num(m0.musculo, 1) + '</b> para <b>' + num(m1.musculo, 1) + ' kg</b> de massa muscular' : '')
+        + '; o peso foi de ' + num(g0.peso, 1) + ' a ' + num(g1.peso, 1) + ' kg. A pergunta deste painel: o que estava acontecendo com treino, cardio, água e '
+        + 'alimentação entre uma avaliação e outra, e se isso aparece no corpo.';
+    }
+    const ult = AV[AV.length - 1], pri = AV[0];
+    const kp = $('#kpis'); kp.innerHTML = '';
+    const kpi = (alvo, rot, valor, nota, cor, colore) => {
+      const d = document.createElement('div'); d.className = 'kpi cor'; d.style.setProperty('--cor-k', cor);
+      d.innerHTML = '<span class="rotulo"></span><span class="numero"></span><span class="nota"></span>';
+      d.children[0].textContent = rot; d.children[1].textContent = valor; d.children[2].textContent = nota;
+      if (colore) d.children[1].style.color = cor;
+      alvo.appendChild(d);
+    };
+    if (ult) {
+      const var_ = (k, c, u) => pri && pri !== ult && pri[k] != null && ult[k] != null ? ' · ' + sinal(ult[k] - pri[k], c) + u + ' no período' : '';
+      kpi(kp, '% de gordura', num(ult.gordura, 1) + '%', 'avaliação de ' + dt(ult.data) + var_('gordura', 1, ' pp'), 'var(--gordura)', true);
+      kpi(kp, 'Gordura', num(ult.gordura_kg, 1) + ' kg', 'massa de gordura' + var_('gordura_kg', 1, ' kg'), 'var(--gordura)', true);
+      kpi(kp, 'Massa muscular', ult.musculo != null ? num(ult.musculo, 1) + ' kg' : '—', 'esquelética' + var_('musculo', 1, ' kg'), 'var(--musculo)', true);
+      kpi(kp, 'Peso', num(ult.peso, 1) + ' kg', 'magra ' + num(ult.magra, 1) + ' kg' + var_('peso', 1, ' kg'), 'var(--fraca)');
+    }
+    const kh = $('#kpis-hab'); kh.innerHTML = '';
+    if (H) {
+      kpi(kh, 'Treinos/semana', num(H.treino_sem, 1), 'média do período', 'var(--treino)');
+      kpi(kh, 'Cardios/semana', num(H.cardio_sem, 1), 'média do período', 'var(--cardio)');
+      kpi(kh, 'Água por dia', num(H.agua_l, 2) + ' L', 'média do período', 'var(--agua)');
+      kpi(kh, 'Jaca por dia', num(H.jaca_dia, 2), 'refeições fora do plano', 'var(--jaca)');
+    }
+  }
+
+  // ------------------------------------------------------------ trajetória
+  function composicao(host, lista) {
+    const W = Math.max(280, host.clientWidth), H = 230, m = { t: 22, r: 8, b: 30, l: 40 };
+    if (!lista.length) { host.innerHTML = '<p class="sub">Sem avaliações neste período.</p>'; return; }
+    const max = Math.max.apply(null, lista.map((a) => a.peso)) * 1.08;
+    const bw = (W - m.l - m.r) / lista.length, b = Math.min(46, bw * 0.62);
+    const Y = (v) => m.t + (max - v) * (H - m.t - m.b) / max;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Composição do peso por avaliação">';
+    [0, max / 2, max / 1.08].forEach((v) => { s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v, 0) + '</text>'; });
+    const passoRot = Math.ceil(lista.length / Math.max(1, Math.floor((W - m.l) / 70)));
+    lista.forEach((a, i) => {
+      const cx = m.l + bw * (i + 0.5), x = cx - b / 2;
+      s += '<g class="cb" data-i="' + i + '"><rect x="' + (m.l + bw * i) + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>'
+        + '<rect x="' + x + '" y="' + Y(a.magra) + '" width="' + b + '" height="' + (Y(0) - Y(a.magra)) + '" fill="#4fd1a5" fill-opacity="' + (a.origem === 'InBody' ? 0.85 : 0.45) + '"/>'
+        + '<rect x="' + x + '" y="' + Y(a.peso) + '" width="' + b + '" height="' + Math.max(0, Y(a.magra) - Y(a.peso) - 2) + '" rx="3" fill="#ff8f6b" fill-opacity="' + (a.origem === 'InBody' ? 0.95 : 0.5) + '"/>';
+      if (lista.length <= 14) s += '<text class="ax" x="' + cx + '" y="' + (Y(a.peso) - 6) + '" text-anchor="middle" style="fill:var(--tinta)">' + num(a.peso, 1) + '</text>';
+      if (i % passoRot === 0 || i === lista.length - 1) s += '<text class="ax" x="' + cx + '" y="' + (H - 10) + '" text-anchor="middle">' + dt(a.data).slice(3) + '</text>';
+      s += '</g>';
+    });
+    host.innerHTML = s + '</svg>';
+    $$('.cb', host).forEach((g) => {
+      const a = lista[+g.dataset.i];
+      g.addEventListener('mousemove', (ev) => mostra('<span class="q">Avaliação ' + a.nr + ' · ' + dt(a.data) + ' · ' + a.origem + '</span>Peso <b>' + num(a.peso, 1) + ' kg</b><br>'
+        + '<i style="background:#ff8f6b"></i>Gordura ' + num(a.gordura_kg, 1) + ' kg (' + num(a.gordura, 1) + '%)<br><i style="background:#4fd1a5"></i>Massa magra ' + num(a.magra, 1) + ' kg', ev));
+      g.addEventListener('mouseleave', esconde);
+    });
+  }
+
+  function desenhaTrajetoria() {
+    const AV = avNo();
+    ['gordura', 'musculo'].forEach((k) => {
+      const pts = AV.filter((a) => a[k] != null);
+      const host = $('#g-' + k);
+      if (pts.length < 1) { host.innerHTML = '<p class="sub">Sem avaliações neste período.</p>'; return; }
+      host._feito = false;
+      tempo(host, {
+        aria: k, hex: MET[k].hex, bolinhas: true, altura: 250,
+        fmtY: (v) => num(v, 0),
+        x0: pts.length === 1 ? ts(pts[0].data) - 30 * DIA : null, x1: pts.length === 1 ? ts(pts[0].data) + 30 * DIA : null,
+        pontos: pts.map((a) => ({ x: ts(a.data), y: a[k], oco: a.origem !== 'InBody', a })),
+        dica: (p) => '<span class="q">Avaliação ' + p.a.nr + ' · ' + dt(p.a.data) + ' · ' + p.a.origem + '</span>'
+          + '<i style="background:' + MET[k].hex + '"></i>' + MET[k].fmt(p.y) + (p.a.peso != null ? '  ·  peso ' + num(p.a.peso, 1) + ' kg' : '')
+      });
+    });
+    composicao($('#g-comp'), AV.filter((a) => a.peso != null && a.gordura_kg != null));
+    const sem = D.semanal.filter((s) => dentro(ts(s.semana)));
+    const caixa = $('#habitos-sem');
+    if (!caixa.children.length) {
+      [['treino', 'treino_sem'], ['cardio', 'cardio_sem'], ['agua', 'agua_l'], ['jaca', 'jaca_dia']].forEach((p) => {
+        const c = document.createElement('div');
+        c.className = 'cartao';
+        c.innerHTML = '<h3></h3><div class="tela" id="s-' + p[0] + '"></div>';
+        c.querySelector('h3').textContent = HAB[p[1]].nome;
+        c.querySelector('h3').style.color = HAB[p[1]].cor;
+        caixa.appendChild(c);
+      });
+    }
+    if (sem.length < 2) { $$('#habitos-sem .tela').forEach((t) => { t.innerHTML = '<p class="sub">Poucas semanas neste período.</p>'; }); return; }
+    const x0 = ts(sem[0].semana), x1 = ts(sem[sem.length - 1].semana);
+    [['treino', 'treino_sem'], ['cardio', 'cardio_sem'], ['agua', 'agua_l'], ['jaca', 'jaca_dia']].forEach((p) => {
+      const host = $('#s-' + p[0]); host._feito = false;
+      tempo(host, {
+        aria: HAB[p[1]].nome, hex: HAB[p[1]].hex, area: true, lo: 0, altura: 170, x0, x1, w: 1.8, marcas: AV.map((a) => ts(a.data)),
+        fmtY: (v) => num(v, p[0] === 'agua' || p[0] === 'jaca' ? 1 : 0),
+        pontos: sem.map((s) => ({ x: ts(s.semana), y: s[p[0]], s })),
+        dica: (q) => '<span class="q">Semana de ' + dt(q.s.semana) + '</span>' + HAB[p[1]].fmt(q.y) + ' (média de 4 semanas)'
+      });
+    });
+  }
+
+  const ta = $('#t-anual tbody');
+  D.anual.forEach((a) => {
+    const tr = document.createElement('tr');
+    [String(a.ano), a.registrados + ' de ' + a.corridos, num(a.treino_sem, 1), num(a.cardio_sem, 1), num(a.agua_l, 2) + ' L',
+     num(a.meta_agua_pct, 0) + '%', num(a.jaca_dia, 2), num(a.plano_pct, 0) + '%'].forEach((t) => {
+      const td = document.createElement('td'); td.textContent = t; tr.appendChild(td);
+    });
+    ta.appendChild(tr);
+  });
+
+  // ------------------------------------------------------ período a período
+  function tabelaPeriodos() {
+    const PG = periodosNo('gordura'), PM = D.metricas.musculo.periodos;
+    const tb = $('#t-periodos tbody');
+    tb.innerHTML = '';
+    if (!PG.length) { tb.innerHTML = '<tr><td colspan="11" style="text-align:left;color:var(--fraca)">Nenhum período fecha dentro deste recorte.</td></tr>'; return; }
+    const linhas = PG.map((p) => ({ p, m: PM.find((q) => q.ate === p.ate) }));
+    // músculo 32→34 não tem par na gordura (33 sem músculo): entra na linha 33→34
+    const cols = ['treino_sem', 'cardio_sem', 'agua_l', 'jaca_dia', 'plano_pct'];
+    const faixa = {};
+    cols.forEach((k) => { const v = PG.map((p) => p[k]); faixa[k] = [Math.min.apply(null, v), Math.max.apply(null, v)]; });
+    const dmax = (arr) => Math.max.apply(null, arr.map((v) => Math.abs(v)).concat([1e-9]));
+    const maxG = dmax(PG.map((p) => p.delta30)), maxM = dmax(linhas.filter((l) => l.m).map((l) => l.m.delta30));
+    linhas.forEach(({ p, m }) => {
+      const tr = document.createElement('tr');
+      const td = (t, cls) => { const c = document.createElement('td'); c.textContent = t; if (cls) c.className = cls; tr.appendChild(c); return c; };
+      const c0 = td(p.de + ' → ' + p.ate);
+      const sub = document.createElement('span'); sub.className = 'fraco'; sub.textContent = '  ' + dt(p.ini) + ' a ' + dt(p.fim);
+      c0.appendChild(sub);
+      td(String(p.dias));
+      cols.forEach((k) => {
+        const c = td(HAB[k].fmt(p[k]).replace(' L', ''), 'calor');
+        const f = (p[k] - faixa[k][0]) / Math.max(1e-9, faixa[k][1] - faixa[k][0]);
+        c.style.background = 'color-mix(in srgb, ' + HAB[k].hex + ' ' + Math.round(6 + f * 38) + '%, transparent)';
+      });
+      const cr = td('');
+      cr.title = REF.map((r) => D.refeicoes[r] + ' ' + (p[r + '_pct'] == null ? '—' : num(p[r + '_pct'], 0) + '%')).join(' · ');
+      cr.innerHTML = '<span class="mini5">' + REF.map((r) => '<i style="background:color-mix(in srgb, ' + HAB[r + '_pct'].hex + ' ' + Math.round(8 + 0.9 * (p[r + '_pct'] || 0)) + '%, transparent)"></i>').join('') + '</span>';
+      const delta = (v, max, bomSe, fmt) => {
+        const c = td(v == null ? '—' : fmt(v), 'calor');
+        if (v == null) return c;
+        const bom = v * bomSe > 0;
+        const f = Math.min(1, Math.abs(v) / max);
+        c.style.background = 'color-mix(in srgb, ' + (bom ? '#4fd1a5' : '#ff6f61') + ' ' + Math.round(8 + f * 42) + '%, transparent)';
+        c.style.fontWeight = '600';
+        return c;
+      };
+      delta(p.delta30, maxG, -1, (v) => sinal(v, 2));
+      const cm = delta(m ? m.delta30 : null, maxM, 1, (v) => sinal(v, 2));
+      if (m && m.de !== p.de) cm.title = 'Músculo comparado de ' + m.de + ' a ' + m.ate + ' (a ' + p.de + ' não mediu)';
+      const obs = td('');
+      if (p.baixa_cobertura) { const s = document.createElement('span'); s.className = 'selo aviso'; s.textContent = num(100 * p.cobertura, 0) + '% dos dias'; obs.appendChild(s); }
+      if (p.misto) { const s = document.createElement('span'); s.className = 'selo aviso'; s.textContent = 'aparelho misto'; obs.appendChild(s); }
+      if (m && m.de !== p.de) { const s = document.createElement('span'); s.className = 'selo'; s.textContent = 'músculo desde a ' + m.de; obs.appendChild(s); }
+      tb.appendChild(tr);
+    });
+  }
+
+  // ---------------------------------------------------------- diagnóstico
+  const periodosAtivos = () => periodosNo(estado.met).filter((p) => !estado.confiaveis || p.confiavel);
+
+  function desenhaDiagnostico() {
+    const per_ = periodosAtivos(), M = MET[estado.met], meta = D.metricas[estado.met];
+    const n = per_.length, lim = 2 / Math.sqrt(Math.max(n, 3));
+    $('#d-n').textContent = n;
+    const ver = $('#veredito'), rk = $('#ranking'), tb = $('#t-tercis tbody'), box = $('#dispersoes');
+    ver.innerHTML = ''; rk.innerHTML = ''; tb.innerHTML = ''; box.innerHTML = '';
+    const h = document.createElement('h3'), p = document.createElement('p');
+    ver.appendChild(h); ver.appendChild(p);
+    if (n < 4) {
+      h.textContent = 'Poucos períodos neste recorte';
+      p.textContent = 'São ' + n + ' períodos entre avaliações' + (estado.confiaveis ? ' confiáveis' : '') + '. Com menos de 4 não dá para medir relação nenhuma: escolha "Tudo" ou um recorte maior.';
+      $('#tercis-sub').textContent = '—';
+      return;
+    }
+    const A = analisa(per_, meta.melhor);
+
+    const fortes = A.corr.filter((c) => Math.abs(c.pearson) >= lim);
+    const top = A.corr[0];
+    const desc = (c) => {
+      const sobe = c.pearson * M.bomSe > 0;
+      return HAB[c.habito].nome.toLowerCase() + ' mais alto anda junto com ' + (sobe ? 'melhora' : 'piora') + ' (r = ' + sinal(c.pearson, 2) + ')';
+    };
+    if (fortes.length) {
+      h.textContent = fortes.length === 1 ? 'Um hábito passa do limiar do acaso' : fortes.length + ' hábitos passam do limiar do acaso';
+      p.textContent = 'Com ' + n + ' períodos, só |r| acima de ' + num(lim, 2) + ' se distingue de coincidência. ' + fortes.map(desc).join('; ') + '.';
+    } else {
+      h.textContent = 'Nenhum hábito passa do limiar do acaso';
+      p.textContent = 'Com ' + n + ' períodos, só |r| acima de ' + num(lim, 2) + ' se distingue de coincidência. O sinal mais forte: '
+        + desc(top) + '. Vale como pista, não como prova' + (A.dist.ruido != null ? ': o ruído do aparelho (' + M.dfmt(A.dist.ruido).replace('+', '±') + ' num mês) é do tamanho do efeito.' : '.');
+    }
+
+    A.corr.forEach((c) => {
+      const lin = document.createElement('div'); lin.className = 'rk';
+      const nm = document.createElement('span'); nm.textContent = HAB[c.habito].nome;
+      const ei = document.createElement('div'); ei.className = 'eixo';
+      const lm = document.createElement('div'); lm.className = 'lim';
+      lm.style.left = (50 - 50 * Math.min(1, lim)) + '%'; lm.style.width = (100 * Math.min(1, lim)) + '%';
+      const b = document.createElement('div'); b.className = 'barra';
+      const r = c.pearson;
+      b.style.left = (r < 0 ? 50 + 50 * r : 50) + '%';
+      b.style.width = (50 * Math.abs(r)) + '%';
+      b.style.background = HAB[c.habito].hex;
+      b.style.opacity = Math.abs(r) >= lim ? 1 : 0.55;
+      ei.appendChild(lm); ei.appendChild(b);
+      const v = document.createElement('span'); v.className = 'v';
+      const bb = document.createElement('b'); bb.textContent = sinal(r, 2);
+      v.appendChild(bb); v.appendChild(document.createTextNode('  ' + c.forca));
+      lin.appendChild(nm); lin.appendChild(ei); lin.appendChild(v);
+      rk.appendChild(lin);
+    });
+
+    const T = A.tercis;
+    $('#tercis-sub').textContent = 'Média dos hábitos nos ' + T.n + ' períodos em que ' + (estado.met === 'gordura' ? 'a gordura mais caiu' : 'o músculo mais subiu')
+      + ' (' + M.dfmt(T.melhores.delta30) + '/30d) contra os ' + T.n + ' em que ' + (estado.met === 'gordura' ? 'mais subiu' : 'mais caiu')
+      + ' (' + M.dfmt(T.piores.delta30) + '/30d).';
+    Object.keys(HAB).forEach((k) => {
+      const tr = document.createElement('tr');
+      const dif = T.melhores[k] - T.piores[k];
+      const sep = Math.abs(dif) / (A.dist[k].desvio || 1);
+      [HAB[k].nome, HAB[k].fmt(T.melhores[k]), HAB[k].fmt(T.piores[k])].forEach((t, i) => {
+        const td = document.createElement('td'); td.textContent = t;
+        if (i === 1) td.className = 'bom';
+        tr.appendChild(td);
+      });
+      const td = document.createElement('td');
+      td.textContent = sinal(dif, k === 'plano_pct' ? 0 : 2);
+      const s = document.createElement('span'); s.className = 'selo' + (sep >= 0.5 ? ' bom' : '');
+      s.textContent = sep >= 0.8 ? 'separa bem' : sep >= 0.5 ? 'separa' : 'pouco';
+      td.appendChild(s);
+      tr.appendChild(td);
+      tb.appendChild(tr);
+    });
+
+    // cria todos os cartões antes de desenhar: com um cartão só na grade
+    // ele ocupa a largura toda e o desenho sairia na escala errada
+    const DISP = A.corr.slice(0, 6);   // as 6 relações mais fortes; o ranking mostra todas
+    const telas = DISP.map((c) => {
+      const card = document.createElement('div'); card.className = 'cartao';
+      const t = document.createElement('h3'); t.textContent = HAB[c.habito].nome;
+      const s = document.createElement('p'); s.className = 'sub';
+      s.textContent = 'r = ' + sinal(c.pearson, 2) + ' · Spearman ' + sinal(c.spearman, 2) + ' · n = ' + c.n;
+      const tela = document.createElement('div'); tela.className = 'tela';
+      card.appendChild(t); card.appendChild(s); card.appendChild(tela);
+      box.appendChild(card);
+      return tela;
+    });
+    DISP.forEach((c, i) => {
+      dispersao(telas[i], {
+        aria: HAB[c.habito].nome, hex: HAB[c.habito].hex, incl: c.incl, inter: c.inter,
+        fmtX: (v) => HAB[c.habito].fmt(v),
+        pontos: per_.map((q) => ({ x: q[c.habito], y: q.delta30, oco: !q.confiavel, p: q })),
+        dica: (q) => '<span class="q">Avaliação ' + q.p.de + ' → ' + q.p.ate + ' · ' + q.p.dias + ' dias' + (q.p.confiavel ? '' : ' · marcado') + '</span>'
+          + HAB[c.habito].nome + ': ' + HAB[c.habito].fmt(q.x) + '<br>' + meta.nome + ': ' + M.dfmt(q.y) + ' /30d'
+      });
+    });
+  }
+
+  // ------------------------------------------------------------ simulador
+  // Composição: peso = magra + gordura. Cada hábito move a gordura e a
+  // magra por mês (efeito já misturado entre fisiologia e seus dados, no
+  // Python); o nível parte do ritmo médio real desde 2024.
+  const SIM = D.simulador;
+  const BASE = AVS.filter((a) => a.gordura_kg != null && a.magra != null).slice(-1)[0];
+  const G0 = BASE.gordura_kg, M0 = BASE.magra;
+  const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const mesDaqui = (k) => { const d = new Date(ts(BASE.data)); d.setMonth(d.getMonth() + Math.round(k)); return MESES[d.getMonth()] + '/' + String(d.getFullYear()).slice(2); };
+  const kg = (v, c) => num(v, c == null ? 1 : c) + ' kg';
+  const sim = { pct: Math.max(6, Math.round(BASE.gordura - 1.3)), magra: Math.round(M0 * 10) / 10, prazo: 6, h: {} };
+
+  function ritmo(h) {
+    let g = SIM.base.g, m = SIM.base.m, vg = SIM.se_base.g ** 2, vm = SIM.se_base.m ** 2;
+    SIM_HAB.forEach((k) => {
+      const d = h[k] - SIM.hbar[k], eg = SIM.efeito.g[k], em = SIM.efeito.m[k];
+      g += eg.usado * d; m += em.usado * d; vg += (eg.dp * d) ** 2; vm += (em.dp * d) ** 2;
+    });
+    return { g, m, sg: Math.sqrt(vg), sm: Math.sqrt(vm) };
+  }
+  // Perder gordura fica mais lento quanto menos gordura resta: a perda é
+  // proporcional à gordura do momento (rg é o ritmo de hoje). Ganho e
+  // massa magra seguem em linha reta.
+  const estadoEm = (rg, rm, t) => {
+    const m = M0 + rm * t;
+    const g = Math.max(rg < 0 ? G0 * Math.exp(rg * t / G0) : G0 + rg * t, 0.05 * m / 0.95);   // piso de 5% de gordura
+    return { g, m, peso: g + m, pct: g / (g + m) };
+  };
+  function tempoAte(rg, rm, p) {
+    if (G0 / (G0 + M0) <= p) return 0;
+    if (estadoEm(rg, rm, 120).pct > p) return null;
+    let a = 0, b = 120;
+    for (let i = 0; i < 40; i++) { const c = (a + b) / 2; if (estadoEm(rg, rm, c).pct > p) a = c; else b = c; }
+    return b;
+  }
+
+  const CTL_OBJ = [
+    { id: 'pct', nome: '% de gordura alvo', cor: '#ff8f6b', min: 6, max: Math.ceil(BASE.gordura + 4), passo: 0.1, fmt: (v) => num(v, 1) + '%' },
+    { id: 'magra', nome: 'Massa magra alvo', cor: '#4fd1a5', min: Math.floor(M0 - 4), max: Math.ceil(M0 + 6), passo: 0.1,
+      fmt: (v) => kg(v) + (Math.abs(v - M0) < 0.05 ? ' · manter' : '') },
+    { id: 'prazo', nome: 'Prazo', cor: '#e8f2f0', min: 1, max: 24, passo: 1, fmt: (v) => v + (v === 1 ? ' mês' : ' meses') }
+  ];
+  const objTxt = document.createElement('p'); objTxt.className = 'alvo-txt';
+  function controle(caixa, c, valor, aoMudar) {
+    const d = document.createElement('div'); d.className = 'ctl'; d.style.setProperty('--cor-h', c.cor);
+    d.innerHTML = '<div class="topo"><span class="t"><i></i><span></span></span><b></b></div><input type="range"><p class="diz"></p>';
+    d.querySelector('.t span').textContent = c.nome;
+    const inp = d.querySelector('input');
+    inp.min = c.min; inp.max = c.max; inp.step = c.passo; inp.value = valor;
+    inp.setAttribute('aria-label', c.nome);
+    inp.addEventListener('input', () => aoMudar(Number(inp.value)));
+    caixa.appendChild(d);
+    return { d, inp, b: d.querySelector('b'), diz: d.querySelector('.diz') };
+  }
+  const objCtl = {};
+  CTL_OBJ.forEach((c) => { objCtl[c.id] = controle($('#s-objetivo'), c, sim[c.id], (v) => { sim[c.id] = v; simula(); }); });
+  $('#s-objetivo').appendChild(objTxt);
+  const habCtl = {};
+  SIM_HAB.forEach((k) => {
+    const h = HAB[k];
+    habCtl[k] = controle($('#s-fatores'), { nome: h.nome, cor: h.hex, min: h.min, max: h.max, passo: h.passo }, 0, (v) => { sim.h[k] = v; simula(); });
+  });
+  function reinicia() {
+    SIM_HAB.forEach((k) => {
+      const h = HAB[k];
+      const v = Math.min(h.max, Math.max(h.min, D.ultimos30[k]));
+      sim.h[k] = Math.round(v / h.passo) * h.passo;
+      habCtl[k].inp.value = sim.h[k];
+    });
+  }
+  $('#s-reset').addEventListener('click', () => { reinicia(); simula(); });
+
+  // onde está hoje
+  [['% de gordura', num(BASE.gordura, 1) + '%', '#ff8f6b'], ['Gordura', kg(G0), '#ff8f6b'], ['Massa magra', kg(M0), '#4fd1a5'], ['Peso', kg(BASE.peso), '#e8f2f0']]
+    .forEach((c) => { const d = document.createElement('div'); d.innerHTML = '<span></span><b></b>'; d.children[0].textContent = c[0]; d.children[1].textContent = c[1]; d.children[1].style.color = c[2]; $('#s-agora').appendChild(d); });
+  $('#s-agora-data').textContent = 'Avaliação ' + BASE.nr + ' (' + dt(BASE.data) + ', ' + BASE.origem + '). Massa magra = peso − gordura.';
+
+  // tabela de premissas
+  (function () {
+    const tb = $('#t-efeitos tbody');
+    const u = { treino_sem: '+1 treino/semana', cardio_sem: '+1 cardio/semana', agua_l: '+1 L de água/dia', jaca_dia: '+1 refeição jaca/dia' };
+    SIM_HAB.forEach((k) => {
+      const e = SIM.efeito.g[k], em = SIM.efeito.m[k], tr = document.createElement('tr');
+      [u[k], sinal(e.priori, 2) + ' kg', sinal(e.dados, 2) + ' ± ' + num(e.dp_dados, 2), sinal(e.usado, 2) + ' kg/mês', num(100 * e.peso_dados, 0) + '%', sinal(em.usado, 2) + ' kg/mês']
+        .forEach((t) => { const td = document.createElement('td'); td.textContent = t; tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+    $('#s-base').textContent = sinal(SIM.base.g, 2) + ' kg de gordura e ' + sinal(SIM.base.m, 2) + ' kg de massa magra por mês, em ' + SIM.n + ' períodos';
+    $('#s-ruido-g').textContent = '±' + kg(SIM.ruido.g);
+    $('#s-ruido-m').textContent = '±' + kg(SIM.ruido.m);
+  })();
+
+  function grafPct(host, cen, ot, pe, H, alvo, prazo) {
+    const W = Math.max(280, host.clientWidth), Hh = 230, m = { t: 14, r: 12, b: 26, l: 44 };
+    const todos = cen.concat(ot, pe).map((e) => 100 * e.pct).concat([100 * alvo]);
+    let lo = Math.min.apply(null, todos), hi = Math.max.apply(null, todos);
+    const f = (hi - lo) * 0.12 || 1; lo -= f; hi += f;
+    const X = (t) => m.l + t * (W - m.l - m.r) / H, Y = (v) => m.t + (hi - v) * (Hh - m.t - m.b) / (hi - lo);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="% de gordura projetada">';
+    for (let k = 0; k <= 3; k++) { const v = lo + (hi - lo) * k / 3; s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v, 1) + '%</text>'; }
+    const passo = H <= 12 ? 2 : H <= 24 ? 3 : 6;
+    for (let t = 0; t <= H; t += passo) s += '<text class="ax" x="' + X(t) + '" y="' + (Hh - 8) + '" text-anchor="middle">' + (t ? mesDaqui(t) : 'hoje') + '</text>';
+    const linha = (arr) => arr.map((e, t) => (t ? 'L' : 'M') + X(t).toFixed(1) + ',' + Y(100 * e.pct).toFixed(1)).join('');
+    const faixa = ot.map((e, t) => (t ? 'L' : 'M') + X(t).toFixed(1) + ',' + Y(100 * e.pct).toFixed(1)).join('')
+      + pe.slice().reverse().map((e, i) => 'L' + X(H - i).toFixed(1) + ',' + Y(100 * e.pct).toFixed(1)).join('') + 'Z';
+    s += '<path d="' + faixa + '" fill="#ff8f6b" fill-opacity=".12"/>'
+      + '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(100 * alvo) + '" y2="' + Y(100 * alvo) + '" stroke="#4fd1a5" stroke-width="1.6" stroke-dasharray="6 4"/>'
+      + '<text class="ax" x="' + (W - m.r) + '" y="' + (Y(100 * alvo) - 6) + '" text-anchor="end" style="fill:#4fd1a5">objetivo ' + num(100 * alvo, 1) + '%</text>';
+    if (prazo <= H) s += '<line x1="' + X(prazo) + '" x2="' + X(prazo) + '" y1="' + m.t + '" y2="' + (Hh - m.b) + '" stroke="#5d7774" stroke-dasharray="2 4"/>'
+      + '<text class="ax" x="' + (X(prazo) + 4) + '" y="' + (m.t + 10) + '">prazo</text>';
+    s += '<path d="' + linha(cen) + '" fill="none" stroke="#ff8f6b" stroke-width="2.4" stroke-linejoin="round"/>'
+      + '<circle cx="' + X(0) + '" cy="' + Y(100 * cen[0].pct) + '" r="4.5" fill="#ff8f6b" stroke="#0e1d21" stroke-width="2"/>';
+    const passoX = (W - m.l - m.r) / H;
+    for (let t = 0; t <= H; t++) s += '<rect class="sp" data-t="' + t + '" x="' + (X(t) - passoX / 2) + '" y="' + m.t + '" width="' + passoX + '" height="' + (Hh - m.t - m.b) + '" fill="transparent"/>';
+    host.innerHTML = s + '</svg>';
+    $$('.sp', host).forEach((r) => {
+      const t = +r.dataset.t, e = cen[t];
+      r.addEventListener('mousemove', (ev) => mostra('<span class="q">' + (t ? mesDaqui(t) + ' · em ' + t + (t === 1 ? ' mês' : ' meses') : 'Hoje') + '</span>'
+        + '<b>' + num(100 * e.pct, 1) + '%</b> de gordura<br>faixa ' + num(100 * ot[t].pct, 1) + '% a ' + num(100 * pe[t].pct, 1) + '%', ev));
+      r.addEventListener('mouseleave', esconde);
+    });
+  }
+
+  // duas linhas lado a lado, cada uma no seu eixo: gordura (6-10 kg) e
+  // magra (~62 kg) num eixo só achatariam a gordura, que é o que muda
+  function grafLinha(host, vals, alvo, cor, nome, H) {
+    const W = Math.max(220, host.clientWidth), Hh = 190, m = { t: 14, r: 10, b: 26, l: 40 };
+    let lo = Math.min(alvo, Math.min.apply(null, vals)), hi = Math.max(alvo, Math.max.apply(null, vals));
+    const f = (hi - lo) * 0.18 || 0.5; lo -= f; hi += f;
+    const X = (t) => m.l + t * (W - m.l - m.r) / H, Y = (v) => m.t + (hi - v) * (Hh - m.t - m.b) / (hi - lo);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="' + nome + ' projetada">';
+    for (let k = 0; k <= 2; k++) { const v = lo + (hi - lo) * k / 2; s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v, 1) + '</text>'; }
+    const passo = H <= 12 ? 3 : H <= 24 ? 6 : 12;
+    for (let t = 0; t <= H; t += passo) s += '<text class="ax" x="' + X(t) + '" y="' + (Hh - 8) + '" text-anchor="middle">' + (t ? mesDaqui(t) : 'hoje') + '</text>';
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(alvo) + '" y2="' + Y(alvo) + '" stroke="#e8f2f0" stroke-width="1.3" stroke-dasharray="6 4" opacity=".6"/>'
+      + '<text class="ax" x="' + (W - m.r) + '" y="' + (Y(alvo) - 6) + '" text-anchor="end" style="fill:var(--tinta)">objetivo ' + kg(alvo) + '</text>';
+    const d = vals.map((v, t) => (t ? 'L' : 'M') + X(t).toFixed(1) + ',' + Y(v).toFixed(1)).join('');
+    s += '<path d="' + d + 'L' + X(H) + ',' + Y(lo) + 'L' + X(0) + ',' + Y(lo) + 'Z" fill="' + cor + '" fill-opacity=".12"/>'
+      + '<path d="' + d + '" fill="none" stroke="' + cor + '" stroke-width="2.4" stroke-linejoin="round"/>'
+      + '<circle cx="' + X(H) + '" cy="' + Y(vals[H]) + '" r="4" fill="' + cor + '" stroke="#0e1d21" stroke-width="2"/>';
+    const px = (W - m.l - m.r) / H;
+    for (let t = 0; t <= H; t++) s += '<rect class="sl" data-t="' + t + '" x="' + (X(t) - px / 2) + '" y="' + m.t + '" width="' + px + '" height="' + (Hh - m.t - m.b) + '" fill="transparent"/>';
+    host.innerHTML = s + '</svg>';
+    $$('.sl', host).forEach((r) => {
+      const t = +r.dataset.t;
+      r.addEventListener('mousemove', (ev) => mostra('<span class="q">' + (t ? mesDaqui(t) : 'Hoje') + '</span>' + nome + ' <b>' + kg(vals[t]) + '</b>', ev));
+      r.addEventListener('mouseleave', esconde);
+    });
+  }
+
+  function simula() {
+    const p = sim.pct / 100, T = sim.prazo;
+    // objetivo em kg: mantida a massa magra alvo, peso = magra / (1 − p)
+    const pesoAlvo = sim.magra / (1 - p), gAlvo = pesoAlvo - sim.magra;
+    CTL_OBJ.forEach((c) => { objCtl[c.id].b.textContent = c.fmt(sim[c.id]); });
+    objCtl.pct.diz.textContent = 'hoje ' + num(BASE.gordura, 1) + '%';
+    objCtl.magra.diz.textContent = 'hoje ' + kg(M0) + (sim.magra > M0 + 0.05 ? ' · ganhar massa magra pede treino e comida, e vem devagar' : '');
+    objCtl.prazo.diz.textContent = 'até ' + mesDaqui(T);
+    objTxt.innerHTML = 'Objetivo: <b>' + kg(pesoAlvo) + '</b> de peso, com <b>' + kg(gAlvo) + '</b> de gordura (' + sinal(gAlvo - G0, 1) + ' kg) e <b>'
+      + kg(sim.magra) + '</b> de massa magra (' + sinal(sim.magra - M0, 1) + ' kg).';
+
+    const r = ritmo(sim.h);
+    SIM_HAB.forEach((k) => {
+      const h = HAB[k], c = habCtl[k], eg = SIM.efeito.g[k], em = SIM.efeito.m[k];
+      c.b.textContent = h.fmt(sim.h[k]);
+      const un = { treino_sem: '+1/sem', cardio_sem: '+1/sem', agua_l: '+1 L', jaca_dia: '+1/dia' }[k];
+      c.diz.innerHTML = 'Cada ' + un + ': <b>' + sinal(eg.usado, 2) + ' kg</b> de gordura e ' + sinal(em.usado, 2) + ' kg de magra por mês · últimos 30 dias: ' + h.fmt(D.ultimos30[k]);
+    });
+
+    const t = tempoAte(r.g, r.m, p), tOt = tempoAte(r.g - r.sg, r.m + r.sm, p), tPe = tempoAte(r.g + r.sg, r.m - r.sm, p);
+    $('#s-cheg-rot').textContent = 'Você chega a ' + num(sim.pct, 1) + '% de gordura';
+    const ch = $('#s-cheg'), txt = $('#s-cheg-txt');
+    if (t === 0) { ch.textContent = 'já está lá'; ch.className = 'numero bom'; txt.innerHTML = 'A última avaliação já está em ' + num(BASE.gordura, 1) + '%.'; }
+    else if (t == null) {
+      ch.textContent = 'não chega neste ritmo'; ch.className = 'numero ruim';
+      txt.innerHTML = 'Com estes hábitos a % de gordura ' + (r.g - (sim.pct / (100 - sim.pct)) * r.m >= 0 ? 'sobe ou fica parada' : 'cai devagar demais') + '. Mexa nos hábitos à esquerda.';
+    } else {
+      const e = estadoEm(r.g, r.m, t);
+      ch.textContent = 'em ~' + (t < 1 ? 'menos de 1 mês' : num(t, t < 10 ? 1 : 0) + ' meses'); ch.className = 'numero ' + (t <= T ? 'bom' : '');
+      txt.innerHTML = 'Por volta de <b>' + mesDaqui(t) + '</b>, pesando ~<b>' + kg(e.peso) + '</b> (' + kg(e.g) + ' de gordura e ' + kg(e.m) + ' de massa magra). '
+        + 'Faixa provável: ' + (tOt != null ? num(tOt, 1) : '—') + ' a ' + (tPe != null ? num(tPe, 1) + ' meses' : 'não chega no cenário pessimista') + '.';
+    }
+    if (sim.magra > M0 + 0.05) {
+      const tm = r.m > 0 ? (sim.magra - M0) / r.m : null;
+      txt.innerHTML += ' Massa magra de ' + kg(sim.magra) + ': ' + (tm != null ? 'em ~' + num(tm, 1) + ' meses.' : 'não sobe com estes hábitos.');
+    }
+
+    const rit = $('#s-ritmos'); rit.innerHTML = '';
+    const e1 = estadoEm(r.g, r.m, 1);
+    [['Gordura por mês', sinal(r.g, 2) + ' kg', '± ' + num(r.sg, 2) + ' · histórico ' + sinal(SIM.base.g, 2), r.g < 0 ? 'bom' : 'ruim'],
+     ['Massa magra por mês', sinal(r.m, 2) + ' kg', '± ' + num(r.sm, 2) + ' · histórico ' + sinal(SIM.base.m, 2), r.m > 0 ? 'bom' : 'ruim'],
+     ['% de gordura por mês', sinal(100 * (e1.pct - G0 / (G0 + M0)), 2) + ' pp', 'no primeiro mês', e1.pct < G0 / (G0 + M0) ? 'bom' : 'ruim'],
+     ['Peso por mês', sinal(r.g + r.m, 2) + ' kg', 'gordura + magra', '']]
+      .forEach((c) => { const d = document.createElement('div'); d.innerHTML = '<span class="rotulo"></span><span class="numero"></span><small></small>';
+        d.children[0].textContent = c[0]; d.children[1].textContent = c[1]; d.children[1].className = 'numero ' + c[3]; d.children[2].textContent = c[2]; rit.appendChild(d); });
+
+    const eT = estadoEm(r.g, r.m, T);
+    $('#s-prazo-rot').textContent = 'Em ' + T + (T === 1 ? ' mês' : ' meses') + ' (' + mesDaqui(T) + ')';
+    const pz = $('#s-prazo'); pz.innerHTML = '';
+    const ok = eT.pct <= p + 1e-9;
+    [['% de gordura', num(100 * eT.pct, 1) + '%', ok ? 'dentro do objetivo' : 'objetivo ' + num(sim.pct, 1) + '%', ok ? 'bom' : 'ruim'],
+     ['Gordura', kg(eT.g), 'objetivo ' + kg(gAlvo), eT.g <= gAlvo + 0.05 ? 'bom' : ''],
+     ['Massa magra', kg(eT.m), 'objetivo ' + kg(sim.magra), eT.m >= sim.magra - 0.05 ? 'bom' : ''],
+     ['Peso', kg(eT.peso), 'objetivo ' + kg(pesoAlvo), '']]
+      .forEach((c) => { const d = document.createElement('div'); d.innerHTML = '<span class="rotulo"></span><span class="numero"></span><small></small>';
+        d.children[0].textContent = c[0]; d.children[1].textContent = c[1]; d.children[1].className = 'numero ' + c[3]; d.children[2].textContent = c[2]; pz.appendChild(d); });
+
+    // o que fecha a diferença no prazo, um hábito de cada vez
+    const fz = $('#s-fecha'); fz.innerHTML = '';
+    // ritmo de hoje que chega no prazo, com a mesma desaceleração
+    let rgPreciso = -0.001;
+    for (let i = 0; i < 400 && estadoEm(rgPreciso, r.m, T).pct > p; i++) rgPreciso -= 0.01;
+    const pp = document.createElement('p');
+    if (ok) {
+      pp.innerHTML = '<b class="bom">Cabe no prazo.</b> ' + (t != null && t > 0 ? (T - t < 0.15 ? 'No limite do prazo.' : 'Sobram ~' + num(T - t, 1) + ' meses de folga.') : '');
+      fz.appendChild(pp);
+    } else {
+      pp.innerHTML = 'Para chegar em ' + T + (T === 1 ? ' mês' : ' meses') + ', a gordura precisa começar caindo <b>' + num(Math.abs(rgPreciso), 2) + ' kg por mês</b>; com estes hábitos '
+        + (r.g < 0 ? 'cai ' + num(Math.abs(r.g), 2) : 'sobe ' + num(r.g, 2)) + '. O que fecha a diferença, mexendo em um hábito só:'
+        + (rgPreciso < -1.5 ? ' <b class="ruim">Ritmo agressivo:</b> mais de 1,5 kg de gordura por mês costuma levar massa magra junto.' : '');
+      fz.appendChild(pp);
+      const lista = document.createElement('div'); lista.className = 'sugestoes'; lista.style.marginTop = '10px';
+      SIM_HAB.forEach((hk) => {
+        const h = HAB[hk], dir = SIM.efeito.g[hk].usado < 0 ? 1 : -1;
+        let v = sim.h[hk], achou = null;
+        for (let i = 0; i < 400; i++) {
+          v = Math.round((v + dir * h.passo) / h.passo) * h.passo;
+          if (v < h.min - 1e-9 || v > h.max + 1e-9) break;
+          const hh = Object.assign({}, sim.h, { [hk]: v }), rr = ritmo(hh);
+          if (estadoEm(rr.g, rr.m, T).pct <= p) { achou = v; break; }
+        }
+        const d = document.createElement('div'); d.className = 'sug' + (achou == null ? ' nao' : '');
+        const tx = document.createElement('span');
+        tx.innerHTML = '<b>' + h.nome + '</b>: ' + (achou == null ? 'sozinho não basta dentro da faixa' : h.fmt(sim.h[hk]) + ' → <b>' + h.fmt(achou) + '</b>');
+        d.appendChild(tx);
+        if (achou != null) {
+          const bt = document.createElement('button'); bt.type = 'button'; bt.className = 'botao'; bt.textContent = 'Aplicar';
+          bt.addEventListener('click', () => { sim.h[hk] = achou; habCtl[hk].inp.value = achou; simula(); });
+          d.appendChild(bt);
+        }
+        lista.appendChild(d);
+      });
+      fz.appendChild(lista);
+    }
+
+    // horizonte dos gráficos: o prazo, a chegada e uma folga
+    const H = Math.min(36, Math.max(6, T + 2, t != null ? Math.ceil(t) + 2 : 0));
+    const serie = (rg, rm) => Array.from({ length: H + 1 }, (_, i) => estadoEm(rg, rm, i));
+    const cen = serie(r.g, r.m);
+    grafPct($('#g-sim-pct'), cen, serie(r.g - r.sg, r.m + r.sm), serie(r.g + r.sg, r.m - r.sm), H, p, T);
+    grafLinha($('#g-sim-g'), cen.map((e) => e.g), gAlvo, '#ff8f6b', 'Gordura', H);
+    grafLinha($('#g-sim-m'), cen.map((e) => e.m), sim.magra, '#4fd1a5', 'Massa magra', H);
+    $('#s-aviso').innerHTML = r.g < 2 * SIM.base.g - 0.3 ? 'Este ritmo de gordura (' + sinal(r.g, 2) + ' kg/mês) é bem mais rápido que o seu histórico desde 2024 ('
+      + sinal(SIM.base.g, 2) + '): vale como direção, e a próxima avaliação diz se está se confirmando.' : '';
+  }
+
+  // ------------------------------------------------------- controles comuns
+  $$('.segmento[aria-label="Métrica"] button').forEach((b) => b.addEventListener('click', () => {
+    estado.met = b.dataset.met;
+    $$('.segmento[aria-label="Métrica"] button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.met === estado.met));
+    desenhaDiagnostico();
+  }));
+  $$('.t-confiaveis').forEach((c) => c.addEventListener('change', () => {
+    estado.confiaveis = c.checked;
+    $$('.t-confiaveis').forEach((x) => { x.checked = estado.confiaveis; });
+    desenhaDiagnostico(); refeicoes();
+  }));
+
+  // ------------------------------------------------------------- notas
+  $('#n-dias').textContent = D.dias_n + ' dias, de ' + dt(D.dias_ini) + ' a ' + dt(D.dias_fim);
+  const ruido = (met) => { const c = D.metricas[met].periodos.filter((q) => q.dias <= 35).map((q) => q.delta); return c.length > 1 ? dp(c) : null; };
+  $('#n-ruido-g').textContent = '±' + num(ruido('gordura'), 1) + ' pp';
+  $('#n-ruido-m').textContent = '±' + num(ruido('musculo'), 1) + ' kg';
+  $('#n-meta').textContent = D.meta_agua_dias + ' de ' + D.dias_n + ' dias (' + num(100 * D.meta_agua_dias / D.dias_n, 0) + '%)';
+  $('#n-gerado').textContent = D.gerado;
+
+  // ------------------------------------------------------ entrada e resize
+  const obs = 'IntersectionObserver' in window ? new IntersectionObserver((ents) => {
+    ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visto'); obs.unobserve(e.target); } });
+  }, { threshold: 0.08 }) : null;
+  $$('.entra').forEach((s) => { if (obs) obs.observe(s); else s.classList.add('visto'); });
+
+
+  // ------------------------------------------------------------ por membro
+  // [data, nr, [[magra kg, gordura kg, magra % padrão, gordura % padrão] por segmento]]
+  const SEG = D.membros.segmentos, SEG_COR = ['#a68cff', '#3cc8ea', '#ffb547', '#4fd1a5', '#ff8fab'];
+  const SEG_AREA = ['be', 'bd', 'tr', 'pe', 'pd'];
+  const MEM = [{ nome: 'Massa magra', kg: 0, pct: 2, bomSe: 1 }, { nome: 'Gordura', kg: 1, pct: 3, bomSe: -1 }];
+  // massa magra fora da curva (exame lido por OCR, coluna trocada): mais de 35% longe da mediana das 3
+  // anteriores sai da conta. Gordura varia de verdade nessa ordem, por isso fica de fora do teste
+  const SUSPEITOS = [];
+  const MEMB = D.membros.aval.map((a, i, todos) => ({ data: a[0], nr: a[1], v: a[2].map((seg, s) => seg.map((x, k) => {
+    if (x == null || k !== 0) return x;
+    const ant = todos.slice(Math.max(0, i - 3), i).map((b) => b[2][s][k]).filter((y) => y != null).sort((p, q) => p - q);
+    if (ant.length >= 2) {
+      const med = ant[Math.floor(ant.length / 2)];
+      if (med > 0.8 && Math.abs(x / med - 1) > 0.35) { SUSPEITOS.push({ data: a[0], seg: SEG[s], med: MEM[k].nome, v: x, ref: med }); return null; }
+    }
+    return x;
+  })) }));
+  let memMet = 0;
+  MEM.forEach((m, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = m.nome; b.dataset.i = i;
+    b.setAttribute('aria-pressed', i === memMet);
+    b.addEventListener('click', () => { memMet = i; $$('#mem-met button').forEach((x) => x.setAttribute('aria-pressed', +x.dataset.i === i)); membros(); });
+    $('#mem-met').appendChild(b);
+  });
+  function membros() {
+    const M = MEM[memMet], lista = MEMB.filter((a) => dentro(ts(a.data)));
+    const corpo = $('#mem-corpo'); corpo.innerHTML = '';
+    // primeira e última avaliação do período com o valor daquele segmento
+    const ponta = (s, k, ultima) => { const l = lista.filter((a) => a.v[s][k] != null); return l.length ? (ultima ? l[l.length - 1] : l[0]) : null; };
+    const deltas = [];
+    SEG.forEach((nome, s) => {
+      const a1 = ponta(s, M.kg, true), a0 = ponta(s, M.kg, false), p1 = ponta(s, M.pct, true);
+      const d = a1 && a0 && a1 !== a0 ? a1.v[s][M.kg] - a0.v[s][M.kg] : null;
+      if (d != null) deltas.push({ s, d, rel: d / a0.v[s][M.kg] });
+      const el = document.createElement('div'); el.className = 'membro'; el.style.setProperty('--cor-s', SEG_COR[s]); el.style.gridArea = SEG_AREA[s];
+      const bom = d == null ? '' : d * M.bomSe > 0 ? 'bom' : d * M.bomSe < 0 ? 'ruim' : '';
+      el.innerHTML = '<span class="rotulo">' + nome + '</span>'
+        + '<span class="numero">' + (a1 ? num(a1.v[s][M.kg], 2) + ' kg' : '—') + '</span>'
+        + '<span class="nota ' + bom + '">' + (d == null ? (a1 ? 'uma medição no período' : 'sem medição no período')
+          : sinal(d, 2) + ' kg desde ' + dt(a0.data) + ' (' + sinal(100 * d / a0.v[s][M.kg], 0) + '%)') + '</span>'
+        + (p1 ? '<span class="nota">' + num(p1.v[s][M.pct], 0) + '% do padrão</span><div class="padrao"><span style="width:' + Math.min(100, p1.v[s][M.pct] / 1.6) + '%"></span></div>' : '');
+      corpo.appendChild(el);
+    });
+    const ult = lista[lista.length - 1];
+    const susp = SUSPEITOS.filter((x) => dentro(ts(x.data)));
+    $('#mem-sub').innerHTML = (lista.length ? lista.length + (lista.length === 1 ? ' avaliação segmentar' : ' avaliações segmentares') + ' no período, a última em ' + dt(ult.data) + '.'
+        : 'Nenhuma avaliação segmentar neste período (o InBody segmentar começa em 2018).')
+      + (susp.length ? ' <span class="aviso">' + susp.map((x) => x.med.toLowerCase() + ' do ' + x.seg.toLowerCase() + ' em ' + dt(x.data) + ' (' + num(x.v, 2) + ' kg, contra ~' + num(x.ref, 1) + ' kg nas anteriores)').join('; ')
+        + ': parece erro de leitura do exame e ficou fora da conta.</span>' : '');
+    if (deltas.length) {
+      const melhor = deltas.slice().sort((a, b) => b.rel * M.bomSe - a.rel * M.bomSe)[0], pior = deltas.slice().sort((a, b) => a.rel * M.bomSe - b.rel * M.bomSe)[0];
+      $('#mem-titulo').textContent = M.nome + ': ' + SEG[melhor.s].toLowerCase() + (melhor.d * M.bomSe > 0 ? ' foi o que mais ' + (memMet ? 'perdeu' : 'ganhou') + ' (' + sinal(melhor.d, 2) + ' kg)' : ' foi o que menos piorou')
+        + (pior.s !== melhor.s && pior.d * M.bomSe < 0 ? '; ' + SEG[pior.s].toLowerCase() + ' foi na contramão' : '');
+    } else $('#mem-titulo').textContent = 'Braços, tronco e pernas';
+
+    // gráfico em % do padrão
+    const host = $('#g-mem');
+    $('#mem-leg').innerHTML = SEG.map((n, s) => '<span><i style="background:' + SEG_COR[s] + '"></i>' + n + '</span>').join('');
+    const pts = SEG.map((n, s) => lista.filter((a) => a.v[s][M.pct] != null && a.v[s][M.kg] != null).map((a) => ({ x: ts(a.data), y: a.v[s][M.pct], a })));
+    const todos = [].concat.apply([], pts);
+    if (lista.length < 2) host.innerHTML = '<p class="sub">Precisa de pelo menos duas avaliações segmentares no período.</p>';
+    else {
+      const W = Math.max(280, host.clientWidth), H = 240, m = { t: 14, r: 14, b: 26, l: 44 };
+      const xs = todos.map((p) => p.x), x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+      const ys = todos.map((p) => p.y), lo = Math.floor(Math.min(90, Math.min.apply(null, ys)) / 10) * 10, hi = Math.ceil(Math.max.apply(null, ys) / 10) * 10 + 5;
+      const X = (x) => m.l + (x1 === x0 ? 0.5 : (x - x0) / (x1 - x0)) * (W - m.l - m.r), Y = (y) => m.t + (hi - y) * (H - m.t - m.b) / (hi - lo);
+      let sv = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Membros em % do padrão">';
+      const passo = hi - lo > 80 ? 20 : 10;
+      for (let y = Math.ceil(lo / passo) * passo; y <= hi; y += passo) sv += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(y) + '" y2="' + Y(y) + '"' + (y === 100 ? ' style="stroke:var(--linha-forte);stroke-dasharray:4 3"' : '') + '/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(y) + 4) + '" text-anchor="end">' + y + '%</text>';
+      const a0 = new Date(x0).getFullYear(), a1 = new Date(x1).getFullYear();
+      if (a1 > a0) { for (let a = a0 + 1; a <= a1; a++) { const t = ts(a + '-01-01'); sv += '<text class="ax" x="' + X(t) + '" y="' + (H - 8) + '" text-anchor="middle">' + a + '</text>'; } }
+      else lista.forEach((a, i) => { if (i % Math.ceil(lista.length / 6) === 0) sv += '<text class="ax" x="' + X(ts(a.data)) + '" y="' + (H - 8) + '" text-anchor="middle">' + dt(a.data).slice(0, 5) + '</text>'; });
+      pts.forEach((l, s) => {
+        if (!l.length) return;
+        sv += '<path d="' + l.map((p, i) => (i ? 'L' : 'M') + X(p.x).toFixed(1) + ',' + Y(p.y).toFixed(1)).join('') + '" fill="none" stroke="' + SEG_COR[s] + '" stroke-width="2"/>';
+        l.forEach((p) => { sv += '<circle class="mp" data-s="' + s + '" data-x="' + p.x + '" cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="3.5" fill="' + SEG_COR[s] + '" stroke="#071013" stroke-width="1.5"/>'; });
+      });
+      host.innerHTML = sv + '</svg>';
+      $$('.mp', host).forEach((c) => {
+        c.addEventListener('mousemove', (ev) => { const s = +c.dataset.s, p = pts[s].find((q) => q.x === +c.dataset.x);
+          mostra('<span class="q">' + SEG[s] + ' · ' + dt(p.a.data) + '</span>' + M.nome + ' <b>' + num(p.a.v[s][M.kg], 2) + ' kg</b><br>' + num(p.y, 1) + '% do padrão', ev); });
+        c.addEventListener('mouseleave', esconde);
+      });
+    }
+
+    // direito x esquerdo na última avaliação do período com os dois lados
+    const lados = $('#mem-lados'); lados.innerHTML = '';
+    const txt = [];
+    [['Braços', 0, 1], ['Pernas', 3, 4]].forEach(([nome, e, d]) => {
+      const a = lista.slice().reverse().find((x) => x.v[e][M.kg] != null && x.v[d][M.kg] != null);
+      const el = document.createElement('div'); el.className = 'lado';
+      if (!a) { el.innerHTML = '<span class="rotulo">' + nome + '</span><span class="nota">sem os dois lados medidos no período</span>'; lados.appendChild(el); return; }
+      const ve = a.v[e][M.kg], vd = a.v[d][M.kg], dif = (ve - vd) / Math.max(ve, vd), maior = ve >= vd ? 'esquerdo' : 'direito', max = Math.max(ve, vd);
+      el.innerHTML = '<span class="rotulo">' + nome + ' · ' + dt(a.data) + '</span>'
+        + '<div class="barra2"><span class="e" style="width:' + 100 * ve / max + '%;background:' + SEG_COR[e] + '"></span><span class="d" style="width:' + 100 * vd / max + '%;background:' + SEG_COR[d] + '"></span></div>'
+        + '<span class="nota">Esquerdo <b>' + num(ve, 2) + ' kg</b> · direito <b>' + num(vd, 2) + ' kg</b> · '
+        + (Math.abs(dif) < 0.02 ? '<span class="bom">equilibrados</span>' : 'o ' + maior + ' tem <b>' + num(100 * Math.abs(dif), 0) + '%</b> a mais') + '</span>';
+      lados.appendChild(el);
+      if (Math.abs(dif) >= 0.02) txt.push(nome.toLowerCase() + ', ' + maior + ' ' + num(100 * Math.abs(dif), 0) + '% maior');
+    });
+    $('#mem-lado-sub').innerHTML = M.nome + ' de cada lado. Até uns 5% de diferença é normal (lado dominante).' + (txt.length ? ' Hoje: <b>' + txt.join('; ') + '</b>.' : '');
+  }
+
+  // fita: só existe de 2008 a 2013; a tabela mostra tudo, independente do período
+  function fita() {
+    const F = D.fita;
+    if (!F.aval.length) { $('#fita-sub').textContent = 'Sem medidas com fita na planilha.'; return; }
+    const a0 = F.aval[0], a1 = F.aval[F.aval.length - 1];
+    $('#fita-sub').innerHTML = F.aval.length + ' medições de ' + dt(a0[0]) + ' a ' + dt(a1[0]) + ', em cm, fora do filtro de período. O InBody não mede circunferência, então <b>não há dado recente</b>: '
+      + 'para comparar braço, abdômen e coxa de novo, vale medir com fita junto das próximas avaliações e lançar na planilha.';
+    $('#t-fita thead').innerHTML = '<tr><th>Medida</th>' + F.aval.map((a) => '<th>' + a[0].slice(5, 7) + '/' + a[0].slice(2, 4) + '</th>').join('') + '<th>Variação</th></tr>';
+    $('#t-fita tbody').innerHTML = F.medidas.map((m, i) => {
+      const v0 = a0[1][i], v1 = a1[1][i], d = v0 != null && v1 != null ? v1 - v0 : null;
+      return '<tr><td>' + m + '</td>' + F.aval.map((a) => '<td>' + (a[1][i] == null ? '—' : num(a[1][i], 1)) + '</td>').join('') + '<td><b>' + (d == null ? '—' : sinal(d, 1) + ' cm') + '</b></td></tr>';
+    }).join('');
+  }
+
+
+  // ------------------------------------------------------------ refeições
+  // DIAS[i].refs: uma letra por refeição, na ordem de D.refeicoes: S no plano, J jaca, N não fez, - sem resposta
+  const REF = Object.keys(D.refeicoes);
+  const SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const ORDEM_SEM = [1, 2, 3, 4, 5, 6, 0];
+  function contaRef(lista, i) {
+    let s = 0, j = 0, n = 0;
+    lista.forEach((d) => { const c = d.refs[i]; if (c === 'S') s++; else if (c === 'J') j++; else if (c === 'N') n++; });
+    const t = s + j + n;
+    return { s, j, n, t, ps: t ? 100 * s / t : null, pj: t ? 100 * j / t : null, pn: t ? 100 * n / t : null };
+  }
+  function refeicoes() {
+    const sel = DIAS.filter((d) => dentro(d.t) && d.refs);
+    const cards = $('#ref-cards'); cards.innerHTML = '';
+    const C = REF.map((k, i) => contaRef(sel, i));
+    REF.forEach((k, i) => {
+      const c = C[i], el = document.createElement('div');
+      el.className = 'refc'; el.style.setProperty('--cor-s', HAB[k + '_pct'].hex);
+      el.innerHTML = '<span class="rotulo">' + D.refeicoes[k] + '</span>'
+        + '<span class="numero">' + (c.ps == null ? '—' : num(c.ps, 0) + '%') + '</span>'
+        + '<span class="nota">' + (c.t ? 'no plano · ' + num(c.pj, 0) + '% jaca · ' + num(c.pn, 0) + '% não fez' : 'sem resposta no período') + '</span>'
+        + '<div class="pilha" aria-hidden="true"><span style="width:' + (c.ps || 0) + '%;background:var(--plano)"></span><span style="width:' + (c.pj || 0) + '%;background:var(--jaca)"></span><span style="width:' + (c.pn || 0) + '%;background:var(--linha-forte)"></span></div>';
+      cards.appendChild(el);
+    });
+    const com = C.map((c, i) => ({ c, i })).filter((x) => x.c.t);
+    if (com.length) {
+      const fraca = com.slice().sort((a, b) => a.c.ps - b.c.ps)[0], jaca = com.slice().sort((a, b) => b.c.pj - a.c.pj)[0];
+      $('#ref-titulo').textContent = D.refeicoes[REF[fraca.i]] + ' é a refeição mais fora do plano (' + num(fraca.c.ps, 0) + '% no plano)'
+        + (jaca.i !== fraca.i ? '; a jaca se concentra ' + (REF[jaca.i] === 'almoco' ? 'no ' : 'na ') + D.refeicoes[REF[jaca.i]].toLowerCase() : ', e é onde mais entra jaca (' + num(jaca.c.pj, 0) + '%)');
+    } else $('#ref-titulo').textContent = 'Refeição por refeição';
+
+    // mês a mês
+    const meses = new Map();
+    sel.forEach((d) => { const k = new Date(d.t).toISOString().slice(0, 7); if (!meses.has(k)) meses.set(k, []); meses.get(k).push(d); });
+    const pontos = [];
+    meses.forEach((lista, k) => {
+      const v = REF.map((r, i) => contaRef(lista, i));
+      if (v.every((c) => c.t < 10)) return;
+      pontos.push({ x: ts(k + '-15'), mes: k, v: v.map((c) => (c.t >= 10 ? c.ps : null)) });
+    });
+    $('#ref-leg').innerHTML = REF.map((k) => '<span><i style="background:' + HAB[k + '_pct'].hex + '"></i>' + D.refeicoes[k] + '</span>').join('');
+    linhasRef($('#g-ref'), pontos);
+
+    // dia da semana
+    const tb = $('#t-ref-sem');
+    tb.querySelector('thead').innerHTML = '<tr><th>Refeição</th>' + ORDEM_SEM.map((w) => '<th>' + SEMANA[w] + '</th>').join('') + '</tr>';
+    const porSem = ORDEM_SEM.map((w) => sel.filter((d) => new Date(d.t).getDay() === w));
+    let pior = null;
+    tb.querySelector('tbody').innerHTML = REF.map((k, i) => '<tr><td>' + D.refeicoes[k] + '</td>' + porSem.map((lista, j) => {
+      const c = contaRef(lista, i);
+      if (c.t < 3) return '<td class="fraco">—</td>';
+      if (!pior || c.pj > pior.pj) pior = { pj: c.pj, i, w: ORDEM_SEM[j], t: c.t };
+      return '<td class="calor" title="' + D.refeicoes[k] + ' · ' + SEMANA[ORDEM_SEM[j]] + ': ' + num(c.ps, 0) + '% no plano, ' + num(c.pj, 0) + '% jaca, ' + num(c.pn, 0) + '% não fez (' + c.t + ' dias)"'
+        + ' style="background:color-mix(in srgb, ' + HAB[k + '_pct'].hex + ' ' + Math.round(4 + 0.5 * c.ps) + '%, transparent)">' + num(c.ps, 0) + '%</td>';
+    }).join('') + '</tr>').join('');
+    $('#ref-sem-sub').textContent = sel.length ? 'Quanto mais forte a cor, mais a refeição ficou no plano naquele dia da semana.'
+      + (pior && pior.pj >= 15 ? ' A maior concentração de jaca: ' + D.refeicoes[REF[pior.i]].toLowerCase() + ' de ' + SEMANA[pior.w].toLowerCase() + ' (' + num(pior.pj, 0) + '% dos dias).' : '')
+      : 'Sem dias registrados neste período.';
+
+    // refeições × avaliações
+    const box = $('#ref-aval'); box.innerHTML = '';
+    const h = document.createElement('h3'), p = document.createElement('p');
+    box.appendChild(h); box.appendChild(p);
+    const linhas = [];
+    ['gordura', 'musculo'].forEach((met) => {
+      const pp = periodosNo(met).filter((q) => !estado.confiaveis || q.confiavel);
+      if (pp.length < 4) return;
+      const A = analisa(pp, D.metricas[met].melhor), lim = 2 / Math.sqrt(pp.length);
+      const rs = A.corr.filter((c) => /_pct$/.test(c.habito) && c.habito !== 'plano_pct');
+      linhas.push({ met, n: pp.length, lim, rs });
+    });
+    if (!linhas.length) {
+      h.textContent = 'Refeições × avaliações';
+      p.textContent = 'Menos de 4 períodos entre avaliações neste recorte: escolha "Tudo" para cruzar as refeições com o resultado das avaliações.';
+      return;
+    }
+    h.textContent = 'Refeições × avaliações';
+    p.innerHTML = linhas.map((l) => {
+      const M = MET[l.met], top = l.rs[0];
+      const passa = l.rs.filter((c) => Math.abs(c.pearson) >= l.lim);
+      const desc = (c) => '<b>' + D.refeicoes[c.habito.replace('_pct', '')].toLowerCase() + '</b> no plano anda junto com '
+        + (c.pearson * M.bomSe > 0 ? 'melhora' : 'piora') + ' (r = ' + sinal(c.pearson, 2) + ')';
+      return (l.met === 'gordura' ? '% de gordura' : 'Massa muscular') + ', ' + l.n + ' períodos (limiar do acaso |r| ' + num(l.lim, 2) + '): '
+        + (passa.length ? passa.map(desc).join('; ') : 'nenhuma refeição passa do limiar; a mais forte é ' + (top ? desc(top) : '—')) + '.';
+    }).join('<br>') + '<br>Com tão poucos períodos isso é pista, não prova. Os gráficos de dispersão de cada refeição estão no <a href="#diagnostico" style="color:var(--agua)">diagnóstico</a>.';
+  }
+
+  function linhasRef(host, pontos) {
+    if (pontos.length < 2) { host.innerHTML = '<p class="sub">Poucos meses com refeições registradas neste período.</p>'; return; }
+    const W = Math.max(280, host.clientWidth), H = 240, m = { t: 14, r: 14, b: 26, l: 40 };
+    const x0 = pontos[0].x, x1 = pontos[pontos.length - 1].x;
+    const X = (x) => m.l + (x - x0) * (W - m.l - m.r) / Math.max(1, x1 - x0), Y = (y) => m.t + (100 - y) * (H - m.t - m.b) / 100;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Refeições no plano mês a mês">';
+    [0, 25, 50, 75, 100].forEach((y) => { s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(y) + '" y2="' + Y(y) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(y) + 4) + '" text-anchor="end">' + y + '%</text>'; });
+    const passo = Math.ceil(pontos.length / Math.max(1, Math.floor((W - m.l) / 60)));
+    pontos.forEach((p, i) => { if (i % passo === 0) s += '<text class="ax" x="' + X(p.x) + '" y="' + (H - 8) + '" text-anchor="middle">' + p.mes.slice(5) + '/' + p.mes.slice(2, 4) + '</text>'; });
+    REF.forEach((k, r) => {
+      let d = '', aberto = false;
+      pontos.forEach((p) => { if (p.v[r] == null) { aberto = false; return; } d += (aberto ? 'L' : 'M') + X(p.x).toFixed(1) + ',' + Y(p.v[r]).toFixed(1); aberto = true; });
+      s += '<path d="' + d + '" fill="none" stroke="' + HAB[k + '_pct'].hex + '" stroke-width="2" stroke-linejoin="round"/>';
+    });
+    s += '<line class="guia" x1="0" x2="0" y1="' + m.t + '" y2="' + (H - m.b) + '" opacity="0"/><rect x="' + m.l + '" y="' + m.t + '" width="' + (W - m.l - m.r) + '" height="' + (H - m.t - m.b) + '" fill="transparent"/></svg>';
+    host.innerHTML = s;
+    const svg = host.querySelector('svg'), guia = host.querySelector('.guia');
+    svg.addEventListener('mousemove', (ev) => {
+      const rr = svg.getBoundingClientRect(), vx = (ev.clientX - rr.left) * W / rr.width;
+      let b = 0; pontos.forEach((p, i) => { if (Math.abs(X(p.x) - vx) < Math.abs(X(pontos[b].x) - vx)) b = i; });
+      const p = pontos[b];
+      guia.setAttribute('x1', X(p.x)); guia.setAttribute('x2', X(p.x)); guia.setAttribute('opacity', 1);
+      mostra('<span class="q">' + MESES_NOME[+p.mes.slice(5) - 1] + ' de ' + p.mes.slice(0, 4) + '</span>'
+        + REF.map((k, r) => '<i style="background:' + HAB[k + '_pct'].hex + '"></i>' + D.refeicoes[k] + ' ' + (p.v[r] == null ? '—' : num(p.v[r], 0) + '%')).join('<br>'), ev);
+    });
+    svg.addEventListener('mouseleave', () => { guia.setAttribute('opacity', 0); esconde(); });
+  }
+  const MESES_NOME = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+  // ------------------------------------------------------------ exame
+  // [data, nr, valor, origem] por métrica, na ordem de D.inbody.metricas
+  const IB = D.inbody;
+  let ibSel = 0;
+  const ibFmt = (m, v) => v == null ? '—' : num(v, m.casas) + (m.unid ? ' ' + m.unid : '');
+  function exame() {
+    const tiles = $('#ib-tiles'); tiles.innerHTML = '';
+    const resumo = [];
+    IB.metricas.forEach((m, i) => {
+      const l = IB.series[i].filter((a) => dentro(ts(a[0])));
+      const ult = l[l.length - 1], pri = l[0];
+      const d = ult && pri && ult !== pri ? ult[2] - pri[2] : null;
+      const sent = m.sentido === 'maior' ? 1 : m.sentido === 'menor' ? -1 : 0;
+      const cls = d == null || !sent || Math.abs(d) < Math.pow(10, -m.casas) / 2 ? '' : d * sent > 0 ? 'bom' : 'ruim';
+      let faixa = '';
+      if (ult && m.ref) faixa = ult[2] < m.ref[0] ? '<span class="selo aviso">abaixo da faixa</span>' : ult[2] > m.ref[1] ? '<span class="selo ' + (sent > 0 ? 'bom' : 'aviso') + '">acima da faixa</span>' : '<span class="selo bom">na faixa</span>';
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'ibt'; b.setAttribute('aria-pressed', i === ibSel);
+      b.innerHTML = '<span class="rotulo">' + m.nome + '</span><span class="numero">' + ibFmt(m, ult && ult[2]) + '</span>'
+        + '<span class="nota ' + cls + '">' + (d == null ? (ult ? 'uma medição no período' : 'sem medição no período') : (Math.abs(d) < Math.pow(10, -m.casas) / 2 ? 'estável' : sinal(d, m.casas) + (m.unid ? ' ' + m.unid : '')) + ' desde ' + dt(pri[0])) + '</span>'
+        + '<span>' + faixa + '</span>';
+      b.addEventListener('click', () => { ibSel = i; exame(); });
+      tiles.appendChild(b);
+      if (cls) resumo.push({ m, d, cls });
+    });
+    const min_ = (n) => /^[A-Z]{2}/.test(n) ? n : n.charAt(0).toLowerCase() + n.slice(1);
+    const bons = resumo.filter((r) => r.cls === 'bom').map((r) => min_(r.m.nome)), ruins = resumo.filter((r) => r.cls === 'ruim').map((r) => min_(r.m.nome));
+    $('#ib-titulo').textContent = bons.length || ruins.length
+      ? (bons.length ? 'Melhoraram no período: ' + bons.join(', ') : 'Nada melhorou no período') + (ruins.length ? '. Pioraram: ' + ruins.join(', ') : '') + '.'
+      : 'O que mais o InBody mede';
+
+    // série da métrica escolhida
+    const m = IB.metricas[ibSel], hex = ['#4fd1a5', '#ffb547', '#3cc8ea', '#a68cff', '#c6e26a', '#ff8fab', '#f6d365', '#4fd1a5', '#8fa8a5'][ibSel % 9];
+    const l = IB.series[ibSel].filter((a) => dentro(ts(a[0])));
+    $('#ib-nome').textContent = m.nome + (m.unid ? ' (' + m.unid + ')' : '');
+    $('#ib-leg-cor').style.background = hex;
+    // última medida fora do comum: mais de 3x a mediana das variações anteriores
+    const vs = l.map((a) => a[2]), difs = vs.slice(1).map((v, i) => Math.abs(v - vs[i])).filter((x) => x > 0);
+    let estranho = '';
+    if (difs.length >= 4) {
+      const ant = difs.slice(0, -1).slice().sort((a, b) => a - b), med = ant[Math.floor(ant.length / 2)], ultD = Math.abs(vs[vs.length - 1] - vs[vs.length - 2]);
+      if (med > 0 && ultD > 3 * med) estranho = ' <span class="aviso">A última variação (' + sinal(vs[vs.length - 1] - vs[vs.length - 2], m.casas) + ') é mais de 3 vezes a variação típica entre exames: vale conferir o exame de ' + dt(l[l.length - 1][0]) + '.</span>';
+    }
+    $('#ib-sub').innerHTML = (m.ref ? 'Faixa de referência ' + num(m.ref[0], m.casas) + ' a ' + num(m.ref[1], m.casas) + (m.ref_fonte === 'exame' ? ', impressa no próprio exame.' : ', a usual do InBody (o exame no lake não traz a faixa).') : 'Sem faixa de referência no exame.')
+      + (m.sentido ? ' Melhor quando ' + (m.sentido === 'maior' ? 'sobe' : 'desce') + '.' : '') + estranho;
+    const host = $('#g-ib');
+    if (!l.length) { host.innerHTML = '<p class="sub">Sem medições neste período.</p>'; return; }
+    host._feito = false;
+    tempo(host, {
+      aria: m.nome, hex, bolinhas: true, altura: 240, faixa: m.ref,
+      fmtY: (v) => num(v, m.casas > 1 ? 2 : m.casas || Math.max.apply(null, vs) - Math.min.apply(null, vs) < 3 ? 1 : 0),
+      x0: l.length === 1 ? ts(l[0][0]) - 30 * DIA : null, x1: l.length === 1 ? ts(l[0][0]) + 30 * DIA : null,
+      pontos: l.map((a) => ({ x: ts(a[0]), y: a[2], oco: a[3] !== 'InBody', a })),
+      dica: (p) => '<span class="q">Avaliação ' + p.a[1] + ' · ' + dt(p.a[0]) + ' · ' + p.a[3] + '</span><i style="background:' + hex + '"></i>' + ibFmt(m, p.y)
+    });
+  }
+
+  // ------------------------------------------------------------ rotina
+  const Phi = (z) => { // normal acumulada (Abramowitz-Stegun 7.1.26)
+    const t = 1 / (1 + 0.3275911 * Math.abs(z) / Math.SQRT2);
+    const e = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z / 2);
+    return z >= 0 ? (1 + e) / 2 : (1 - e) / 2;
+  };
+  const pProp = (a, na, b, nb) => { const p = (a + b) / (na + nb); const se = Math.sqrt(p * (1 - p) * (1 / na + 1 / nb)); return se ? 2 * (1 - Phi(Math.abs(a / na - b / nb) / se)) : 1; };
+  const pMedia = (x, y) => { const vx = Math.pow(dp(x), 2) * x.length / Math.max(1, x.length - 1), vy = Math.pow(dp(y), 2) * y.length / Math.max(1, y.length - 1);
+    const se = Math.sqrt(vx / x.length + vy / y.length); return se ? 2 * (1 - Phi(Math.abs(media(x) - media(y)) / se)) : 1; };
+  const CONDICOES = [
+    { nome: 'Dia produtivo', f: (d) => d.prod === 'S', sem: 'dia normal' },
+    { nome: 'Dia de trabalho', f: (d) => d.trab === 1, sem: 'folga' },
+    { nome: 'Nina em casa', f: (d) => d.nina === 1, sem: 'sem a Nina' },
+    { nome: 'Fim de semana', f: (d) => { const w = new Date(d.t).getDay(); return w === 0 || w === 6; }, sem: 'dia útil' },
+    { nome: 'Feriado', f: (d) => d.fer === 1, sem: 'outros dias' }
+  ];
+  const plano = (d) => d.feitas == null || d.jaca == null ? null : 100 * Math.max(0, d.feitas - d.jaca) / 5;
+  const RESULT = [
+    { nome: 'Treino', cor: 'var(--treino)', tipo: 'p', v: (d) => d.treino, fmt: (v) => num(100 * v, 0) + '%', sent: 1, dif: (v) => sinal(100 * v, 0) + ' pp' },
+    { nome: 'Cardio', cor: 'var(--cardio)', tipo: 'p', v: (d) => d.cardio, fmt: (v) => num(100 * v, 0) + '%', sent: 1, dif: (v) => sinal(100 * v, 0) + ' pp' },
+    { nome: 'Água', cor: 'var(--agua)', tipo: 'm', v: (d) => d.agua, fmt: (v) => num(v, 2) + ' L', sent: 1, dif: (v) => sinal(v, 2) + ' L' },
+    { nome: 'Meta de água', cor: 'var(--agua)', tipo: 'p', v: (d) => d.meta, fmt: (v) => num(100 * v, 0) + '%', sent: 1, dif: (v) => sinal(100 * v, 0) + ' pp' },
+    { nome: 'Refeições no plano', cor: 'var(--plano)', tipo: 'm', v: plano, fmt: (v) => num(v, 0) + '%', sent: 1, dif: (v) => sinal(v, 0) + ' pp' },
+    { nome: 'Jaca por dia', cor: 'var(--jaca)', tipo: 'm', v: (d) => d.jaca, fmt: (v) => num(v, 2), sent: -1, dif: (v) => sinal(v, 2) }
+  ];
+  function rotina() {
+    const sel = DIAS.filter((d) => dentro(d.t));
+    const tb = $('#t-rotina');
+    tb.querySelector('thead').innerHTML = '<tr><th>Condição</th>' + RESULT.map((r) => '<th style="color:' + r.cor + '">' + r.nome + '</th>').join('') + '</tr>';
+    const achados = [];
+    tb.querySelector('tbody').innerHTML = CONDICOES.map((c) => {
+      const A = sel.filter(c.f), B = sel.filter((d) => !c.f(d));
+      let lin = '<td>' + c.nome + '<br><span class="fraco">' + A.length + ' × ' + B.length + ' dias (' + c.sem + ')</span></td>';
+      RESULT.forEach((r) => {
+        const xa = A.map(r.v).filter((v) => v != null), xb = B.map(r.v).filter((v) => v != null);
+        if (xa.length < 5 || xb.length < 5) { lin += '<td class="fraco">poucos dias</td>'; return; }
+        const ma = media(xa), mb = media(xb), d = ma - mb;
+        const p = r.tipo === 'p' ? pProp(xa.reduce((s, v) => s + v, 0), xa.length, xb.reduce((s, v) => s + v, 0), xb.length) : pMedia(xa, xb);
+        const sig = p < 0.05, bom = d * r.sent > 0;
+        if (sig) achados.push({ c, r, d, p, bom, rel: Math.abs(d) / (Math.abs(mb) || 1) });
+        lin += '<td class="rc' + (sig ? (bom ? ' sig-bom' : ' sig-ruim') : '') + '" title="' + c.nome + ' × ' + c.sem + ': ' + r.dif(d) + ', p = ' + num(p, 3) + '">'
+          + '<b>' + r.fmt(ma) + '</b><small>' + r.fmt(mb) + '</small>' + (sig ? '<em>' + r.dif(d) + '</em>' : '') + '</td>';
+      });
+      return '<tr>' + lin + '</tr>';
+    }).join('');
+    const box = $('#rot-ver'); box.innerHTML = '';
+    const h = document.createElement('h3'), p = document.createElement('p');
+    box.appendChild(h); box.appendChild(p);
+    if (sel.length < 30) { h.textContent = 'Poucos dias neste período'; p.textContent = 'São ' + sel.length + ' dias registrados. Escolha um recorte maior.'; return; }
+    achados.sort((a, b) => a.p - b.p);
+    const desc = (a) => '<b>' + a.c.nome.toLowerCase() + '</b>, ' + a.r.nome.toLowerCase() + ' ' + a.r.dif(a.d) + ' (p = ' + num(a.p, 3) + ')';
+    const bons = achados.filter((a) => a.bom), ruins = achados.filter((a) => !a.bom);
+    h.textContent = achados.length ? achados.length + (achados.length === 1 ? ' diferença passa' : ' diferenças passam') + ' do teste em ' + sel.length + ' dias' : 'Nenhuma diferença passa do teste neste período';
+    p.innerHTML = achados.length
+      ? (bons.length ? 'Andam junto com hábito melhor: ' + bons.slice(0, 4).map(desc).join('; ') + '. ' : '') + (ruins.length ? 'Andam junto com hábito pior: ' + ruins.slice(0, 4).map(desc).join('; ') + '.' : '')
+      : 'Nos ' + sel.length + ' dias do recorte, nenhuma condição separa os hábitos além do que o acaso explicaria. Com "Tudo" há mais dias e o teste fica mais sensível.';
+  }
+
+  function recorte() { abertura(); desenhaTrajetoria(); membros(); refeicoes(); exame(); rotina(); tabelaPeriodos(); desenhaDiagnostico(); }
+  reinicia();
+  recorte(); fita();
+  simula();
+  let tm;
+  window.addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(() => { desenhaTrajetoria(); membros(); refeicoes(); exame(); desenhaDiagnostico(); simula(); }, 150); });
+})();
+</script>
+</body>
+</html>

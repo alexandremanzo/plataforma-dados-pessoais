@@ -1,0 +1,37 @@
+/// Cópia de gold.dim_categoria_financ.
+table dim_categoria_financ
+	lineageTag: e59d635c-7a80-5ac8-921e-71107c8d7bc7
+
+	column SK_CATEGORIA_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: 41d06afd-c2da-5570-921c-831e434b091c
+		summarizeBy: none
+		sourceColumn: SK_CATEGORIA_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_CATEGORIA
+		dataType: string
+		lineageTag: a8131fba-c47d-53ed-a040-01e5dd071d5c
+		summarizeBy: none
+		sourceColumn: NM_CATEGORIA
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_categoria_financ = m
+		mode: import
+		source =
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_categoria_financ"]}[Data],
+				
+				    // Copia da gold: so a selecao das colunas que esta aba usa. Nada e
+				    // transformado aqui - o que precisa ser derivado e coluna
+				    // calculada, que fica visivel no modelo.
+				    Final  = Table.SelectColumns(Tabela, {"SK_CATEGORIA_FINANC", "NM_CATEGORIA"}, MissingField.UseNull)
+				in
+				    Final
+
+	annotation PBI_ResultType = Exception
+

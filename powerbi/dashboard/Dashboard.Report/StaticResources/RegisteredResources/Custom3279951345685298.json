@@ -1,0 +1,35 @@
+{
+  "name": "Custom",
+  "textClasses": {
+    "label": {
+      "color": "#808080",
+      "fontFace": "wf_standard-font_light, helvetica, arial, sans-serif",
+      "fontSize": 11
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          {
+            "show": true
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#FFFFFF"
+              }
+            },
+            "transparency": 100
+          }
+        ]
+      }
+    }
+  }
+}

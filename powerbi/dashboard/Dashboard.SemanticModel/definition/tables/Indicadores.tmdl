@@ -1,0 +1,38 @@
+/// Eixo do bloco de indicadores. DESCONECTADA, pelo mesmo motivo.
+table Indicadores
+	lineageTag: 3206ef87-bc6b-533f-892b-482908e6f5aa
+
+	column Ordem
+		dataType: int64
+		isHidden
+		lineageTag: 51ac296a-d1bd-592d-abeb-b0f35a2a02e6
+		summarizeBy: none
+		sourceColumn: Ordem
+
+		annotation SummarizationSetBy = Automatic
+
+	column Indicador
+		dataType: string
+		lineageTag: d3022b74-c8fc-5f9c-86aa-9a0fa9faccdd
+		summarizeBy: none
+		sourceColumn: Indicador
+		sortByColumn: Ordem
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Indicadores = m
+		mode: import
+		source =
+				let
+				    T = #table(
+				        type table [Ordem = Int64.Type, Indicador = text],
+				        {
+				            {1, "% Salário em relação à Receita Total"},
+				            {2, "% Despesas Outras em relação à Despesa Total"},
+				            {3, "% Saldo (apenas Salário) x Receita Total"}
+				        })
+				in
+				    T
+
+	annotation PBI_ResultType = Table
+

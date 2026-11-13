@@ -1,0 +1,7 @@
+# O cache guarda os DADOS do modelo - nunca versionar.
+**/.pbi/cache.abf
+**/.pbi/localSettings.json
+*.pbix
+
+# Regeneravel por gerar_fundo.py --previa
+_previa-*.png

@@ -1,0 +1,168 @@
+/// Calendário pela data do lançamento.
+table dCalendario
+	lineageTag: af527509-98f2-5690-89ef-f4d446a9d351
+
+	column SK_DATA
+		dataType: int64
+		isHidden
+		lineageTag: 05950a7f-ac56-50f5-a740-9b35d430d4af
+		summarizeBy: none
+		sourceColumn: SK_DATA
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Data do lançamento.
+	column DT_DATA
+		dataType: dateTime
+		formatString: dd/MM/yyyy
+		lineageTag: 5f7f61b6-b933-5e59-8eed-34386a14668c
+		summarizeBy: none
+		sourceColumn: DT_DATA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_ANO
+		dataType: int64
+		formatString: 0
+		lineageTag: 67d10f4b-0012-55d8-8cf7-f152e35cd608
+		summarizeBy: none
+		sourceColumn: NR_ANO
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_MES
+		dataType: int64
+		isHidden
+		lineageTag: f626799c-4133-5569-8ae7-87db382da7a0
+		summarizeBy: none
+		sourceColumn: NR_MES
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_MES
+		dataType: string
+		lineageTag: 8ba521e1-1827-563d-9082-f511c37864e1
+		sortByColumn: NR_MES
+		summarizeBy: none
+		sourceColumn: NM_MES
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_MES_ABREV
+		dataType: string
+		lineageTag: 8f812509-0d8b-55a6-b106-749ab2c4ef99
+		sortByColumn: NR_MES
+		summarizeBy: none
+		sourceColumn: NM_MES_ABREV
+
+		annotation SummarizationSetBy = Automatic
+
+	/// AAAA-MM. Ordenável como texto, o que o painel usa.
+	column NM_ANO_MES
+		dataType: string
+		lineageTag: cfff17a2-7371-508d-9674-6bfcb8d7a248
+		summarizeBy: none
+		sourceColumn: NM_ANO_MES
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Set/2026 — o rótulo do eixo do histórico, vindo do banco.
+	column NM_MES_ANO
+		dataType: string
+		lineageTag: 3791cad8-299d-5ee3-b656-691fdbab980e
+		sortByColumn: NR_INDICE_MES
+		summarizeBy: none
+		sourceColumn: NM_MES_ANO
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_INDICE_MES
+		dataType: int64
+		isHidden
+		lineageTag: 78261d9b-3014-55bf-b704-643ea2b19fad
+		summarizeBy: none
+		sourceColumn: NR_INDICE_MES
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_DIA
+		dataType: int64
+		formatString: 0
+		lineageTag: f7b0b0d8-2596-57bf-868e-6ab88de1ecf9
+		summarizeBy: none
+		sourceColumn: NR_DIA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_DIA_SEMANA
+		dataType: string
+		lineageTag: c397879b-bff0-59f0-941d-6c6b3d423140
+		sortByColumn: NR_DIA_SEMANA
+		summarizeBy: none
+		sourceColumn: NM_DIA_SEMANA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_DIA_SEMANA_ABREV
+		dataType: string
+		lineageTag: e145f5ae-299c-535d-847a-2eef6342e893
+		sortByColumn: NR_DIA_SEMANA
+		summarizeBy: none
+		sourceColumn: NM_DIA_SEMANA_ABREV
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_DIA_SEMANA
+		dataType: int64
+		isHidden
+		lineageTag: d9087507-8ee2-561a-9daf-e4992cbdd184
+		summarizeBy: none
+		sourceColumn: NR_DIA_SEMANA
+
+		annotation SummarizationSetBy = Automatic
+
+	/// S em feriado nacional e em ponto facultativo.
+	column FL_FERIADO
+		dataType: string
+		lineageTag: d8a76fc6-76b8-575a-b74e-2d0bb039a487
+		summarizeBy: none
+		sourceColumn: FL_FERIADO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Nome do feriado; vazio nos dias comuns.
+	column NM_FERIADO
+		dataType: string
+		lineageTag: e63e6482-5ec3-52dd-abae-f504653b975c
+		summarizeBy: none
+		sourceColumn: NM_FERIADO
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dCalendario = m
+		mode: import
+		source = ```
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_calendario"]}[Data],
+
+				    // NM_MES_ANO ("Set/2026") VEM DO BANCO desde o
+				    // 47_dim_calendario_atributos.sql. Era derivado aqui e deixou de
+				    // ser: derivar de novo faria o Table.AddColumn recusar um nome que
+				    // a origem ja traz, e a atualizacao quebraria inteira.
+				    //
+				    // NR_INDICE_MES continua local: existe so para ordenar o eixo, e
+				    // por texto Abr viria antes de Jan.
+				    Indice = Table.AddColumn(Tabela, "NR_INDICE_MES",
+				                 each [NR_ANO] * 12 + [NR_MES], Int64.Type),
+				    Final  = Table.SelectColumns(Indice, {
+				                 "SK_DATA", "DT_DATA", "NR_ANO", "NR_MES", "NM_MES",
+				                 "NM_MES_ABREV", "NM_ANO_MES", "NM_MES_ANO", "NR_INDICE_MES",
+				                 "NR_DIA", "NM_DIA_SEMANA", "NM_DIA_SEMANA_ABREV",
+				                 "NR_DIA_SEMANA", "FL_FERIADO", "NM_FERIADO"},
+				                 MissingField.UseNull)
+				in
+				    Final
+				```
+
+	annotation PBI_ResultType = Table

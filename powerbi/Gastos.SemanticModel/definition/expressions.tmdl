@@ -1,0 +1,15 @@
+/// Servidor do SQL Server. Único ponto a mudar se o banco se mover.
+expression pServidor = "localhost" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 7f6f82ed-91c7-5386-9c07-a22a6737801e
+
+/// Banco de dados.
+expression pBanco = "db-manzo" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: abab83a4-d491-56dd-b9a7-f0d43bd07eeb
+
+/// Meta da fatura, em reais. Mudar aqui muda todo o painel.
+expression pMeta = 5000 meta [IsParameterQuery=true, Type="Number", IsParameterQueryRequired=true]
+	lineageTag: 9fdeeb1b-89af-572f-8b41-629f301333e4
+
+/// Dias entre o fechamento e o vencimento da fatura.
+expression pDiasFechamento = 7 meta [IsParameterQuery=true, Type="Number", IsParameterQueryRequired=true]
+	lineageTag: 53c5d372-8e79-557a-92d2-9e3d47a8481c

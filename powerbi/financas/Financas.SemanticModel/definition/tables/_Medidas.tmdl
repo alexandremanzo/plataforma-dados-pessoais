@@ -1,0 +1,366 @@
+/// Abriga as medidas.
+table _Medidas
+	lineageTag: ca605349-e35f-52d4-b085-90c8c8f5813a
+
+	/// Receita no filtro atual, fora aporte, resgate e transferência.
+	measure Receita = CALCULATE ( SUM ( Movimentacao[VL_RECEITA] ), dGrupo[DS_CLASSE] <> "Nao e gasto" )
+		formatString: "R$" #,0.00
+		lineageTag: de50f9f6-4aec-5cbf-ae51-d0bdce8630ca
+
+	/// Despesa no filtro atual, fora aporte, resgate e transferência.
+	measure Despesa = CALCULATE ( SUM ( Movimentacao[VL_DESPESA] ), dGrupo[DS_CLASSE] <> "Nao e gasto" )
+		formatString: "R$" #,0.00
+		lineageTag: ad671f76-85c2-598f-96b7-0e5515e6de5b
+
+	/// Mês mais recente com lançamento, em AAAA-MM. É o padrão do painel.
+	measure 'Último mês com dado' = ```
+			// O mes mais recente com lancamento, em 'AAAA-MM'. REMOVEFILTERS
+			// porque ele e o PADRAO do painel: tem de ser o mesmo numero
+			// independentemente do que esteja filtrado na tela.
+			VAR _sk = CALCULATE ( MAX ( Movimentacao[SK_DATA] ), REMOVEFILTERS () )
+			RETURN
+			    CALCULATE ( MAX ( dCalendario[NM_ANO_MES] ),
+			                REMOVEFILTERS (), dCalendario[SK_DATA] = _sk )
+			```
+		lineageTag: 923d672a-a0d3-5961-9e6b-7d42127e5a2a
+
+	/// O mês escolhido no seletor; sem seleção, o último mês com dado.
+	measure 'Mês de referência' = ```
+			// O mes que o painel inteiro usa. Vem do seletor desconectado; sem
+			// selecao, cai no ultimo mes com dado.
+			VAR _sel = SELECTEDVALUE ( dPeriodo[NM_ANO_MES] )
+			RETURN
+			    IF ( ISBLANK ( _sel ), [Último mês com dado], _sel )
+			```
+		lineageTag: ee8daab1-2018-5485-a014-19c9c31912be
+
+	/// Ano × 12 + mês do mês de referência. Aritmética de meses sem time intelligence.
+	measure 'Índice do mês' = ```
+			// Ano*12 + mes. Serve para "o mes anterior" e para a janela de doze
+			// meses virarem subtracao, sem depender de inteligencia de tempo.
+			VAR _m = [Mês de referência]
+			RETURN
+			    IF ( NOT ISBLANK ( _m ), VALUE ( LEFT ( _m, 4 ) ) * 12 + VALUE ( RIGHT ( _m, 2 ) ) )
+			```
+		formatString: 0
+		lineageTag: 2964755c-4ccb-5dd8-ba8c-3bea171191e7
+
+	/// O mês de referência por extenso, como no cabeçalho do modelo.
+	measure 'Período selecionado' = ```
+			VAR _m = [Mês de referência]
+			VAR _mes = CALCULATE ( MAX ( dCalendario[NM_MES] ), REMOVEFILTERS ( dCalendario ),
+			                       dCalendario[NM_ANO_MES] = _m )
+			VAR _ano = CALCULATE ( MAX ( dCalendario[NR_ANO] ), REMOVEFILTERS ( dCalendario ),
+			                       dCalendario[NM_ANO_MES] = _m )
+			RETURN
+			    _mes & " / " & FORMAT ( _ano, "0" )
+			```
+		lineageTag: 6c8f6158-03c8-53dc-a5d0-33b3450dbc13
+
+	/// Até quando o mês está completo em TODAS as origens que movimentaram nele.
+	measure 'Dados completos até' = ```
+			// A MENOR das ultimas datas das origens que movimentaram no mes.
+			// O cartao fecha depois da conta corrente, entao a data em que o mes
+			// esta completo DE VERDADE e a da origem mais atrasada — dai para
+			// frente o numero ainda sobe.
+			VAR _m = [Mês de referência]
+			VAR _origens =
+			    FILTER (
+			        ALL ( dOrigem ),
+			        CALCULATE ( COUNTROWS ( Movimentacao ),
+			                    REMOVEFILTERS ( dCalendario ),
+			                    dCalendario[NM_ANO_MES] = _m ) > 0 )
+			RETURN
+			    MINX (
+			        _origens,
+			        VAR _sk = CALCULATE ( MAX ( Movimentacao[SK_DATA] ),
+			                              REMOVEFILTERS ( dCalendario ),
+			                              dCalendario[NM_ANO_MES] = _m )
+			        RETURN
+			            DATE ( INT ( _sk / 10000 ), MOD ( INT ( _sk / 100 ), 100 ), MOD ( _sk, 100 ) ) )
+			```
+		formatString: dd/MM/yyyy
+		lineageTag: 826d6156-f89f-51f2-94d5-97352203fc99
+
+	/// Diz se o mês ainda está enchendo e até quando o número é confiável.
+	measure 'Aviso do período' = ```
+			// "Em andamento" e o mes CORRENTE DO CALENDARIO, nao o mes cujo
+			// ultimo lancamento nao caiu no dia 31. Um mes fechado quase nunca tem
+			// movimento no ultimo dia, e a primeira versao disto marcava todos eles
+			// como parciais — um aviso que aparece sempre deixa de ser lido.
+			VAR _ate = [Dados completos até]
+			VAR _emAndamento = [Mês de referência] = FORMAT ( TODAY (), "yyyy-MM" )
+			RETURN
+			    IF (
+			        ISBLANK ( _ate ), "Sem lançamento no mês",
+			        IF ( _emAndamento,
+			             "Mês em andamento · completo até " & FORMAT ( _ate, "dd/MM" ),
+			             "Mês fechado · dados até " & FORMAT ( _ate, "dd/MM" ) ) )
+			```
+		lineageTag: 15a6ba26-2f78-5c6c-9670-8860a834b6a7
+
+	/// Tudo que entrou no mês de referência, inclusive entrada não recorrente.
+	measure 'Receita total' = ```
+			VAR _m = [Mês de referência]
+			RETURN
+			    CALCULATE ( [Receita], REMOVEFILTERS ( dCalendario ), dCalendario[NM_ANO_MES] = _m )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: e0fa4d27-f81c-5990-b09a-dea0d9eafb28
+
+	/// Tudo que saiu no mês de referência.
+	measure 'Despesa total' = ```
+			VAR _m = [Mês de referência]
+			RETURN
+			    CALCULATE ( [Despesa], REMOVEFILTERS ( dCalendario ), dCalendario[NM_ANO_MES] = _m )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 3ea296b1-7d33-51ef-b10a-30761d6cfd21
+
+	/// A parte da despesa do mês que passou no cartão de crédito.
+	measure 'Despesa no cartão' = CALCULATE ( [Despesa total], dOrigem[DS_TIPO_CONTA] = "Cartão de crédito" )
+		formatString: "R$" #,0.00
+		lineageTag: 14d5a9b2-76b9-5f4f-821c-e34f06a4b134
+
+	/// Receita menos despesa. Negativo significa mês fechado no vermelho.
+	measure 'Saldo do mês' = [Receita total] - [Despesa total]
+		formatString: "R$" #,0.00
+		lineageTag: 731af769-7912-5794-9ddf-17a675d96b5b
+
+	/// Quanto da receita do mês sobrou.
+	measure 'Taxa de poupança' = DIVIDE ( [Saldo do mês], [Receita total] )
+		formatString: 0.0%
+		lineageTag: 86d6bcae-bae3-5187-a186-0b6eab3c988f
+
+	/// Quanto da despesa do mês passou no cartão.
+	measure '% do cartão na despesa' = DIVIDE ( [Despesa no cartão], [Despesa total] )
+		formatString: 0.0%
+		lineageTag: 38c2a9db-13c1-586e-9d67-5340f101b629
+
+	/// Receita do mês imediatamente anterior ao de referência.
+	measure 'Receita do mês anterior' = ```
+			VAR _i = [Índice do mês] - 1
+			RETURN
+			    CALCULATE ( [Receita],
+			        FILTER ( ALL ( dCalendario ),
+			                 dCalendario[NR_ANO] * 12 + dCalendario[NR_MES] = _i ) )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: f2e90580-7387-55d5-98a0-731dbdd13456
+
+	/// Despesa do mês imediatamente anterior ao de referência.
+	measure 'Despesa do mês anterior' = ```
+			VAR _i = [Índice do mês] - 1
+			RETURN
+			    CALCULATE ( [Despesa],
+			        FILTER ( ALL ( dCalendario ),
+			                 dCalendario[NR_ANO] * 12 + dCalendario[NR_MES] = _i ) )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: eab982e8-c31c-58aa-9b85-07723a3eec96
+
+	/// Gasto no cartão do mês imediatamente anterior.
+	measure 'Cartão do mês anterior' = ```
+			VAR _i = [Índice do mês] - 1
+			RETURN
+			    CALCULATE ( CALCULATE ( [Despesa], dOrigem[DS_TIPO_CONTA] = "Cartão de crédito" ),
+			        FILTER ( ALL ( dCalendario ),
+			                 dCalendario[NR_ANO] * 12 + dCalendario[NR_MES] = _i ) )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 18b4b988-8e01-561c-9665-15cfb01d6c7a
+
+	/// Linha de contexto do cartão de receita.
+	measure 'Variação da receita' = ```
+			VAR _ant = [Receita do mês anterior]
+			VAR _d = DIVIDE ( [Receita total] - _ant, _ant )
+			RETURN
+			    IF (
+			        ISBLANK ( _ant ) || _ant = 0, "— sem mês anterior",
+			        IF ( _d >= 0, "▲ +", "▼ −" ) & FORMAT ( ABS ( _d ), "0.0%" ) & " vs mês ant." )
+			```
+		lineageTag: 7c113144-acde-593d-8b6d-4356782240e7
+
+	/// Linha de contexto do cartão de despesa.
+	measure 'Variação da despesa' = ```
+			VAR _ant = [Despesa do mês anterior]
+			VAR _d = DIVIDE ( [Despesa total] - _ant, _ant )
+			RETURN
+			    IF (
+			        ISBLANK ( _ant ) || _ant = 0, "— sem mês anterior",
+			        IF ( _d >= 0, "▲ +", "▼ −" ) & FORMAT ( ABS ( _d ), "0.0%" ) & " vs mês ant." )
+			```
+		lineageTag: edac80bd-1bf5-5d24-9fac-54fd59f09deb
+
+	/// Linha de contexto do cartão de crédito: variação e peso na despesa.
+	measure 'Cartão em contexto' = ```
+			VAR _ant = [Cartão do mês anterior]
+			VAR _d = DIVIDE ( [Despesa no cartão] - _ant, _ant )
+			VAR _seta = IF ( ISBLANK ( _ant ) || _ant = 0, "",
+			                 IF ( _d >= 0, "▲ +", "▼ −" ) & FORMAT ( ABS ( _d ), "0.0%" ) & " · " )
+			RETURN
+			    _seta & FORMAT ( [% do cartão na despesa], "0.0%" ) & " da despesa"
+			```
+		lineageTag: c7e06807-5ac6-508f-be24-0b4fffac1816
+
+	/// Linha de contexto do cartão de saldo.
+	measure 'Poupança em contexto' = ```
+			VAR _t = [Taxa de poupança]
+			RETURN
+			    IF ( _t >= 0, "▲ ", "▼ " ) & FORMAT ( _t, "0.0%" ) & " taxa de poupança"
+			```
+		lineageTag: 5ccfb9de-9a81-5eb3-8776-d774c5c0b8bb
+
+	/// Receita do mês do eixo, em branco fora da janela de doze meses.
+	measure 'Receita (12m)' = ```
+			// Branco fora da janela de doze meses. O grafico descarta a categoria
+			// cujas medidas sao todas brancas, entao o eixo nasce com doze pontos
+			// sem precisar de filtro de visual — que o PBIR grava de forma fragil.
+			VAR _fim = [Índice do mês]
+			VAR _i = MAX ( dCalendario[NR_ANO] ) * 12 + MAX ( dCalendario[NR_MES] )
+			RETURN
+			    IF ( _i > _fim - 12 && _i <= _fim, [Receita] )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 77466829-c48a-57d9-8d89-5ff63c6fd162
+
+	/// Despesa do mês do eixo, em branco fora da janela de doze meses.
+	measure 'Despesa (12m)' = ```
+			// Branco fora da janela de doze meses. O grafico descarta a categoria
+			// cujas medidas sao todas brancas, entao o eixo nasce com doze pontos
+			// sem precisar de filtro de visual — que o PBIR grava de forma fragil.
+			VAR _fim = [Índice do mês]
+			VAR _i = MAX ( dCalendario[NR_ANO] ) * 12 + MAX ( dCalendario[NR_MES] )
+			RETURN
+			    IF ( _i > _fim - 12 && _i <= _fim, [Despesa] )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 1378c097-b35d-56ca-8cf1-453067c6596e
+
+	/// Só a receita que se repete todo mês. Existe para mostrar que a despesa cruza o salário mesmo nos meses em que o total fecha positivo.
+	measure 'Receita recorrente (12m)' = ```
+			// Branco fora da janela de doze meses. O grafico descarta a categoria
+			// cujas medidas sao todas brancas, entao o eixo nasce com doze pontos
+			// sem precisar de filtro de visual — que o PBIR grava de forma fragil.
+			VAR _fim = [Índice do mês]
+			VAR _i = MAX ( dCalendario[NR_ANO] ) * 12 + MAX ( dCalendario[NR_MES] )
+			RETURN
+			    IF ( _i > _fim - 12 && _i <= _fim, CALCULATE ( [Receita], dGrupo[DS_RECORRENCIA] = "Recorrente" ) )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 24cde05f-dfa8-538e-a5f5-cfc79936466e
+
+	/// Despesa do mês na categoria, só para as cinco maiores.
+	measure 'Despesa da categoria' = ```
+			VAR _r = RANKX ( ALLSELECTED ( dCategoria[NM_CATEGORIA] ),
+			                 [Despesa total], , DESC )
+			RETURN
+			    IF ( _r <= 5, [Despesa total] )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 839d0c51-e0aa-5573-96bd-ac6e1e023cb1
+
+	/// 1 a 5, na ordem de valor. Ordena a tabela do top 5.
+	measure 'Posição da categoria' = ```
+			VAR _r = RANKX ( ALLSELECTED ( dCategoria[NM_CATEGORIA] ),
+			                 [Despesa total], , DESC )
+			RETURN
+			    IF ( _r <= 5, _r )
+			```
+		formatString: 0
+		lineageTag: 1316d82c-267b-5641-8f37-5c80fb995138
+
+	/// Peso da categoria na despesa do mês.
+	measure '% da despesa (categoria)' = ```
+			VAR _r = RANKX ( ALLSELECTED ( dCategoria[NM_CATEGORIA] ),
+			                 [Despesa total], , DESC )
+			RETURN
+			    IF ( _r <= 5, DIVIDE ( [Despesa total], CALCULATE ( [Despesa total], ALL ( dCategoria ) ) ) )
+			```
+		formatString: 0.0%
+		lineageTag: 3656b733-21bc-5e8f-a51a-04b8263e54cc
+
+	/// Fração do gasto não essencial que o bloco de oportunidades supõe cortada.
+	measure 'Corte alvo' = MAX ( Parametros[Corte alvo] )
+		formatString: 0%
+		lineageTag: 4071cbe1-5f45-5de2-a147-ffd396a728dd
+
+	/// Despesa do mês nos grupos marcados como compressíveis em gold.dim_grupo_financ.
+	measure 'Não essencial' = CALCULATE ( [Despesa total], dGrupo[DS_CLASSE] = "Compressivel" )
+		formatString: "R$" #,0.00
+		lineageTag: fa4b04f1-bb5d-5d7f-b5ab-8332baf40f0b
+
+	/// Peso do gasto não essencial na despesa do mês.
+	measure '% não essencial' = DIVIDE ( [Não essencial], [Despesa total] )
+		formatString: 0.0%
+		lineageTag: 075f304e-6d4e-5d5e-853e-6af9d2c4d1f6
+
+	/// Quantos lançamentos compõem o gasto não essencial do mês.
+	measure 'Lançamentos não essenciais' = ```
+			VAR _m = [Mês de referência]
+			RETURN
+			    CALCULATE ( CALCULATE ( COUNTROWS ( Movimentacao ), dGrupo[DS_CLASSE] = "Compressivel" ), REMOVEFILTERS ( dCalendario ), dCalendario[NM_ANO_MES] = _m )
+			```
+		formatString: #,0
+		lineageTag: f8025d70-64a4-5016-b182-3d1edb7e95a4
+
+	/// Linha de contexto do total não essencial.
+	measure 'Não essencial em contexto' = ```
+			FORMAT ( [% não essencial], "0.0%" ) & " da despesa · "
+			    & FORMAT ( [Lançamentos não essenciais], "#,0" ) & " lançamentos"
+			```
+		lineageTag: cf744a89-e1b3-53df-a170-10a1d58c5578
+
+	/// O que sobraria no mês cortando a fração alvo do gasto não essencial.
+	measure 'Potencial de economia' = [Não essencial] * [Corte alvo]
+		formatString: "R$" #,0.00
+		lineageTag: be8453dc-4206-56fa-8aea-74062f796ca3
+
+	/// Linha de contexto do potencial de economia.
+	measure 'Potencial em contexto' = "cortando " & FORMAT ( [Corte alvo], "0%" ) & " do não essencial"
+		lineageTag: 47d00d45-b3d3-5f49-b0ae-dd56f4a88dfc
+
+	/// Gasto não essencial do mês por grupo, limitado aos oito maiores.
+	measure 'Não essencial do grupo' = ```
+			VAR _r = RANKX ( ALLSELECTED ( dGrupo[NM_GRUPO] ), [Não essencial], , DESC )
+			RETURN
+			    IF ( _r <= 8, [Não essencial] )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 5de6d744-f6d6-5475-a2c7-7c14dd3c6557
+
+	/// A frase de impacto do modelo, calculada com os números do mês.
+	measure 'Impacto no planejamento' = ```
+			// A frase do "Impacto no Planejamento" do modelo, com os numeros do
+			// mes em vez dos ficticios do PDF.
+			VAR _eco = [Potencial de economia]
+			VAR _saldo = [Saldo do mês]
+			VAR _novo = _saldo + _eco
+			VAR _rec = [Receita total]
+			RETURN
+			    "Cortando " & FORMAT ( [Corte alvo], "0%" ) & " dos gastos não essenciais, o saldo do mês vai de "
+			    & FORMAT ( _saldo, "R$ #,0.00" ) & " para " & FORMAT ( _novo, "R$ #,0.00" )
+			    & ", e a taxa de poupança de " & FORMAT ( DIVIDE ( _saldo, _rec ), "0.0%" )
+			    & " para " & FORMAT ( DIVIDE ( _novo, _rec ), "0.0%" ) & "."
+			```
+		lineageTag: f4ec5302-b629-5d37-b9fe-1d72048272c6
+
+	column Marcador
+		dataType: int64
+		isHidden
+		lineageTag: 41db1e6c-b4a6-5be0-9ce5-ee195de26ec3
+		summarizeBy: none
+		sourceColumn: Marcador
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Medidas = m
+		mode: import
+		source = ```
+				let
+				    T = #table(type table [Marcador = Int64.Type], {{1}})
+				in
+				    T
+				```
+
+	annotation PBI_ResultType = Table

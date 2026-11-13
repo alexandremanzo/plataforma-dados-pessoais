@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Gastos"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "362fdb8a-cf0a-58e3-b132-70b25d41fd4c"
+  }
+}

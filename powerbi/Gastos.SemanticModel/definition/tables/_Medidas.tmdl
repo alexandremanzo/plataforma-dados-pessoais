@@ -1,0 +1,385 @@
+/// Abriga as medidas.
+table _Medidas
+	lineageTag: ca605349-e35f-52d4-b085-90c8c8f5813a
+
+	/// Soma das despesas no filtro atual. Receita entra como zero.
+	measure Gasto = SUM ( Movimentacao[VL_GASTO] )
+		formatString: "R$" #,0.00
+		lineageTag: 89cb5097-4a81-5a39-95b9-c5dcae27858b
+
+	/// Gasto tirando aporte, resgate e transferência — o que é consumo de verdade.
+	measure Consumo = CALCULATE ( [Gasto], dGrupo[DS_CLASSE] <> "Nao e gasto" )
+		formatString: "R$" #,0.00
+		lineageTag: beabf086-22c8-559a-a82d-27260ff42543
+
+	/// Gasto apenas nas origens que são cartão de crédito.
+	measure 'Gasto no cartão' = CALCULATE ( [Gasto], dOrigem[DS_TIPO_CONTA] = "Cartão de crédito" )
+		formatString: "R$" #,0.00
+		lineageTag: 2b18fb01-4779-5bdb-9b34-111905452c45
+
+	/// Quantidade de lançamentos no filtro atual.
+	measure Lançamentos = COUNTROWS ( Movimentacao )
+		formatString: #,0
+		lineageTag: cc983011-fe31-5712-9dca-293897b58562
+
+	/// A meta da fatura. Editável em Transformar dados > Parâmetros.
+	measure 'Meta da fatura' = MAX ( Parametros[Meta da fatura] )
+		formatString: "R$" #,0
+		lineageTag: b815aac8-6c53-5172-8ce0-fb6b2d797c6f
+
+	/// Próximo vencimento que ainda não passou — a fatura que está enchendo.
+	measure 'Data da fatura corrente' = ```
+			// A fatura em aberto e a proxima data de vencimento que ainda nao
+			// passou. Nao e o MAX de SK_DATA_FATURA: as parcelas ja lancadas
+			// alcancam faturas de ate nove meses a frente.
+			CALCULATE (
+			    MIN ( dFatura[DT_FATURA] ),
+			    dFatura[DT_FATURA] >= TODAY (),
+			    REMOVEFILTERS ( dFatura )
+			)
+			```
+		formatString: dd/MM/yyyy
+		lineageTag: 47a5f207-33f3-592d-acea-8ab82260dab9
+
+	/// Quando a fatura em aberto fecha e as compras passam para a seguinte.
+	measure 'Data de fechamento' = [Data da fatura corrente] - MAX ( Parametros[Dias antes do fechamento] )
+		formatString: dd/MM/yyyy
+		lineageTag: 7e25379e-419a-51ad-9629-796f37780a25
+
+	/// O que já caiu na fatura em aberto, incluindo parcelas vindas de compras antigas.
+	measure 'Fatura em aberto' = ```
+			VAR _dt = [Data da fatura corrente]
+			RETURN
+			    CALCULATE (
+			        [Gasto no cartão],
+			        REMOVEFILTERS ( dFatura ),
+			        REMOVEFILTERS ( dCalendario ),
+			        dFatura[DT_FATURA] = _dt
+			    )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 9006620d-93ab-579b-9bff-af5511795bbf
+
+	/// Quanto ainda cabe antes de estourar. Negativo significa meta já ultrapassada.
+	measure 'Falta para a meta' = [Meta da fatura] - [Fatura em aberto]
+		formatString: "R$" #,0.00
+		lineageTag: 97641fc2-7a16-5f4b-bc98-7c103b552fe6
+
+	/// Quanto da meta já foi consumido neste ciclo.
+	measure '% da meta' = DIVIDE ( [Fatura em aberto], [Meta da fatura] )
+		formatString: 0%
+		lineageTag: 02bbc5e2-0b48-5274-9a61-c35cb42ea2c0
+
+	/// Dias restantes até a fatura fechar.
+	measure 'Dias até o fechamento' = ```
+			VAR _fecha = [Data de fechamento]
+			RETURN MAX ( 0, DATEDIFF ( TODAY (), _fecha, DAY ) )
+			```
+		formatString: #,0
+		lineageTag: 9bc1d81e-bf28-5b8e-98b3-0025d53c4ea8
+
+	/// Dias já corridos desde a abertura do ciclo.
+	measure 'Dias decorridos do ciclo' = ```
+			// O ciclo abre no fechamento anterior. Minimo de 1 para a divisao do
+			// ritmo nao estourar no primeiro dia.
+			VAR _fecha = [Data de fechamento]
+			VAR _abre = EDATE ( _fecha, -1 )
+			RETURN MAX ( 1, DATEDIFF ( _abre, TODAY (), DAY ) )
+			```
+		formatString: #,0
+		lineageTag: 703fd205-b430-57a5-b6aa-36b8d5d7da3f
+
+	/// O que ainda cabe, dividido pelos dias que faltam.
+	measure 'Pode gastar por dia' = DIVIDE ( MAX ( 0, [Falta para a meta] ), [Dias até o fechamento] )
+		formatString: "R$" #,0.00
+		lineageTag: d3d71eed-b924-5475-b153-55e17df263e6
+
+	/// Média diária de compra à vista neste ciclo. Ignora parcelas: elas não são gasto de hoje, são cobrança de uma compra antiga.
+	measure 'Ritmo diário do ciclo' = DIVIDE ( [Livre na fatura], [Dias decorridos do ciclo] )
+		formatString: "R$" #,0.00
+		lineageTag: f1e2bd9b-38d5-533d-8871-bdc25beda53f
+
+	/// Onde a fatura fecha se o ritmo atual continuar até o fechamento.
+	measure 'Projeção de fechamento' = ```
+			// O ritmo se mede SO sobre a compra a vista do ciclo. As parcelas ja
+			// entraram inteiras na fatura; dividi-las pelos dias corridos e
+			// projeta-las adiante seria cobrar a mesma revisao de carro todo dia
+			// ate o fechamento — foi o que a conferencia pegou.
+			VAR _aberto = [Fatura em aberto]
+			VAR _ritmo = DIVIDE ( [Livre na fatura], [Dias decorridos do ciclo] )
+			RETURN _aberto + _ritmo * [Dias até o fechamento]
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 1ebb270b-d720-5dfb-b5fc-91b203221f22
+
+	/// Dentro da meta, No limite, Vai estourar ou Estourada.
+	measure 'Situação da meta' = ```
+			VAR _meta = [Meta da fatura]
+			VAR _aberto = [Fatura em aberto]
+			VAR _proj = [Projeção de fechamento]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        _aberto > _meta, "Estourada",
+			        _proj > _meta, "Vai estourar",
+			        _proj > _meta * 0.85, "No limite",
+			        "Dentro da meta"
+			    )
+			```
+		lineageTag: c5d38512-b23c-514f-9749-bf7cc122011d
+
+	/// Parte da fatura em aberto que são parcelas de compras já feitas.
+	measure 'Comprometido na fatura' = CALCULATE ( [Fatura em aberto], Movimentacao[FL_PARCELADO] = "S" )
+		formatString: "R$" #,0.00
+		lineageTag: 04192c1e-8a95-534b-a7ab-5cf004a33e23
+
+	/// Parte da fatura em aberto que veio de compras à vista no ciclo.
+	measure 'Livre na fatura' = [Fatura em aberto] - [Comprometido na fatura]
+		formatString: "R$" #,0.00
+		lineageTag: 663bfe06-dd2e-5305-b962-f931d7ec5075
+
+	/// Total que caiu numa fatura. Use com a dimensão de fatura no eixo.
+	measure 'Fatura fechada' = [Gasto no cartão]
+		formatString: "R$" #,0.00
+		lineageTag: aebaa02c-4db8-5697-a524-7355288a42e0
+
+	/// Média das 12 últimas faturas fechadas — a corrente fica de fora.
+	measure 'Média 12 faturas' = ```
+			VAR _corrente = [Data da fatura corrente]
+			VAR _t =
+			    ADDCOLUMNS (
+			        FILTER (
+			            VALUES ( dFatura[DT_FATURA] ),
+			            dFatura[DT_FATURA] < _corrente
+			                && dFatura[DT_FATURA] >= EDATE ( _corrente, -12 )
+			        ),
+			        "@v", [Fatura fechada]
+			    )
+			RETURN AVERAGEX ( _t, [@v] )
+			```
+		formatString: "R$" #,0
+		lineageTag: dd37bc05-22fd-55e4-a88b-139f739265ff
+
+	/// Mediana das 12 últimas faturas fechadas; resiste a mês atípico.
+	measure 'Mediana 12 faturas' = ```
+			// So faturas FECHADAS: a corrente ainda esta enchendo e puxaria a
+			// mediana para baixo todo comeco de ciclo.
+			VAR _corrente = [Data da fatura corrente]
+			VAR _t =
+			    ADDCOLUMNS (
+			        FILTER (
+			            VALUES ( dFatura[DT_FATURA] ),
+			            dFatura[DT_FATURA] < _corrente
+			                && dFatura[DT_FATURA] >= EDATE ( _corrente, -12 )
+			        ),
+			        "@v", [Fatura fechada]
+			    )
+			RETURN MEDIANX ( _t, [@v] )
+			```
+		formatString: "R$" #,0
+		lineageTag: 0a9f38c6-5eb0-5310-872a-d76d07a132c8
+
+	/// Quantas das 12 últimas faturas fecharam acima da meta.
+	measure 'Faturas acima da meta' = ```
+			VAR _meta = [Meta da fatura]
+			VAR _corrente = [Data da fatura corrente]
+			VAR _t =
+			    ADDCOLUMNS (
+			        FILTER (
+			            VALUES ( dFatura[DT_FATURA] ),
+			            dFatura[DT_FATURA] < _corrente
+			                && dFatura[DT_FATURA] >= EDATE ( _corrente, -12 )
+			        ),
+			        "@v", [Fatura fechada]
+			    )
+			RETURN COUNTROWS ( FILTER ( _t, [@v] > _meta ) )
+			```
+		formatString: #,0
+		lineageTag: 15a80456-3baa-5ace-8133-1a950fcaf55c
+
+	/// Soma do que passou da meta nas 12 últimas faturas.
+	measure 'Excesso sobre a meta 12m' = ```
+			VAR _meta = [Meta da fatura]
+			VAR _corrente = [Data da fatura corrente]
+			VAR _t =
+			    ADDCOLUMNS (
+			        FILTER (
+			            VALUES ( dFatura[DT_FATURA] ),
+			            dFatura[DT_FATURA] < _corrente
+			                && dFatura[DT_FATURA] >= EDATE ( _corrente, -12 )
+			        ),
+			        "@v", [Fatura fechada]
+			    )
+			RETURN SUMX ( _t, MAX ( 0, [@v] - _meta ) )
+			```
+		formatString: "R$" #,0
+		lineageTag: 5b4bb2f8-a740-5ad0-8bd7-41f15e9b3619
+
+	/// A maior fatura fechada nos últimos 12 meses.
+	measure 'Maior fatura 12m' = ```
+			VAR _corrente = [Data da fatura corrente]
+			VAR _t =
+			    ADDCOLUMNS (
+			        FILTER (
+			            VALUES ( dFatura[DT_FATURA] ),
+			            dFatura[DT_FATURA] < _corrente
+			                && dFatura[DT_FATURA] >= EDATE ( _corrente, -12 )
+			        ),
+			        "@v", [Fatura fechada]
+			    )
+			RETURN MAXX ( _t, [@v] )
+			```
+		formatString: "R$" #,0
+		lineageTag: 4a00e474-12b8-561c-8e6a-13ec24334e17
+
+	/// Média mensal do gasto discricionário e recorrente nos 12 meses fechados.
+	measure 'Compressível por mês' = ```
+			// Media mensal sobre os ultimos 12 meses fechados de compra.
+			VAR _fim = EOMONTH ( TODAY (), -1 )
+			VAR _ini = EDATE ( _fim, -12 ) + 1
+			RETURN
+			    DIVIDE (
+			        CALCULATE (
+			            [Consumo],
+			            REMOVEFILTERS ( dCalendario ),
+			            REMOVEFILTERS ( dFatura ),
+			            dCalendario[DT_DATA] >= _ini && dCalendario[DT_DATA] <= _fim,
+			            dGrupo[DS_CLASSE] = "Compressivel"
+			        ),
+			        12
+			    )
+			```
+		formatString: "R$" #,0
+		lineageTag: e1ade192-6378-5e6c-a286-1eadc2eb7724
+
+	/// Média mensal do que não se repete — é o que estoura a fatura.
+	measure 'Eventual por mês' = ```
+			// Media mensal sobre os ultimos 12 meses fechados de compra.
+			VAR _fim = EOMONTH ( TODAY (), -1 )
+			VAR _ini = EDATE ( _fim, -12 ) + 1
+			RETURN
+			    DIVIDE (
+			        CALCULATE (
+			            [Consumo],
+			            REMOVEFILTERS ( dCalendario ),
+			            REMOVEFILTERS ( dFatura ),
+			            dCalendario[DT_DATA] >= _ini && dCalendario[DT_DATA] <= _fim,
+			            dGrupo[DS_CLASSE] = "Eventual"
+			        ),
+			        12
+			    )
+			```
+		formatString: "R$" #,0
+		lineageTag: 91672245-bcd0-553e-a206-562987113bd5
+
+	/// Média mensal do que não dá para cortar.
+	measure 'Essencial por mês' = ```
+			// Media mensal sobre os ultimos 12 meses fechados de compra.
+			VAR _fim = EOMONTH ( TODAY (), -1 )
+			VAR _ini = EDATE ( _fim, -12 ) + 1
+			RETURN
+			    DIVIDE (
+			        CALCULATE (
+			            [Consumo],
+			            REMOVEFILTERS ( dCalendario ),
+			            REMOVEFILTERS ( dFatura ),
+			            dCalendario[DT_DATA] >= _ini && dCalendario[DT_DATA] <= _fim,
+			            dGrupo[DS_CLASSE] = "Essencial"
+			        ),
+			        12
+			    )
+			```
+		formatString: "R$" #,0
+		lineageTag: 51785e9e-1466-58fd-89fe-5b5d0efdc95a
+
+	/// Média mensal de consumo total nos 12 meses fechados.
+	measure 'Consumo por mês' = ```
+			VAR _fim = EOMONTH ( TODAY (), -1 )
+			VAR _ini = EDATE ( _fim, -12 ) + 1
+			RETURN
+			    DIVIDE (
+			        CALCULATE (
+			            [Consumo], REMOVEFILTERS ( dCalendario ), REMOVEFILTERS ( dFatura ),
+			            dCalendario[DT_DATA] >= _ini && dCalendario[DT_DATA] <= _fim
+			        ), 12 )
+			```
+		formatString: "R$" #,0
+		lineageTag: 62f754a9-34f1-5a81-84eb-e87fd3ee0b95
+
+	/// Quanto do consumo mensal é compressível.
+	measure '% compressível' = DIVIDE ( [Compressível por mês], [Consumo por mês] )
+		formatString: 0.0%
+		lineageTag: 0412f373-c304-5871-ae42-d7d504501b96
+
+	/// Quanto sobraria por mês cortando 30% do compressível.
+	measure 'Economia se cortar 30%' = [Compressível por mês] * 0.30
+		formatString: "R$" #,0
+		lineageTag: 7e2e89b8-4c77-5d21-8954-cbcd96ccbda3
+
+	/// Quanto guardar por mês para os eventuais saírem do fundo, não da fatura.
+	measure 'Fundo de eventuais sugerido' = [Eventual por mês]
+		formatString: "R$" #,0
+		lineageTag: 2194933c-d9f6-511a-99c4-4300dc31d36d
+
+	/// Piso do termômetro da meta.
+	measure 'Mínimo do termômetro' = 0
+		formatString: "R$" #,0
+		lineageTag: 16238557-117d-5994-b9aa-559864f72b3f
+
+	/// Teto do termômetro: sobe junto quando a fatura passa da meta, para a agulha não encostar no fim da escala e esconder o tamanho do estouro.
+	measure 'Máximo do termômetro' = MAX ( [Meta da fatura] * 1.5, [Fatura em aberto] * 1.1 )
+		formatString: "R$" #,0
+		lineageTag: 5339ba80-2d6a-580d-896a-ff57c45dac5c
+
+	/// Parcelas que já caem em faturas posteriores à atual. Em branco no passado, para o gráfico mostrar só o que ainda vem.
+	measure 'Comprometido à frente' = ```
+			VAR _d = MAX ( dFatura[DT_FATURA] )
+			RETURN IF ( _d > [Data da fatura corrente], [Gasto no cartão] )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 207710c9-d9f0-54a8-891f-989c87bee143
+
+	/// Gasto de cada dia dentro do ciclo em curso.
+	measure 'Gasto do dia no ciclo' = ```
+			VAR _fecha = [Data de fechamento]
+			VAR _abre = EDATE ( _fecha, -1 )
+			VAR _d = MAX ( dCalendario[DT_DATA] )
+			RETURN IF ( _d > _abre && _d <= TODAY (), [Gasto no cartão] )
+			```
+		formatString: "R$" #,0.00
+		lineageTag: 1fdc3b86-65a5-5d78-8627-857984ece4cb
+
+	/// Consumo apenas dos grupos discricionários e recorrentes.
+	measure 'Consumo compressível' = CALCULATE ( [Consumo], dGrupo[DS_CLASSE] = "Compressivel" )
+		formatString: "R$" #,0.00
+		lineageTag: c9483195-2228-5f5d-83dd-fc54097abc6d
+
+	/// Em quantos meses distintos o grupo apareceu — separa o recorrente do avulso.
+	measure 'Meses com gasto' = DISTINCTCOUNT ( dCalendario[NM_ANO_MES] )
+		formatString: #,0
+		lineageTag: c617e377-ce8e-5bd9-a03d-aca3f316c5cc
+
+	/// Consumo dividido pelos meses em que houve gasto.
+	measure 'Média mensal' = DIVIDE ( [Consumo], [Meses com gasto] )
+		formatString: "R$" #,0.00
+		lineageTag: e646da30-15b5-599b-ad1b-3f53b2b1c512
+
+	column Marcador
+		dataType: int64
+		isHidden
+		lineageTag: 41db1e6c-b4a6-5be0-9ce5-ee195de26ec3
+		summarizeBy: none
+		sourceColumn: Marcador
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Medidas = m
+		mode: import
+		source = ```
+				let
+				    T = #table(type table [Marcador = Int64.Type], {{1}})
+				in
+				    T
+				```
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,97 @@
+/// Cópia de gold.dim_grupo_financ, mais a classe tratada.
+table dim_grupo_financ
+	lineageTag: 7aa94edb-6afc-52cf-a7e1-bf5b5665a1ed
+
+	column SK_GRUPO_FINANC
+		dataType: int64
+		isHidden
+		lineageTag: 306bdca4-b5fe-5c69-b62b-5af660ff07cc
+		summarizeBy: none
+		sourceColumn: SK_GRUPO_FINANC
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_GRUPO
+		dataType: string
+		lineageTag: 18f3b505-d6fe-5469-8e32-462690cd4b4a
+		summarizeBy: none
+		sourceColumn: NM_GRUPO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Como vem da gold, com nulo em 383 dos 520 grupos. Oculta: use DS_CLASSE.
+	column DS_COMPRESSIBILIDADE
+		dataType: string
+		isHidden
+		lineageTag: 265c4c35-120c-565e-a1cd-58b53eeb8190
+		summarizeBy: none
+		sourceColumn: DS_COMPRESSIBILIDADE
+
+		annotation SummarizationSetBy = Automatic
+
+	/// A classe sem nulo. 383 grupos não têm classificação, e em branco num slicer isso se lê como 'nada' em vez de 'não classificado'.
+	column DS_CLASSE = COALESCE ( dim_grupo_financ[DS_COMPRESSIBILIDADE], "A classificar" )
+		dataType: string
+		lineageTag: 77dc2eba-5449-532f-9230-055b1a883842
+		summarizeBy: none
+		sortByColumn: NR_ORDEM_CLASSE
+
+		annotation SummarizationSetBy = Automatic
+
+	/// A classe com acento, para eixo e legenda. O banco grava sem acento porque a CHECK da coluna exige.
+	column NM_CLASSE =
+			SWITCH (
+			    dim_grupo_financ[DS_CLASSE],
+			    "Compressivel", "Compressível",
+			    "Nao e gasto",  "Não é gasto",
+			    dim_grupo_financ[DS_CLASSE]
+			)
+		dataType: string
+		lineageTag: 0dca88bb-2abe-5a37-93df-8476804cc533
+		summarizeBy: none
+		sortByColumn: NR_ORDEM_CLASSE
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Ordena do que se corta para o que não se corta.
+	column NR_ORDEM_CLASSE =
+			// LE A COLUNA DE ORIGEM, NAO A DS_CLASSE. Parece rodeio e nao e:
+			// DS_CLASSE e ORDENADA por esta coluna, e no modelo tabular
+			// "ordenar por" conta como dependencia igual a uma referencia de
+			// formula. Lendo DS_CLASSE aqui, as duas se fechavam num ciclo e o
+			// Desktop recusava o modelo inteiro com
+			// "dependencia circular detectada".
+			//
+			// Nao precisa de COALESCE: o nulo nao casa com nenhum ramo e cai no
+			// padrao 4 - que e exatamente a posicao de "A classificar".
+			SWITCH (
+			    dim_grupo_financ[DS_COMPRESSIBILIDADE],
+			    "Compressivel",  1,
+			    "Eventual",      2,
+			    "Essencial",     3,
+			    "Nao e gasto",   5,
+			    4
+			)
+		dataType: int64
+		isHidden
+		lineageTag: 6a6e749f-5bfb-502b-8203-d94fa32cde79
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_grupo_financ = m
+		mode: import
+		source =
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_grupo_financ"]}[Data],
+				
+				    // Copia da gold: so a selecao das colunas que esta aba usa. Nada e
+				    // transformado aqui - o que precisa ser derivado e coluna
+				    // calculada, que fica visivel no modelo.
+				    Final  = Table.SelectColumns(Tabela, {"SK_GRUPO_FINANC", "NM_GRUPO", "DS_COMPRESSIBILIDADE"}, MissingField.UseNull)
+				in
+				    Final
+
+	annotation PBI_ResultType = Exception
+

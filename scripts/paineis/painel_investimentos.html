@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patrimônio que Rende</title>
+<style>
+  /* Mesmo mundo dos outros painéis. As 9 classes do app da XP usam a
+     paleta categórica validada para fundo escuro, na ordem fixa (azul,
+     laranja, água, amarelo, magenta, verde, violeta, vermelho) + cinza.
+     Proventos herdam a cor da classe de quem pagou. Ouro = a marca. */
+  :root {
+    color-scheme: dark;
+    --bg: #071013;
+    --bg-alto: #0a171b;
+    --painel: #0e1d21;
+    --painel-2: #12262b;
+    --linha: #1d343a;
+    --linha-forte: #2a4a51;
+    --tinta: #e8f2f0;
+    --fraca: #8fa8a5;
+    --apagada: #5d7774;
+    --destaque: #4fd1a5;
+    --ouro: #e9c46a;
+    --bom: #4fd1a5;
+    --ruim: #ff6f61;
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+    --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --c9: #6b8582;
+    --raio: 14px;
+    --display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    --texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 560px at 6% -10%, rgba(233, 196, 106, .10), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(79, 209, 165, .08), transparent 60%),
+      var(--bg);
+    color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.5;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 80px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px 96px; } }
+
+  .barra-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0;
+    border-bottom: 1px solid var(--linha); font-size: 13px; color: var(--fraca); flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 10px; color: var(--tinta); font-weight: 600; letter-spacing: .02em; }
+  .marca > svg { width: 26px; height: 26px; }
+  .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav a { color: var(--fraca); text-decoration: none; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; transition: color .15s, border-color .15s; }
+  .nav a:hover, .nav a:focus-visible { color: var(--tinta); border-color: var(--linha-forte); outline: none; }
+  .nav a.cta { color: var(--bg); background: var(--ouro); font-weight: 600; }
+
+  .hero { padding: 48px 0 28px; display: grid; gap: 28px; }
+  .hero > *, .grade > *, .grade-3 > *, .sim > * { min-width: 0; }
+  .olho { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ouro); font-weight: 600; margin: 0 0 14px; }
+  .hero h1 { font-family: var(--display); font-weight: 600; font-stretch: 85%; font-size: clamp(34px, 5.4vw, 66px);
+    line-height: 1.04; letter-spacing: -.015em; margin: 0; max-width: 22ch; text-wrap: balance; }
+  .hero h1 em { font-style: normal; color: var(--ouro); }
+  .hero .tese { max-width: 70ch; color: var(--fraca); font-size: 18px; margin: 18px 0 0; text-wrap: pretty; }
+  .hero .tese b { color: var(--tinta); font-weight: 600; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 158px), 1fr)); gap: 12px; }
+  .kpi { background: linear-gradient(180deg, var(--painel-2), var(--painel)); border: 1px solid var(--linha);
+    border-top: 2px solid var(--cor-k, var(--linha)); border-radius: var(--raio); padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .kpi .numero { font-size: 28px; }
+  .rotulo { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); font-weight: 600; }
+  .numero { font-family: var(--display); font-weight: 600; line-height: 1.1; letter-spacing: -.01em; }
+  .nota { font-size: 13px; color: var(--fraca); }
+  .nota b { color: var(--tinta); }
+  .bom { color: var(--bom); }
+  .ruim { color: var(--ruim); }
+  .selo { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px;
+    border-radius: 99px; border: 1px solid var(--linha-forte); color: var(--fraca); vertical-align: middle; }
+  .selo.saiu { color: var(--ruim); border-color: rgba(255, 111, 97, .45); }
+
+  .callout { border-radius: var(--raio); padding: 18px 22px; border: 1px solid var(--linha-forte); margin-top: 12px;
+    background: linear-gradient(90deg, rgba(233, 196, 106, .09), transparent 60%), var(--painel);
+    display: grid; grid-template-columns: auto 1fr; gap: 10px 28px; align-items: center; }
+  .callout .numero { font-size: 40px; color: var(--ouro); }
+  .callout p { margin: 0; color: var(--fraca); font-size: 14px; }
+  .callout p b { color: var(--tinta); }
+  .progresso { grid-column: 1 / -1; height: 10px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; position: relative; }
+  .progresso span { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #b8923a, var(--ouro)); border-radius: 99px; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  @media (max-width: 640px) { .callout { grid-template-columns: 1fr; } }
+
+  section.bloco { padding: 56px 0 0; scroll-margin-top: 16px; }
+  .cab { display: grid; gap: 8px; margin-bottom: 24px; max-width: 76ch; }
+  .cab h2 { font-family: var(--display); font-weight: 600; font-stretch: 90%; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .cab p { margin: 0; color: var(--fraca); text-wrap: pretty; }
+  .cab p b { color: var(--tinta); font-weight: 600; }
+  .cab .olho { margin: 0; }
+  .grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+  .grade-3 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 22px; min-width: 0;
+    display: flex; flex-direction: column; gap: 12px; }
+  .cartao h3 { margin: 0; font-size: 17px; font-weight: 600; }
+  .cartao .sub { margin: 0; color: var(--fraca); font-size: 14px; }
+  .cartao .sub b { color: var(--tinta); }
+  .grande { font-family: var(--display); font-size: 34px; font-weight: 600; line-height: 1; }
+  .tela { width: 100%; position: relative; }
+  .tela svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg .grid { stroke: var(--linha); stroke-width: 1; }
+  svg .ax { fill: var(--apagada); font-size: 11px; font-family: var(--texto); }
+  svg .rot { fill: var(--tinta); font-size: 12px; font-weight: 600; font-family: var(--texto); }
+  svg .rotf { fill: var(--fraca); font-size: 11px; font-family: var(--texto); }
+
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--fraca); align-items: center; }
+  .legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .legenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* alocação */
+  .aloc { display: flex; height: 28px; border-radius: 8px; overflow: hidden; gap: 2px; background: var(--painel); }
+  .aloc span { height: 100%; transition: filter .15s; cursor: default; min-width: 2px; }
+  .aloc span:hover { filter: brightness(1.2); }
+  .classes { display: grid; gap: 0; }
+  .classe { display: grid; grid-template-columns: 14px 1fr auto 52px 64px; gap: 12px; align-items: center; font-size: 14px; padding: 7px 4px; border-bottom: 1px solid var(--linha); }
+  .classe:last-child { border-bottom: 0; }
+  .classe.cab-t { font-size: 11px; color: var(--fraca); letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+  .classe i { width: 12px; height: 12px; border-radius: 3px; }
+  .classe .p, .classe .r { font-size: 13px; text-align: right; }
+  .classe .p { color: var(--fraca); }
+  .classe b { font-weight: 600; text-align: right; }
+  @media (max-width: 520px) { .classe { grid-template-columns: 14px 1fr auto 48px; } .classe .r { display: none; } }
+
+  /* cobertura */
+  .cobertura { position: relative; height: 18px; border-radius: 99px; background: repeating-linear-gradient(135deg, #1d343a 0 6px, #12262b 6px 12px); overflow: hidden; }
+  .cobertura span { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #b8923a, var(--ouro)); border-radius: 99px; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+
+  /* tabelas */
+  .tabela { width: 100%; overflow-x: auto; }
+  table.dados { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.dados th, table.dados td { padding: 9px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--linha); }
+  table.dados th { color: var(--fraca); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  table.dados th:first-child, table.dados td:first-child { text-align: left; }
+  table.dados tbody tr:hover td { background: var(--painel-2); }
+  table.dados td i.m { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 8px; }
+  table.dados tr.fora td { color: var(--apagada); }
+
+  /* simulador */
+  .sim { display: grid; gap: 16px; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 980px) { .sim { grid-template-columns: 1fr; } }
+  .ctrl { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--linha); }
+  .ctrl:last-child { border-bottom: 0; }
+  .ctrl .topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+  .ctrl .topo b { font-family: var(--display); font-size: 19px; color: var(--ouro); white-space: nowrap; }
+  .ctrl .base { font-size: 12px; color: var(--apagada); }
+  .ctrl input[type="range"] { width: 100%; accent-color: var(--ouro); height: 20px; cursor: pointer; background: transparent; margin: 0; }
+  .ctrl input[type="range"]:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; border-radius: 6px; }
+  .metas { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+  .meta { border-radius: var(--raio); padding: 18px; border: 1px solid var(--linha-forte); display: grid; gap: 4px;
+    background: linear-gradient(180deg, var(--painel-2), var(--painel)); border-top: 2px solid var(--cor-m); }
+  .meta .numero { font-size: clamp(26px, 2.6vw, 34px); }
+  .meta .q { font-size: 13px; color: var(--fraca); }
+  .meta .q b { color: var(--tinta); }
+
+  .notas { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--fraca); display: grid; gap: 12px; max-width: 86ch; }
+  .notas h2 { font-size: 15px; color: var(--tinta); margin: 0; font-weight: 600; }
+  .notas ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .notas b { color: var(--tinta); font-weight: 600; }
+
+  .dica { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .12s; background: #0b1a1e;
+    border: 1px solid var(--linha-forte); border-radius: 10px; padding: 8px 12px; font-size: 13px; color: var(--tinta);
+    box-shadow: 0 12px 30px rgba(0,0,0,.45); white-space: nowrap; }
+  .dica .q { color: var(--fraca); display: block; font-size: 12px; margin-bottom: 2px; }
+  .dica i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+
+  .entra { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .entra.visto { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .entra { opacity: 1; transform: none; transition: none; } * { transition-duration: 0s !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="barra-topo">
+    <div class="marca">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="5" y="17" width="5" height="10" rx="1.5" fill="#e9c46a" opacity=".55"/>
+        <rect x="13.5" y="11" width="5" height="16" rx="1.5" fill="#e9c46a" opacity=".8"/>
+        <rect x="22" y="5" width="5" height="22" rx="1.5" fill="#e9c46a"/>
+      </svg>
+      Patrimônio que Rende
+    </div>
+    <nav class="nav" aria-label="Seções">
+      <a href="#carteira">Carteira</a>
+      <a href="#aportes">Aportes</a>
+      <a href="#proventos">Proventos</a>
+      <a href="#diagnostico">Diagnóstico</a>
+      <a href="#simulador" class="cta">Simulador</a>
+    </nav>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="olho" id="h-olho">—</p>
+      <h1 id="manchete">—</h1>
+      <p class="tese" id="tese">—</p>
+    </div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+  <div class="callout">
+    <div><span class="rotulo">Proventos × custo fixo</span><div class="numero" id="cf-pct">—</div></div>
+    <p id="cf-txt">—</p>
+    <div class="progresso" aria-hidden="true"><span id="cf-barra" style="width:0"></span></div>
+  </div>
+
+  <!-- ===================================================== carteira -->
+  <section class="bloco entra" id="carteira">
+    <div class="cab">
+      <p class="olho">Analítica</p>
+      <h2>A carteira hoje</h2>
+      <p id="ca-sub">—</p>
+    </div>
+    <div class="grade">
+      <div class="cartao">
+        <h3>Por classe, como o app da XP mostra</h3>
+        <div class="aloc" id="aloc"></div>
+        <div class="classes" id="classes"></div>
+        <p class="nota">Rentabilidade é a que o app informa ao lado de cada classe, desde a compra.</p>
+      </div>
+      <div class="cartao">
+        <h3>Quanto o Open Finance enxerga</h3>
+        <p class="sub" id="cob-sub">—</p>
+        <div class="cobertura" aria-hidden="true"><span id="cob-barra" style="width:0"></span></div>
+        <div class="legenda"><span><i style="background:var(--ouro)"></i>Detalhado ativo a ativo</span><span><i style="background:repeating-linear-gradient(135deg,#2a4a51 0 3px,#12262b 3px 6px)"></i>Só no app</span></div>
+        <p class="sub" style="margin-top:6px">O extrato mostra ativos que o Open Finance não entrega; eles ajudam a explicar a diferença:</p>
+        <div class="tabela"><table class="dados" id="t-fora"><thead><tr><th>Ativo</th><th>Custo</th><th>Compra</th><th>Proventos 12m</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Maiores posições detalhadas</h3>
+        <p class="sub">Só a parte que chega pelo Open Finance, ativo a ativo, em valor bruto.</p>
+        <div class="tela" id="g-top"></div>
+      </div>
+      <div class="cartao">
+        <h3>Renda fixa: aplicado × hoje</h3>
+        <p class="sub" id="rf-sub">—</p>
+        <div class="tabela"><table class="dados" id="t-rf"><thead><tr><th>Título</th><th>Aplicado</th><th>Hoje</th><th>Ganho</th><th>Taxa</th><th>Vence</th></tr></thead><tbody></tbody></table></div>
+        <h3 style="margin-top:12px">Fundos: rentabilidade em 12 meses</h3>
+        <div class="tela" id="g-fundos"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== aportes -->
+  <section class="bloco entra" id="aportes">
+    <div class="cab">
+      <p class="olho">Analítica</p>
+      <h2>O dinheiro que entrou e saiu da XP</h2>
+      <p>Só o que cruzou a porta da corretora: transferências do banco (entrada) e retiradas ou pagamentos de cartão (saída).
+        Compra, venda, aplicação e resgate dentro da XP não contam aqui.</p>
+    </div>
+    <div class="grade">
+      <div class="cartao">
+        <h3>Por ano</h3>
+        <div class="legenda"><span><i style="background:var(--bom)"></i>Entrou</span><span><i style="background:var(--ruim)"></i>Saiu</span><span>Número acima: o líquido do ano</span></div>
+        <div class="tela" id="g-anos"></div>
+      </div>
+      <div class="cartao">
+        <h3>Acumulado: o que você colocou × o que vale</h3>
+        <p class="sub" id="ac-sub">—</p>
+        <div class="legenda"><span><i style="background:var(--fraca)"></i>Aporte líquido acumulado</span><span><i style="background:var(--ouro)"></i>Proventos acumulados</span><span><i style="background:var(--tinta);border-radius:50%"></i>Patrimônio no app</span></div>
+        <div class="tela" id="g-acum"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== proventos -->
+  <section class="bloco entra" id="proventos">
+    <div class="cab">
+      <p class="olho">Renda passiva</p>
+      <h2 id="pv-titulo">Proventos mês a mês</h2>
+      <p id="pv-sub">—</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda">
+        <span><i style="background:var(--c3)"></i>FIIs</span><span><i style="background:var(--c2)"></i>Ações (dividendos, JCP, reembolsos)</span>
+        <span><i style="background:var(--c1)"></i>Renda fixa e COE (juros, cupom)</span><span><i style="background:var(--c9)"></i>Aluguel de ações</span>
+        <span><i style="background:var(--tinta);height:2px;border-radius:0"></i>Média de 12 meses</span>
+      </div>
+      <div class="tela" id="g-prov"></div>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Ano a ano</h3>
+        <div class="tabela"><table class="dados" id="t-anos"><thead><tr><th>Ano</th><th>Proventos</th><th>Por mês</th><th>vs ano anterior</th><th>IR e taxas</th><th>Investback</th></tr></thead><tbody></tbody></table></div>
+        <p class="nota">2026 vai até <span id="pv-fim">—</span>; "por mês" divide pelos meses com extrato. Investback é cashback do cartão aplicado em fundo: aparece, mas fica fora dos proventos.</p>
+      </div>
+      <div class="cartao">
+        <h3>Quem pagou nos últimos 12 meses</h3>
+        <p class="sub" id="pag-sub">—</p>
+        <div class="tabela" style="max-height:420px;overflow-y:auto"><table class="dados" id="t-pag"><thead><tr><th>Ativo</th><th>12 meses</th><th>Últimos 3</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== diagnóstico -->
+  <section class="bloco entra" id="diagnostico">
+    <div class="cab">
+      <p class="olho">Diagnóstica</p>
+      <h2>O que sustenta e o que ameaça a renda</h2>
+      <p>Quanto a carteira já rendeu de fato, de quem os proventos dependem, onde o dinheiro está concentrado, quanto vai em imposto e com que regularidade ele entra.</p>
+    </div>
+    <div class="grade-3">
+      <div class="cartao"><h3>Resultado estimado</h3><div class="grande" id="rs-num">—</div><p class="sub" id="rs-sub">—</p>
+        <div class="tabela"><table class="dados" id="t-res"><tbody></tbody></table></div></div>
+      <div class="cartao"><h3>Dependência</h3><div class="grande" id="dp-num">—</div><p class="sub" id="dp-sub">—</p><div class="tela" id="g-dep"></div></div>
+      <div class="cartao"><h3>Concentração</h3><div class="grande" id="cc-num">—</div><p class="sub" id="cc-sub">—</p><div class="tela" id="g-grupos"></div></div>
+      <div class="cartao"><h3>Imposto e custos</h3><div class="grande" id="ir-num">—</div><p class="sub" id="ir-sub">—</p></div>
+      <div class="cartao"><h3>Regularidade dos aportes</h3><div class="grande" id="rg-num">—</div><p class="sub" id="rg-sub">—</p><div class="tela" id="g-reg"></div></div>
+      <div class="cartao"><h3>Liquidez da renda fixa</h3><div class="grande" id="lq-num">—</div><p class="sub" id="lq-sub">—</p></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== simulador -->
+  <section class="bloco entra" id="simulador">
+    <div class="cab">
+      <p class="olho">Simulador</p>
+      <h2>Quando o patrimônio paga a conta</h2>
+      <p id="sim-sub">—</p>
+    </div>
+    <div class="sim">
+      <div class="cartao" id="sim-ctrl"></div>
+      <div style="display:grid;gap:16px;min-width:0">
+        <div class="metas" aria-live="polite">
+          <div class="meta" style="--cor-m:var(--ouro)"><span class="rotulo">Proventos pagam o custo fixo</span><div class="numero" id="m1">—</div><span class="q" id="m1q">—</span></div>
+          <div class="meta" style="--cor-m:var(--destaque)"><span class="rotulo">Patrimônio-alvo</span><div class="numero" id="m2">—</div><span class="q" id="m2q">—</span></div>
+          <div class="meta" style="--cor-m:var(--c7)"><span class="rotulo">Liberdade financeira</span><div class="numero" id="m3">—</div><span class="q" id="m3q">—</span></div>
+        </div>
+        <div class="cartao">
+          <h3>Patrimônio projetado, em dinheiro de hoje</h3>
+          <p class="sub" id="sim-g-sub">—</p>
+          <div class="tela" id="g-sim"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="notas">
+    <h2>De onde vêm estes números</h2>
+    <ul>
+      <li><b>Patrimônio e classes</b>: foto do app da XP em <span id="n-app">—</span>, copiada para um arquivo local. O Open Finance da XP entrega só parte da carteira (<span id="n-of">—</span>); COE, FII de balcão e alguns fundos não vêm.</li>
+      <li><b>Extrato</b>: <span id="n-mov">—</span> lançamentos da conta XP, de <span id="n-ini">—</span> a <span id="n-fim">—</span>. Proventos, aportes, IR e taxas saem daqui.</li>
+      <li><b>Proventos</b>: rendimentos de FII, dividendos, JCP, juros de LCA, cupons de COE, reembolsos de evento e aluguel de ações, brutos. "Por mês" é sempre a média dos últimos 12 meses do extrato. Investback (cashback do cartão) fica de fora.</li>
+      <li><b>Entrada e saída</b>: transferência para a XP é entrada; retirada, pagamento de cartão e pagamento ao Banco XP são saída. Movimentos dentro da corretora não contam.</li>
+      <li><b>Resultado estimado</b> = patrimônio no app + tudo o que saiu − tudo o que entrou. Transferências entre o fim do extrato e a data da foto não entram.</li>
+      <li><b>Só XP</b>. Previdência e cofrinho de outros bancos ficam de fora.</li>
+      <li><b>Custo fixo e despesa média</b> vêm do painel financeiro, com a mesma régua: últimos 12 meses (<span id="n-ref">—</span>), sem compra de bem.</li>
+      <li><b>Simulador</b>: valores em dinheiro de hoje (rentabilidade real, acima da inflação), aporte no fim de cada mês, sem imposto.</li>
+      <li>Gerado em <span id="n-gerado">—</span> a partir do <i>db-demo</i>. Arquivo local, sem conexão com a internet.</li>
+    </ul>
+  </footer>
+</div>
+
+<div class="dica" id="dica" role="tooltip"></div>
+
+<script>
+const D = /*__DADOS__*/null;
+
+(function () {
+  'use strict';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const num = (v, c) => v == null || isNaN(v) ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: c || 0, maximumFractionDigits: c || 0 });
+  const brl = (v, c) => v == null ? '—' : (v < 0 ? '−' : '') + 'R$ ' + num(Math.abs(v), c);
+  const kbrl = (v) => (v < 0 ? '−' : '') + 'R$ ' + (Math.abs(v) >= 1e6 ? num(Math.abs(v) / 1e6, 1) + ' mi' : Math.abs(v) >= 1e4 ? num(Math.abs(v) / 1e3, 0) + ' mil' : Math.abs(v) >= 1e3 ? num(Math.abs(v) / 1e3, 1) + ' mil' : num(Math.abs(v), 0));
+  const pct = (v, c) => v == null || !isFinite(v) ? '—' : (v < 0 ? '−' : '') + num(Math.abs(100 * v), c === undefined ? 1 : c) + '%';
+  const sinal = (v, f) => (v >= 0 ? '+' : '−') + f(Math.abs(v));
+  const fd = (s) => s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4);
+  const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const rotMes = (k) => MESES[+k.slice(5, 7) - 1] + '/' + k.slice(2, 4);
+  const soma = (a, f) => a.reduce((s, x) => s + (f ? f(x) : x), 0);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // paleta categórica validada (escuro), na ordem fixa; cinza = resto
+  const PAL = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'];
+  const CINZA = '#6b8582';
+  const COR_PROV = { fii: PAL[2], acoes: PAL[1], rf: PAL[0], btc: CINZA };
+  const NOME_PROV = { fii: 'FII', acoes: 'Ação', rf: 'Renda fixa e COE', btc: 'Aluguel' };
+  const NOME_OF = { acoes: 'Ação', fii: 'FII', rf: 'Renda fixa', fundo_rf: 'Fundo de renda fixa', multi: 'Multimercado', fundo_acoes: 'Fundo de ações', coe: 'COE' };
+  const OURO = '#e9c46a';
+
+  const dica = $('#dica');
+  function mostra(html, ev) {
+    dica.innerHTML = html; dica.style.opacity = '1';
+    const w = dica.offsetWidth, h = dica.offsetHeight;
+    let x = ev.clientX + 14, y = ev.clientY - h - 12;
+    if (x + w > window.innerWidth - 8) x = ev.clientX - w - 14;
+    if (y < 8) y = ev.clientY + 16;
+    dica.style.left = Math.max(8, x) + 'px'; dica.style.top = y + 'px';
+  }
+  const esconde = () => { dica.style.opacity = '0'; };
+  function liga(host, sel, fn) {
+    $$(sel, host).forEach((el) => {
+      el.addEventListener('mousemove', (ev) => mostra(fn(el), ev));
+      el.addEventListener('mouseleave', esconde);
+    });
+  }
+  function anima(el, alvo, fmt) {
+    const de = el._v === undefined ? (calmo ? alvo : 0) : el._v;
+    el._v = alvo;
+    if (calmo || de === alvo) { el.textContent = fmt(alvo); return; }
+    const t0 = performance.now();
+    cancelAnimationFrame(el._raf);
+    const passo = (t) => { const p = Math.min(1, (t - t0) / 700), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(de + (alvo - de) * e); if (p < 1) el._raf = requestAnimationFrame(passo); };
+    el._raf = requestAnimationFrame(passo);
+  }
+
+  // ------------------------------------------------------------ números-base
+  const S = D.serie.map((r) => ({ m: r[0], ent: r[1], sai: r[2], fii: r[3], acoes: r[4], rf: r[5], btc: r[6], inv: r[7], custo: r[8] }));
+  S.forEach((x) => { x.prov = x.fii + x.acoes + x.rf + x.btc; });
+  const ult12 = S.slice(-12);
+  const prov12 = soma(ult12, (x) => x.prov), provMes = prov12 / 12;
+  const APP = D.app;
+  const CLASSES = APP ? APP.classes.map((c, i) => Object.assign({}, c, { cor: i < PAL.length && !/provento/i.test(c.nome) ? PAL[i] : CINZA })) : [];
+  const patr = APP ? APP.total : D.resultado.base;
+  const dataPatr = APP ? APP.data : D.foto;
+  const PAG = D.pagadores.map((r) => ({ nome: r[0], tp: r[1], v12: r[2], v3: r[3], ativo: r[4] }));
+  const saiu = PAG.filter((p) => !p.ativo && p.v12 > 0), vSaiu = soma(saiu, (p) => p.v12);
+  const yld = prov12 / patr;
+  const R = D.resultado;
+  const aportado = R.entradas - R.saidas;
+  const FIXO = D.ref.fixo, DESP = D.ref.despesa;
+  const ultFechado = S[S.length - 1].m === D.ult_mov.slice(0, 7) && D.ult_mov.slice(8) < '28' ? S[S.length - 2] : S[S.length - 1];
+
+  // ------------------------------------------------------------ topo
+  $('#h-olho').textContent = 'Investimentos XP · patrimônio de ' + fd(dataPatr);
+  $('#manchete').innerHTML = kbrl(patr) + ' investidos. Os proventos pagam <em>' + brl(provMes) + ' por mês</em>.';
+  $('#tese').innerHTML = 'Média dos últimos 12 meses do extrato (' + rotMes(ult12[0].m) + ' a ' + rotMes(ult12[11].m) + '); em ' + rotMes(ultFechado.m)
+    + ' foram <b>' + brl(ultFechado.prov) + '</b>. Desde ' + rotMes(D.ini) + ' entraram <b>' + kbrl(R.entradas) + '</b> na XP e saíram <b>' + kbrl(R.saidas)
+    + '</b>; o que ficou rendeu cerca de <b>' + kbrl(R.valor) + '</b>. Os proventos subiram todo ano e hoje cobrem <b>' + pct(provMes / FIXO, 0) + '</b> do custo fixo da casa.';
+
+  function kpi(rot, nota, cor) {
+    const d = document.createElement('div'); d.className = 'kpi'; d.style.setProperty('--cor-k', cor);
+    d.innerHTML = '<span class="rotulo">' + rot + '</span><div class="numero"></div><span class="nota">' + nota + '</span>';
+    $('#kpis').appendChild(d); return d.querySelector('.numero');
+  }
+  const k1 = kpi('Patrimônio', 'app da XP em ' + fd(dataPatr), 'var(--ouro)');
+  const k2 = kpi('Aporte líquido', 'entrou ' + kbrl(R.entradas) + ', saiu ' + kbrl(R.saidas), 'var(--fraca)');
+  const k3 = kpi('Resultado estimado', pct(R.valor / aportado, 0) + ' sobre o aportado', 'var(--bom)');
+  const k4 = kpi('Proventos 12 meses', 'brutos, do extrato', 'var(--c3)');
+  const k5 = kpi('Proventos por mês', 'média de 12 meses', 'var(--ouro)');
+  const k6 = kpi('Yield', 'proventos de 12 meses ÷ patrimônio', 'var(--c1)');
+  anima(k1, patr, kbrl); anima(k2, aportado, kbrl);
+  anima(k3, R.valor, (v) => sinal(v, kbrl)); k3.className = 'numero ' + (R.valor >= 0 ? 'bom' : 'ruim');
+  anima(k4, prov12, kbrl); anima(k5, provMes, (v) => brl(v)); anima(k6, yld, (v) => pct(v, 1) + ' a.a.');
+
+  const cob = provMes / FIXO;
+  anima($('#cf-pct'), cob, (v) => pct(v, 0));
+  $('#cf-txt').innerHTML = 'O custo fixo é de <b>' + brl(FIXO) + ' por mês</b> (painel financeiro). Os proventos cobrem <b>' + brl(provMes)
+    + '</b>; faltam <b>' + brl(FIXO - provMes) + '</b>. Com o yield de hoje (' + pct(yld, 1) + ' ao ano), isso pede um patrimônio de <b>' + kbrl(FIXO * 12 / yld) + '</b>.';
+  requestAnimationFrame(() => { $('#cf-barra').style.width = Math.min(100, 100 * cob) + '%'; });
+
+  // ------------------------------------------------------------ carteira
+  function carteira() {
+    $('#aloc').innerHTML = CLASSES.map((c, i) => '<span data-i="' + i + '" style="width:' + (100 * c.valor / patr) + '%;background:' + c.cor + '"></span>').join('');
+    liga($('#aloc'), 'span', (el) => { const c = CLASSES[+el.dataset.i]; return '<span class="q">' + esc(c.nome) + '</span>' + brl(c.valor, 2) + ' · ' + pct(c.valor / patr, 1); });
+    $('#classes').innerHTML = '<div class="classe cab-t"><span></span><span>Classe</span><span style="text-align:right">Valor</span><span class="p">%</span><span class="r">Rentab.</span></div>'
+      + CLASSES.map((c) => '<div class="classe"><i style="background:' + c.cor + '"></i><span>' + esc(c.nome) + '</span><b>' + brl(c.valor) + '</b><span class="p">'
+        + pct(c.valor / patr, c.valor / patr < 0.01 ? 1 : 0) + '</span><span class="r ' + (c.rent == null ? '' : c.rent >= 0 ? 'bom' : 'ruim') + '">' + (c.rent == null ? '—' : sinal(c.rent / 100, (v) => pct(v, 1))) + '</span></div>').join('');
+    const rv = soma(CLASSES.filter((c) => /Renda Variável|Listados/.test(c.nome)), (c) => c.valor);
+    const rfx = soma(CLASSES.filter((c) => /Pós|Prefixado|Inflação/.test(c.nome)), (c) => c.valor);
+    $('#ca-sub').innerHTML = '<b>' + kbrl(patr) + '</b> em ' + CLASSES.length + ' classes. Renda fixa (pós, pré e inflação) é <b>' + pct(rfx / patr, 0)
+      + '</b>; renda variável (Brasil, global e fundos listados) é <b>' + pct(rv / patr, 0) + '</b>. A maior classe é ' + esc(CLASSES[0].nome) + ', com ' + pct(CLASSES[0].valor / patr, 0) + '.';
+
+    const of = D.of_hoje, fr = of / patr;
+    $('#cob-sub').innerHTML = 'O Open Finance detalha <b>' + kbrl(of) + '</b> (' + D.ativos.length + ' ativos), <b>' + pct(fr, 0) + '</b> do patrimônio. Os outros <b>'
+      + kbrl(patr - of) + '</b> só aparecem no app: é a XP que não compartilha esses produtos, não uma falha da carga.';
+    requestAnimationFrame(() => { $('#cob-barra').style.width = Math.min(100, 100 * fr) + '%'; });
+    const fora = $('#t-fora tbody'); fora.innerHTML = '';
+    D.fora.forEach((f) => {
+      fora.insertAdjacentHTML('beforeend', '<tr><td>' + esc(f.nome) + '</td><td>' + (f.custo ? brl(f.custo) : '<span class="selo">sem registro</span>')
+        + '</td><td>' + (f.data ? fd(f.data) : '—') + '</td><td>' + (f.prov12 ? brl(f.prov12) : (f.classe === 'coe' ? 'cupom semestral' : '—')) + '</td></tr>');
+    });
+  }
+
+  function barrasH(host, dados, fmt, esq) {
+    const W = Math.max(280, host.clientWidth), lin = 26, H = dados.length * lin + 4;
+    esq = Math.min(esq || 150, W * 0.42);
+    const max = Math.max.apply(null, dados.map((d) => d.v)) || 1, dir = 78, cab = Math.floor((esq - 14) / 6.4);
+    const corta = (t) => t.length > cab ? t.slice(0, cab - 1).trim() + '…' : t;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    dados.forEach((d, i) => {
+      const y = 2 + i * lin, w = Math.max(3, (W - esq - dir) * d.v / max);
+      s += '<g class="hb" data-i="' + i + '"><rect x="0" y="' + y + '" width="' + W + '" height="' + lin + '" fill="transparent"/>'
+        + '<text class="ax" x="' + (esq - 10) + '" y="' + (y + 17) + '" text-anchor="end" style="fill:var(--tinta);font-size:12px">' + esc(corta(d.rot)) + '</text>'
+        + '<rect x="' + esq + '" y="' + (y + 7) + '" width="' + w + '" height="12" rx="4" fill="' + d.cor + '"/>'
+        + '<text class="rot" x="' + (esq + w + 8) + '" y="' + (y + 17) + '">' + fmt(d.v) + '</text></g>';
+    });
+    host.innerHTML = s + '</svg>';
+    liga(host, '.hb', (el) => { const d = dados[+el.dataset.i]; return '<span class="q">' + esc(d.rot) + '</span>' + (d.dica || fmt(d.v)); });
+  }
+
+  function detalhe() {
+    const lista = D.ativos.slice().sort((a, b) => b.bruto - a.bruto).slice(0, 14)
+      .map((a) => ({ rot: a.nome, v: a.bruto, cor: OURO, dica: brl(a.bruto) + ' · ' + NOME_OF[a.classe] }));
+    barrasH($('#g-top'), lista, kbrl, 190);
+
+    const rf = D.ativos.filter((a) => a.classe === 'rf' && a.aplic).sort((a, b) => (a.venc || '').localeCompare(b.venc || ''));
+    const tb = $('#t-rf tbody'); tb.innerHTML = '';
+    rf.forEach((a) => {
+      const g = a.bruto / a.aplic - 1;
+      tb.insertAdjacentHTML('beforeend', '<tr><td>' + esc(a.nome) + '</td><td>' + brl(a.aplic) + '</td><td>' + brl(a.bruto) + '</td><td class="' + (g >= 0 ? 'bom' : 'ruim') + '">' + sinal(g, (v) => pct(v, 1))
+        + '</td><td>' + (a.taxa ? esc(a.taxa) : '—') + '</td><td>' + (a.venc ? a.venc.slice(5, 7) + '/' + a.venc.slice(0, 4) : '—') + '</td></tr>');
+    });
+    const ap = soma(rf, (a) => a.aplic), hj = soma(rf, (a) => a.bruto);
+    tb.insertAdjacentHTML('beforeend', '<tr><td><b>Total</b></td><td><b>' + brl(ap) + '</b></td><td><b>' + brl(hj) + '</b></td><td class="bom"><b>' + sinal(hj / ap - 1, (v) => pct(v, 1)) + '</b></td><td></td><td></td></tr>');
+    $('#rf-sub').innerHTML = 'Os títulos que o Open Finance traz com o valor aplicado, por isso o ganho aqui é exato: <b>' + brl(hj - ap) + '</b> brutos sobre ' + brl(ap) + '. Ordenado pelo vencimento.';
+
+    const fundos = D.ativos.filter((a) => a.r12 != null).sort((a, b) => b.r12 - a.r12)
+      .map((a) => ({ rot: a.nome.replace(/ FI[CF]?.*| CIA$/, ''), v: a.r12 / 100, cor: OURO, dica: pct(a.r12 / 100, 1) + ' em 12 meses · posição ' + brl(a.bruto) }));
+    barrasH($('#g-fundos'), fundos, (v) => pct(v, 1), 190);
+  }
+
+  // ------------------------------------------------------------ aportes
+  function anos() {
+    const host = $('#g-anos'), por = {};
+    S.forEach((x) => { const a = x.m.slice(0, 4); por[a] = por[a] || { a, ent: 0, sai: 0 }; por[a].ent += x.ent; por[a].sai += x.sai; });
+    const L = Object.values(por).filter((x) => x.ent || x.sai);
+    const W = Math.max(280, host.clientWidth), H = 240, m = { t: 26, r: 6, b: 26, l: 46 };
+    const max = Math.max.apply(null, L.map((x) => Math.max(x.ent, x.sai))) * 1.05;
+    const bw = (W - m.l - m.r) / L.length, Y = (v) => m.t + (max - v) * (H - m.t - m.b) / max, b = Math.min(28, bw * 0.3);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Entradas e saídas por ano">';
+    [0, max / 2, max].forEach((v) => { s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + kbrl(v) + '</text>'; });
+    L.forEach((x, i) => {
+      const cx = m.l + bw * (i + 0.5), liq = x.ent - x.sai;
+      s += '<g class="an" data-i="' + i + '"><rect x="' + (m.l + bw * i) + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>'
+        + '<rect x="' + (cx - b - 1) + '" y="' + Y(x.ent) + '" width="' + b + '" height="' + (Y(0) - Y(x.ent)) + '" rx="4" fill="#4fd1a5"/>'
+        + '<rect x="' + (cx + 1) + '" y="' + Y(x.sai) + '" width="' + b + '" height="' + (Y(0) - Y(x.sai)) + '" rx="4" fill="#ff6f61"/>'
+        + '<text class="rot" x="' + cx + '" y="' + (Y(Math.max(x.ent, x.sai)) - 8) + '" text-anchor="middle" style="fill:' + (liq >= 0 ? '#4fd1a5' : '#ff6f61') + '">' + sinal(liq, kbrl) + '</text>'
+        + '<text class="ax" x="' + cx + '" y="' + (H - 6) + '" text-anchor="middle">' + x.a + '</text></g>';
+    });
+    host.innerHTML = s + '</svg>';
+    liga(host, '.an', (el) => { const x = L[+el.dataset.i]; return '<span class="q">' + x.a + '</span><i style="background:#4fd1a5"></i>Entrou ' + brl(x.ent) + '<br><i style="background:#ff6f61"></i>Saiu ' + brl(x.sai) + '<br>Líquido <b>' + sinal(x.ent - x.sai, brl) + '</b>'; });
+  }
+
+  function acumulado() {
+    const host = $('#g-acum'); let a = 0, p = 0;
+    const L = S.map((x) => { a += x.ent - x.sai; p += x.prov; return { m: x.m, a, p }; });
+    const fim = patr;
+    const W = Math.max(280, host.clientWidth), H = 240, m = { t: 22, r: 16, b: 26, l: 52 };
+    const max = Math.max(fim, Math.max.apply(null, L.map((x) => x.a))) * 1.08;
+    const X = (i) => m.l + i * (W - m.l - m.r) / (L.length - 1), Y = (v) => m.t + (max - v) * (H - m.t - m.b) / max;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Aporte líquido e proventos acumulados">'
+      + '<defs><linearGradient id="gac" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e9c46a" stop-opacity=".45"/><stop offset="1" stop-color="#e9c46a" stop-opacity=".05"/></linearGradient></defs>';
+    [0, max / 2, max / 1.08].forEach((v) => { s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + kbrl(v) + '</text>'; });
+    L.forEach((x, i) => { if (x.m.endsWith('-01')) s += '<text class="ax" x="' + X(i) + '" y="' + (H - 6) + '" text-anchor="middle">' + x.m.slice(0, 4) + '</text>'; });
+    const pa = L.map((x, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(x.a).toFixed(1)).join('');
+    const pp = L.map((x, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(x.p).toFixed(1)).join('');
+    s += '<path d="' + pp + 'L' + X(L.length - 1) + ',' + Y(0) + 'L' + X(0) + ',' + Y(0) + 'Z" fill="url(#gac)"/><path d="' + pp + '" fill="none" stroke="#e9c46a" stroke-width="2"/>'
+      + '<path d="' + pa + '" fill="none" stroke="#8fa8a5" stroke-width="2"/>';
+    const xf = X(L.length - 1);
+    s += '<line x1="' + xf + '" x2="' + xf + '" y1="' + Y(L[L.length - 1].a) + '" y2="' + Y(fim) + '" stroke="#4fd1a5" stroke-width="2" stroke-dasharray="3 3"/>'
+      + '<circle cx="' + xf + '" cy="' + Y(fim) + '" r="5" fill="#e8f2f0" stroke="#0e1d21" stroke-width="2"/>'
+      + '<text class="rot" x="' + (xf - 10) + '" y="' + (Y(fim) - 8) + '" text-anchor="end">' + kbrl(fim) + '</text>';
+    const passo = (W - m.l - m.r) / (L.length - 1);
+    L.forEach((x, i) => { s += '<rect class="ac" data-i="' + i + '" x="' + (X(i) - passo / 2) + '" y="' + m.t + '" width="' + passo + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>'; });
+    host.innerHTML = s + '</svg>';
+    liga(host, '.ac', (el) => { const x = L[+el.dataset.i]; return '<span class="q">' + rotMes(x.m) + '</span><i style="background:#8fa8a5"></i>Aportado ' + brl(x.a) + '<br><i style="background:#e9c46a"></i>Proventos ' + brl(x.p); });
+    $('#ac-sub').innerHTML = 'Linha cinza: tudo o que entrou menos tudo o que saiu (<b>' + kbrl(aportado) + '</b>). Ponto branco: o patrimônio no app em ' + fd(dataPatr)
+      + ' (<b>' + kbrl(fim) + '</b>). O tracejado entre os dois é o resultado estimado.';
+  }
+
+  // ------------------------------------------------------------ proventos
+  function proventos() {
+    const host = $('#g-prov'), L = S.filter((x) => x.m >= '2022-01');
+    const W = Math.max(320, host.clientWidth), H = 260, m = { t: 14, r: 8, b: 26, l: 46 };
+    const media = L.map((x) => { const j = S.indexOf(x); return soma(S.slice(Math.max(0, j - 11), j + 1), (y) => y.prov) / 12; });
+    const max = Math.max.apply(null, L.map((x) => x.prov)) * 1.08;
+    const bw = (W - m.l - m.r) / L.length, Y = (v) => m.t + (max - Math.max(0, v)) * (H - m.t - m.b) / max, b = Math.max(2, bw - 2);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Proventos por mês">';
+    [0, max / 2, max / 1.08].forEach((v) => { s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + kbrl(v) + '</text>'; });
+    const ORDEM = ['fii', 'acoes', 'rf', 'btc'];
+    L.forEach((x, i) => {
+      const x0 = m.l + bw * i + 1; let base = 0;
+      const vis = ORDEM.filter((k) => x[k] > 0), topoK = vis[vis.length - 1];
+      s += '<g class="pv" data-i="' + i + '"><rect x="' + (m.l + bw * i) + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+      vis.forEach((k) => {
+        const v = x[k], y1 = Y(base + v), y0 = Y(base); base += v;
+        // 1px de respiro entre segmentos empilhados
+        s += '<rect x="' + x0 + '" y="' + y1 + '" width="' + b + '" height="' + Math.max(0.5, y0 - y1 - (k === vis[0] ? 0 : 1)) + '" rx="' + (k === topoK ? Math.min(3, b / 2) : 0) + '" fill="' + COR_PROV[k] + '"/>';
+      });
+      s += '</g>';
+      if (x.m.endsWith('-01')) s += '<text class="ax" x="' + (x0 + b / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + x.m.slice(0, 4) + '</text>';
+    });
+    s += '<path d="' + media.map((v, i) => (i ? 'L' : 'M') + (m.l + bw * (i + 0.5)).toFixed(1) + ',' + Y(v).toFixed(1)).join('') + '" fill="none" stroke="#e8f2f0" stroke-width="2" stroke-opacity=".85"/>';
+    const xl = m.l + bw * (L.length - 0.5);
+    s += '<circle cx="' + xl + '" cy="' + Y(media[media.length - 1]) + '" r="4" fill="#e8f2f0" stroke="#0e1d21" stroke-width="2"/>';
+    host.innerHTML = s + '</svg>';
+    liga(host, '.pv', (el) => { const i = +el.dataset.i, x = L[i];
+      return '<span class="q">' + rotMes(x.m) + '</span><b>' + brl(x.prov) + '</b><br>'
+        + ORDEM.filter((k) => x[k]).map((k) => '<i style="background:' + COR_PROV[k] + '"></i>' + NOME_PROV[k] + ' ' + brl(x[k])).join('<br>')
+        + '<br><span class="q" style="margin-top:4px">média 12m ' + brl(media[i]) + '</span>'; });
+
+    const por = {};
+    S.forEach((x) => { const a = x.m.slice(0, 4); por[a] = por[a] || { a, p: 0, c: 0, inv: 0, n: 0 }; por[a].p += x.prov; por[a].c += x.custo; por[a].inv += x.inv; por[a].n += 1; });
+    const tb = $('#t-anos tbody'); tb.innerHTML = '';
+    let ant = null;
+    Object.values(por).filter((x) => x.p || x.c).forEach((x) => {
+      const v = ant && ant.p ? (x.p / x.n) / (ant.p / ant.n) - 1 : null;
+      tb.insertAdjacentHTML('beforeend', '<tr><td>' + x.a + '</td><td><b>' + brl(x.p) + '</b></td><td>' + brl(x.p / x.n) + '</td><td class="' + (v > 0 ? 'bom' : v < 0 ? 'ruim' : '') + '">' + (v == null ? '—' : sinal(v, (z) => pct(z, 0)))
+        + '</td><td>' + brl(x.c) + '</td><td>' + brl(x.inv) + '</td></tr>');
+      ant = x;
+    });
+    $('#pv-fim').textContent = fd(D.ult_mov);
+    const p22 = por['2022'] ? por['2022'].p / por['2022'].n : 0;
+    $('#pv-titulo').textContent = 'De ' + brl(p22) + ' por mês em 2022 para ' + brl(provMes) + ' hoje';
+    $('#pv-sub').innerHTML = 'Proventos brutos do extrato, mês a mês, empilhados por origem. A linha branca é a média de 12 meses: o ponto no fim dela é o <b>' + brl(provMes)
+      + ' por mês</b> do topo da página. Os FIIs respondem por <b>' + pct(soma(ult12, (x) => x.fii) / prov12, 0) + '</b> do que entrou nos últimos 12 meses.';
+
+    const tp = $('#t-pag tbody'); tp.innerHTML = '';
+    PAG.filter((p) => p.v12 > 1).forEach((p) => {
+      tp.insertAdjacentHTML('beforeend', '<tr class="' + (p.ativo ? '' : 'fora') + '"><td><i class="m" style="background:' + COR_PROV[p.tp] + '"></i>' + esc(p.nome) + '</td><td>' + brl(p.v12)
+        + '</td><td>' + brl(p.v3) + '</td><td>' + (p.ativo ? '' : '<span class="selo saiu">saiu</span>') + '</td></tr>');
+    });
+    $('#pag-sub').innerHTML = 'Somam os mesmos ' + brl(prov12) + ' dos 12 meses. "Saiu" marca quem não está mais na carteira: esses pagaram <b>' + brl(vSaiu) + '</b> que não se repetem.';
+  }
+
+  // ------------------------------------------------------------ diagnóstico
+  function diagnostico() {
+    anima($('#rs-num'), R.valor, (v) => sinal(v, kbrl)); $('#rs-num').className = 'grande ' + (R.valor >= 0 ? 'bom' : 'ruim');
+    $('#rs-sub').innerHTML = pct(R.valor / aportado, 0) + ' sobre o que ficou aportado, em ' + (+dataPatr.slice(0, 4) - +D.ini.slice(0, 4)) + ' anos, já contando os <b>'
+      + kbrl(soma(S, (x) => x.prov)) + '</b> de proventos recebidos e os impostos pagos.';
+    const linhas = [['Patrimônio no app (' + fd(dataPatr) + ')', patr], ['Tudo o que saiu', R.saidas], ['Tudo o que entrou', -R.entradas]];
+    $('#t-res tbody').innerHTML = linhas.map((l) => '<tr><td>' + l[0] + '</td><td class="' + (l[1] < 0 ? 'ruim' : '') + '">' + sinal(l[1], brl) + '</td></tr>').join('')
+      + '<tr><td><b>Resultado</b></td><td class="' + (R.valor >= 0 ? 'bom' : 'ruim') + '"><b>' + sinal(R.valor, brl) + '</b></td></tr>';
+
+    anima($('#dp-num'), vSaiu / prov12, (v) => pct(v, 0));
+    const sem = (prov12 - vSaiu) / 12;
+    $('#dp-sub').innerHTML = 'dos proventos de 12 meses vieram de ativos que <b>já saíram</b> (' + saiu.slice(0, 2).map((p) => esc(p.nome)).join(', ')
+      + '). Sem eles, a média seria <b>' + brl(sem) + ' por mês</b>, não ' + brl(provMes) + ': o dinheiro do resgate precisa ir para algo que pague renda para manter o nível. Quem mais pagou entre os que ficaram:';
+    barrasH($('#g-dep'), PAG.filter((p) => p.ativo).slice(0, 5).map((p) => ({ rot: p.nome, v: p.v12, cor: COR_PROV[p.tp] })), (v) => kbrl(v), 160);
+
+    const grupos = [
+      { rot: 'Renda fixa', v: soma(CLASSES.filter((c) => /Pós|Prefixado|Inflação/.test(c.nome)), (c) => c.valor), cor: PAL[0] },
+      { rot: 'Renda variável', v: soma(CLASSES.filter((c) => /Renda Variável|Listados/.test(c.nome)), (c) => c.valor), cor: PAL[1] },
+      { rot: 'Alternativos e multi', v: soma(CLASSES.filter((c) => /Alternativos|Multi/.test(c.nome)), (c) => c.valor), cor: PAL[6] },
+    ];
+    const top = CLASSES[0];
+    anima($('#cc-num'), top.valor / patr, (v) => pct(v, 0));
+    $('#cc-sub').innerHTML = 'do patrimônio está numa classe só, <b>' + esc(top.nome) + '</b>, quase toda fora do Open Finance. No ativo a ativo que dá para ver, o maior é '
+      + esc(D.ativos.slice().sort((a, b) => b.bruto - a.bruto)[0].nome) + '. Por grande grupo:';
+    barrasH($('#g-grupos'), grupos, (v) => pct(v / patr, 0), 150);
+
+    const c12 = soma(ult12, (x) => x.custo), cTot = soma(S, (x) => x.custo);
+    anima($('#ir-num'), c12 / prov12, (v) => pct(v, 1));
+    const irTot = soma(Object.values(D.custos_ano), (o) => -(o.IR || 0));
+    $('#ir-sub').innerHTML = 'dos proventos de 12 meses foram para IR e taxas (' + brl(c12) + '). Desde o início: <b>' + brl(cTot) + '</b>, dos quais ' + brl(irTot)
+      + ' de IR, quase todo retido em juros de renda fixa e COE. Rendimento de FII e dividendo de ação são isentos.';
+
+    const u24 = S.slice(-24), comAporte = u24.filter((x) => x.ent - x.sai > 0).length;
+    $('#rg-num').textContent = comAporte + ' de 24';
+    $('#rg-sub').innerHTML = 'meses com aporte líquido positivo nos últimos dois anos. Nos últimos 12 meses entraram <b>' + brl(D.aporte12) + '</b> líquidos ('
+      + brl(D.aporte12 / 12) + ' por mês, em média), concentrados em poucos depósitos grandes. Cada barra é um mês:';
+    const host = $('#g-reg'), W = Math.max(240, host.clientWidth), H = 90, bw = W / 24, mx = Math.max.apply(null, u24.map((x) => Math.abs(x.ent - x.sai))) || 1;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img"><line class="grid" x1="0" x2="' + W + '" y1="' + H / 2 + '" y2="' + H / 2 + '"/>';
+    u24.forEach((x, i) => {
+      const v = x.ent - x.sai, h = Math.max(v ? 2 : 0, Math.abs(v) / mx * (H / 2 - 4));
+      s += '<g class="rg" data-i="' + i + '"><rect x="' + (i * bw) + '" y="0" width="' + bw + '" height="' + H + '" fill="transparent"/><rect x="' + (i * bw + 1) + '" y="' + (v >= 0 ? H / 2 - h : H / 2) + '" width="' + Math.max(2, bw - 2) + '" height="' + h + '" rx="2" fill="' + (v >= 0 ? '#4fd1a5' : '#ff6f61') + '"/></g>';
+    });
+    host.innerHTML = s + '</svg>';
+    liga(host, '.rg', (el) => { const x = u24[+el.dataset.i]; return '<span class="q">' + rotMes(x.m) + '</span>' + sinal(x.ent - x.sai, brl); });
+
+    const rf = D.ativos.filter((a) => a.classe === 'rf' && a.venc), hoje = D.hoje;
+    const ano = new Date(Date.UTC(+hoje.slice(0, 4) + 1, +hoje.slice(5, 7) - 1, +hoje.slice(8, 10))).toISOString().slice(0, 10);
+    const ate1 = rf.filter((a) => a.venc <= ano), vAte1 = soma(ate1, (a) => a.bruto);
+    const longo = rf.filter((a) => a.venc > ano).sort((a, b) => b.venc.localeCompare(a.venc));
+    const pos = CLASSES.find((c) => /Pós/.test(c.nome));
+    $('#lq-num').textContent = kbrl(vAte1);
+    $('#lq-sub').innerHTML = 'vencem nos próximos 12 meses (' + ate1.length + ' títulos detalhados). O mais longo vai até <b>' + (longo.length ? longo[0].venc.slice(0, 4) : '—')
+      + '</b>. A reserva de fato está no pós-fixado (' + (pos ? kbrl(pos.valor) : '—') + '), em geral com resgate em poucos dias; COE só sai sem perda no vencimento.';
+  }
+
+  // ------------------------------------------------------------ simulador
+  const apDef = Math.max(0, Math.round(D.aporte12 / 12 / 100) * 100);
+  const est = { aporte: apDef, real: 5, yld: Math.round(yld * 1000) / 10, ret: 4, alvo: 1000000 };
+  const CTRL = [
+    { k: 'aporte', nome: 'Aporte por mês', min: 0, max: 10000, step: 100, fmt: (v) => brl(v), base: 'média dos últimos 12 meses: ' + brl(D.aporte12 / 12) },
+    { k: 'real', nome: 'Rentabilidade real ao ano', min: 0, max: 10, step: 0.5, fmt: (v) => num(v, 1) + '%', base: 'acima da inflação; renda fixa boa entrega 5% a 6%' },
+    { k: 'yld', nome: 'Proventos ao ano sobre o patrimônio', min: 2, max: 12, step: 0.1, fmt: (v) => num(v, 1) + '%', base: 'yield de hoje: ' + pct(yld, 1) },
+    { k: 'ret', nome: 'Retirada segura ao ano', min: 2.5, max: 6, step: 0.5, fmt: (v) => num(v, 1) + '%', base: 'quanto do patrimônio dá para gastar por ano sem esgotá-lo; 4% é a regra clássica' },
+    { k: 'alvo', nome: 'Patrimônio-alvo', min: 200000, max: 5000000, step: 50000, fmt: kbrl, base: 'escolha um número redondo para mirar' },
+  ];
+  const box = $('#sim-ctrl');
+  CTRL.forEach((c) => {
+    const d = document.createElement('div'); d.className = 'ctrl';
+    d.innerHTML = '<div class="topo"><span>' + c.nome + '</span><b></b></div><input type="range" min="' + c.min + '" max="' + c.max + '" step="' + c.step + '" aria-label="' + c.nome + '"><span class="base">' + c.base + '</span>';
+    const inp = $('input', d), b = $('b', d); inp.value = est[c.k]; b.textContent = c.fmt(est[c.k]);
+    inp.addEventListener('input', () => { est[c.k] = +inp.value; b.textContent = c.fmt(est[c.k]); simula(); });
+    box.appendChild(d);
+  });
+  $('#sim-sub').innerHTML = 'Parte do patrimônio de hoje (<b>' + kbrl(patr) + '</b>) e soma o aporte todo mês. Três metas: proventos pagando o custo fixo de <b>'
+    + brl(FIXO) + '</b>; o patrimônio-alvo que você escolher; e a liberdade financeira, quando a retirada segura paga a despesa média inteira de <b>' + brl(DESP) + '</b> por mês.';
+
+  const quando = (serie, alvo) => { for (let k = 0; k < serie.length; k++) if (serie[k] >= alvo) return k; return null; };
+  function simula() {
+    const i = Math.pow(1 + est.real / 100, 1 / 12) - 1, N = 50 * 12;
+    const serie = [patr]; let v = patr;
+    for (let k = 1; k <= N; k++) { v = v * (1 + i) + est.aporte; serie.push(v); }
+    const metas = [
+      { el: 1, alvo: FIXO * 12 / (est.yld / 100), cor: OURO, nome: 'custo fixo' },
+      { el: 2, alvo: est.alvo, cor: '#4fd1a5', nome: 'alvo' },
+      { el: 3, alvo: DESP * 12 / (est.ret / 100), cor: PAL[6], nome: 'liberdade' },
+    ];
+    const ano0 = +D.hoje.slice(0, 4), mes0 = +D.hoje.slice(5, 7);
+    metas.forEach((mt) => {
+      mt.k = quando(serie, mt.alvo);
+      const n = $('#m' + mt.el), q = $('#m' + mt.el + 'q');
+      let quandoTxt = '';
+      if (mt.k == null) { n.textContent = 'mais de 50 anos'; n.className = 'numero ruim'; }
+      else if (mt.k === 0) { n.textContent = 'já chegou'; n.className = 'numero bom'; }
+      else { const anos = mt.k / 12; n.textContent = anos < 1 ? num(mt.k) + ' meses' : num(anos, anos < 10 ? 1 : 0) + ' anos'; n.className = 'numero';
+        quandoTxt = 'em <b>' + (ano0 + Math.floor((mes0 - 1 + mt.k) / 12)) + '</b> · '; }
+      q.innerHTML = quandoTxt + (mt.el === 2 ? '' : 'patrimônio de ') + '<b>' + kbrl(mt.alvo) + '</b>'
+        + (mt.el === 1 ? ' a ' + num(est.yld, 1) + '% de proventos' : mt.el === 3 ? ' a ' + num(est.ret, 1) + '% de retirada' : '');
+    });
+    const ks = metas.map((mt) => mt.k).filter((k) => k != null);
+    const anosG = Math.min(50, Math.max(10, Math.ceil((ks.length ? Math.max.apply(null, ks) : N) / 12) + 3));
+    const L = serie.slice(0, anosG * 12 + 1);
+    const host = $('#g-sim'), W = Math.max(280, host.clientWidth), H = 300, m = { t: 16, r: 16, b: 26, l: 56 };
+    const max = Math.max(L[L.length - 1], Math.max.apply(null, metas.map((mt) => mt.alvo).filter((a) => a < L[L.length - 1] * 1.6))) * 1.08;
+    const X = (k) => m.l + k * (W - m.l - m.r) / (L.length - 1), Y = (v) => m.t + (max - Math.min(v, max)) * (H - m.t - m.b) / max;
+    let ap = patr; const apo = L.map((_, k) => (k ? (ap += est.aporte) : ap));
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Patrimônio projetado">'
+      + '<defs><linearGradient id="gsim" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e9c46a" stop-opacity=".3"/><stop offset="1" stop-color="#e9c46a" stop-opacity="0"/></linearGradient></defs>';
+    [0, .25, .5, .75, 1].forEach((f) => { const v = max / 1.08 * f; s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + kbrl(v) + '</text>'; });
+    const passoA = anosG <= 15 ? 2 : anosG <= 30 ? 5 : 10;
+    for (let a = passoA; a <= anosG; a += passoA) s += '<text class="ax" x="' + X(a * 12) + '" y="' + (H - 6) + '" text-anchor="middle">' + (ano0 + a) + '</text>';
+    const d1 = L.map((v, k) => (k ? 'L' : 'M') + X(k).toFixed(1) + ',' + Y(v).toFixed(1)).join('');
+    const d2 = apo.map((v, k) => (k ? 'L' : 'M') + X(k).toFixed(1) + ',' + Y(v).toFixed(1)).join('');
+    s += '<path d="' + d1 + 'L' + X(L.length - 1) + ',' + Y(0) + 'L' + X(0) + ',' + Y(0) + 'Z" fill="url(#gsim)"/>'
+      + '<path d="' + d2 + '" fill="none" stroke="#8fa8a5" stroke-width="1.4" stroke-dasharray="4 4"/>'
+      + '<path d="' + d1 + '" fill="none" stroke="#e9c46a" stroke-width="2.4"/>';
+    let ultY = -99;
+    metas.slice().sort((a, b) => b.alvo - a.alvo).forEach((mt) => {
+      if (mt.alvo > max) return;
+      let ty = Y(mt.alvo) - 6; if (ty - ultY < 14) ty = Y(mt.alvo) + 15; ultY = ty;
+      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(mt.alvo) + '" y2="' + Y(mt.alvo) + '" stroke="' + mt.cor + '" stroke-width="1.5" stroke-dasharray="6 4" stroke-opacity=".8"/>'
+        + '<text class="rotf" x="' + (m.l + 6) + '" y="' + ty + '" style="fill:' + mt.cor + '">' + mt.nome + ' · ' + kbrl(mt.alvo) + '</text>';
+      if (mt.k != null && mt.k < L.length) s += '<circle cx="' + X(mt.k) + '" cy="' + Y(mt.alvo) + '" r="5" fill="' + mt.cor + '" stroke="#0e1d21" stroke-width="2"/>';
+    });
+    const passo = (W - m.l - m.r) / anosG;
+    for (let a = 0; a <= anosG; a++) s += '<rect class="sm" data-k="' + (a * 12) + '" x="' + (X(a * 12) - passo / 2) + '" y="' + m.t + '" width="' + passo + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+    host.innerHTML = s + '</svg>';
+    liga(host, '.sm', (el) => { const k = +el.dataset.k, v = L[k];
+      return '<span class="q">' + (ano0 + k / 12) + '</span>Patrimônio <b>' + kbrl(v) + '</b><br>aportado ' + kbrl(apo[k]) + '<br>proventos ' + brl(v * est.yld / 100 / 12) + '/mês'; });
+    const v10 = serie[120];
+    $('#sim-g-sub').innerHTML = 'Linha dourada: patrimônio; tracejado cinza: só o que foi aportado. Em 10 anos, <b>' + kbrl(v10) + '</b>, pagando cerca de <b>'
+      + brl(v10 * est.yld / 100 / 12) + '</b> por mês em proventos. As linhas horizontais são as metas.';
+  }
+
+  // ------------------------------------------------------------ notas
+  $('#n-app').textContent = fd(dataPatr); $('#n-of').textContent = kbrl(D.of_hoje) + ' de ' + kbrl(patr);
+  $('#n-mov').textContent = num(D.n_mov); $('#n-ini').textContent = fd(D.ini); $('#n-fim').textContent = fd(D.ult_mov);
+  $('#n-ref').textContent = rotMes(D.ref.meses[0]) + ' a ' + rotMes(D.ref.meses[1]);
+  $('#n-gerado').textContent = D.gerado;
+
+  const obs = 'IntersectionObserver' in window ? new IntersectionObserver((ents) => {
+    ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visto'); obs.unobserve(e.target); } });
+  }, { threshold: 0.05 }) : null;
+  $$('.entra').forEach((s) => { if (obs) obs.observe(s); else s.classList.add('visto'); });
+
+  function desenha() { carteira(); detalhe(); anos(); acumulado(); proventos(); diagnostico(); simula(); }
+  desenha();
+  let tm;
+  window.addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(desenha, 150); });
+})();
+</script>
+</body>
+</html>

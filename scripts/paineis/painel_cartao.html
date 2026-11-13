@@ -1,0 +1,1150 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fatura na Mira</title>
+<style>
+  /* Mesmo mundo dos outros painéis. O cartão é verde-limão; as classes de gasto
+     seguem o painel de finanças: essencial azul, eventual âmbar, cortável coral. */
+  :root {
+    color-scheme: dark;
+    --bg: #071013;
+    --bg-alto: #0a171b;
+    --painel: #0e1d21;
+    --painel-2: #12262b;
+    --linha: #1d343a;
+    --linha-forte: #2a4a51;
+    --tinta: #e8f2f0;
+    --fraca: #8fa8a5;
+    --apagada: #5d7774;
+    --cartao: #b8e05a;
+    --essencial: #6c8cff;
+    --eventual: #ffb547;
+    --cortavel: #ff6f61;
+    --bom: #4fd1a5;
+    --ruim: #ff6f61;
+    --atencao: #ffb547;
+    --raio: 14px;
+    --display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    --texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 560px at 6% -10%, rgba(184, 224, 90, .10), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(255, 111, 97, .06), transparent 60%),
+      var(--bg);
+    color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.5;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 80px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px 96px; } }
+
+  .barra-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0;
+    border-bottom: 1px solid var(--linha); font-size: 13px; color: var(--fraca); flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 10px; color: var(--tinta); font-weight: 600; letter-spacing: .02em; }
+  .marca svg { width: 26px; height: 26px; }
+  .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav a { color: var(--fraca); text-decoration: none; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; transition: color .15s, border-color .15s; }
+  .nav a:hover, .nav a:focus-visible { color: var(--tinta); border-color: var(--linha-forte); outline: none; }
+  .nav a.cta { color: var(--bg); background: var(--cartao); font-weight: 600; }
+
+  .hero { padding: 48px 0 24px; display: grid; gap: 28px; }
+  .hero > *, .grade > *, .grade-3 > *, .sim > *, .filtros > * { min-width: 0; }
+  .olho { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--cartao); font-weight: 600; margin: 0 0 14px; }
+  .hero h1 { font-family: var(--display); font-weight: 600; font-stretch: 85%; font-size: clamp(34px, 5.4vw, 66px);
+    line-height: 1.04; letter-spacing: -.015em; margin: 0; max-width: 22ch; text-wrap: balance; }
+  .hero h1 em { font-style: normal; color: var(--cartao); }
+  .hero .tese { max-width: 70ch; color: var(--fraca); font-size: 18px; margin: 18px 0 0; text-wrap: pretty; }
+  .hero .tese b { color: var(--tinta); font-weight: 600; }
+
+  .filtros { display: flex; gap: 12px 20px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; z-index: 10;
+    padding: 12px 0; background: linear-gradient(180deg, var(--bg) 70%, transparent); }
+  .segmento { display: inline-grid; grid-auto-flow: column; padding: 4px; gap: 4px; background: var(--bg-alto);
+    border: 1px solid var(--linha); border-radius: 12px; max-width: 100%; overflow-x: auto; }
+  .segmento button { font: inherit; font-size: 13px; color: var(--fraca); background: transparent; border: 0; border-radius: 9px;
+    padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+  .segmento button[aria-pressed="true"] { background: var(--painel-2); color: var(--tinta); box-shadow: 0 0 0 1px var(--linha-forte); }
+  .segmento button:focus-visible { outline: 2px solid var(--cartao); outline-offset: 1px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr)); gap: 12px; }
+  .kpi { background: linear-gradient(180deg, var(--painel-2), var(--painel)); border: 1px solid var(--linha);
+    border-top: 2px solid var(--cor-k, var(--linha)); border-radius: var(--raio); padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .kpi .numero { font-size: 30px; }
+  .rotulo { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); font-weight: 600; }
+  .numero { font-family: var(--display); font-weight: 600; line-height: 1.1; letter-spacing: -.01em; }
+  .nota { font-size: 13px; color: var(--fraca); }
+  .nota b { color: var(--tinta); }
+  .delta { font-size: 12px; font-weight: 600; }
+  .bom { color: var(--bom); }
+  .ruim { color: var(--ruim); }
+  .aviso { color: var(--atencao); }
+
+  section.bloco { padding: 56px 0 0; scroll-margin-top: 64px; }
+  .cab { display: grid; gap: 8px; margin-bottom: 24px; max-width: 76ch; }
+  .cab h2 { font-family: var(--display); font-weight: 600; font-stretch: 90%; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .cab p { margin: 0; color: var(--fraca); text-wrap: pretty; }
+  .cab p b { color: var(--tinta); font-weight: 600; }
+  .cab .olho { margin: 0; }
+  .grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+  .grade-3 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 22px; min-width: 0;
+    display: flex; flex-direction: column; gap: 12px; }
+  .cartao h3 { margin: 0; font-size: 17px; font-weight: 600; }
+  .cartao .sub { margin: 0; color: var(--fraca); font-size: 14px; }
+  .cartao .sub b { color: var(--tinta); }
+  .tela { width: 100%; position: relative; }
+  .tela svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg .grid { stroke: var(--linha); stroke-width: 1; }
+  svg .ax { fill: var(--apagada); font-size: 11px; font-family: var(--texto); }
+
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--fraca); align-items: center; }
+  .legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .legenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  .barras { display: grid; gap: 6px; }
+  .barra { display: grid; grid-template-columns: minmax(120px, 210px) 1fr minmax(150px, auto); gap: 14px; align-items: center; font-size: 14px; padding: 4px 0; }
+  .barra .trilho { height: 12px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; display: flex; }
+  .barra .trilho span { height: 100%; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+  .barra .v { text-align: right; color: var(--fraca); font-size: 13px; white-space: nowrap; }
+  .barra .v b { color: var(--tinta); }
+  .barra .n { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+  .barra .n i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .barra .n span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 560px) { .barra { grid-template-columns: 1fr auto; } .barra .trilho { grid-column: 1 / -1; grid-row: 2; } }
+
+  /* categorias com detalhe */
+  .cats { display: grid; gap: 4px; }
+  .cat > button { width: 100%; display: grid; grid-template-columns: minmax(110px, 200px) 1fr minmax(150px, auto); gap: 14px; align-items: center;
+    font: inherit; font-size: 14px; color: var(--tinta); background: transparent; border: 0; padding: 7px 8px; border-radius: 10px; cursor: pointer; text-align: left; }
+  .cat > button:hover { background: var(--painel-2); }
+  .cat > button:focus-visible { outline: 2px solid var(--cartao); }
+  .cat .trilho { height: 12px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; display: flex; }
+  .cat .trilho span { height: 100%; }
+  .cat .v { text-align: right; color: var(--fraca); font-size: 13px; white-space: nowrap; }
+  .cat .v b { color: var(--tinta); }
+  .cat .grupos { display: none; padding: 4px 8px 12px 24px; }
+  .cat.aberto .grupos { display: grid; gap: 4px; }
+  .cat.aberto > button { background: var(--painel-2); }
+  .gr { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px 14px; font-size: 13px; color: var(--fraca); align-items: center; }
+  .gr i { width: 8px; height: 8px; border-radius: 2px; }
+  .gr b { color: var(--tinta); font-weight: 600; }
+  @media (max-width: 560px) { .cat > button { grid-template-columns: 1fr auto; } .cat .trilho { grid-column: 1 / -1; grid-row: 2; } }
+
+  /* cartões (os de plástico) */
+  .plasticos { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+  .plastico { position: relative; border-radius: 16px; padding: 18px 20px; display: grid; gap: 4px; overflow: hidden;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--cor-p) 22%, var(--painel-2)), var(--painel) 70%);
+    border: 1px solid color-mix(in srgb, var(--cor-p) 35%, var(--linha)); }
+  .plastico .chip { width: 30px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #e9d48a, #b99a45); opacity: .85; margin-bottom: 6px; }
+  .plastico .nome { font-family: var(--display); font-weight: 600; font-size: 20px; color: var(--cor-p); }
+  .plastico .numero { font-size: 28px; }
+  .plastico.apagado { opacity: .55; }
+  .selo { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; }
+
+  /* tabelas */
+  .tabela { width: 100%; overflow-x: auto; }
+  .tabela.alta { max-height: 420px; overflow-y: auto; }
+  table.dados { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.dados th, table.dados td { padding: 9px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--linha); }
+  table.dados th { color: var(--fraca); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; position: sticky; top: 0; background: var(--painel); }
+  table.dados th:first-child, table.dados td:first-child { text-align: left; }
+  table.dados td.esq, table.dados th.esq { text-align: left; }
+  table.dados td.desc { text-align: left; white-space: normal; min-width: 180px; max-width: 320px; }
+  table.dados tbody tr:hover td { background: var(--painel-2); }
+  .mini { height: 6px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; min-width: 70px; display: flex; }
+  .mini span { height: 100%; background: var(--cartao); }
+
+  /* simulador */
+  .sim { display: grid; gap: 16px; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 980px) { .sim { grid-template-columns: 1fr; } }
+  .ctl { display: grid; gap: 4px; padding: 9px 0; border-bottom: 1px solid var(--linha); }
+  .ctl:last-child { border-bottom: 0; }
+  .ctl .topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+  .ctl .topo b { font-family: var(--display); font-size: 17px; color: var(--cor-c, var(--cartao)); white-space: nowrap; }
+  .ctl .base { font-size: 12px; color: var(--apagada); }
+  .ctl input[type="range"] { width: 100%; accent-color: var(--cor-c, var(--cartao)); height: 20px; cursor: pointer; background: transparent; margin: 0; }
+  .ctl input[type="range"]:focus-visible { outline: 2px solid var(--cartao); outline-offset: 2px; border-radius: 6px; }
+  .ctl.forte { border-bottom: 1px solid var(--linha-forte); padding-bottom: 14px; margin-bottom: 4px; }
+  .ctl.forte .topo b { font-size: 26px; }
+  .botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+  .botao { font: inherit; font-size: 13px; color: var(--tinta); background: var(--painel-2); border: 1px solid var(--linha-forte);
+    border-radius: 9px; padding: 7px 12px; cursor: pointer; }
+  .botao:hover { border-color: var(--cartao); }
+  .botao.forte { background: var(--cartao); color: var(--bg); border-color: var(--cartao); font-weight: 600; }
+  .botao:focus-visible { outline: 2px solid var(--cartao); outline-offset: 1px; }
+  .placar { border-radius: var(--raio); padding: 24px; border: 1px solid var(--linha-forte);
+    background: radial-gradient(600px 240px at 100% 0, rgba(184, 224, 90, .12), transparent 70%), linear-gradient(180deg, var(--painel-2), var(--painel));
+    display: grid; gap: 18px; }
+  .placar-nums { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+  .placar .numero { font-size: clamp(28px, 3vw, 40px); }
+  .placar p { margin: 0; font-size: 14px; color: var(--fraca); }
+  .placar p b { color: var(--tinta); }
+  .medidor { height: 16px; border-radius: 99px; background: var(--bg-alto); position: relative; overflow: visible; }
+  .medidor span { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 99px; transition: width .5s cubic-bezier(.2,.8,.2,1); }
+  .medidor .alvo { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--tinta); border-radius: 2px; }
+  .passos { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .passos li { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; font-size: 14px; padding: 8px 10px; border-radius: 10px; background: var(--bg-alto); }
+  .passos li i { width: 9px; height: 9px; border-radius: 2px; }
+  .passos li b { color: var(--tinta); }
+  .passos li span.v { color: var(--bom); font-weight: 600; white-space: nowrap; }
+
+  .notas { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--fraca); display: grid; gap: 12px; max-width: 86ch; }
+  .notas h2 { font-size: 15px; color: var(--tinta); margin: 0; font-weight: 600; }
+  .notas ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .notas b { color: var(--tinta); font-weight: 600; }
+
+  .dica { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .12s; background: #0b1a1e;
+    border: 1px solid var(--linha-forte); border-radius: 10px; padding: 8px 12px; font-size: 13px; color: var(--tinta);
+    box-shadow: 0 12px 30px rgba(0,0,0,.45); white-space: nowrap; }
+  .dica .q { color: var(--fraca); display: block; font-size: 12px; margin-bottom: 2px; }
+  .dica i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+
+  .entra { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .entra.visto { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .entra { opacity: 1; transform: none; transition: none; } * { transition-duration: 0s !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="barra-topo">
+    <div class="marca">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="4" y="8" width="24" height="16" rx="3" stroke="#b8e05a" stroke-width="2.2"/>
+        <path d="M4 13h24" stroke="#b8e05a" stroke-width="2.2"/>
+        <circle cx="22" cy="19.5" r="2" fill="#ff6f61"/>
+      </svg>
+      Fatura na Mira
+    </div>
+    <nav class="nav" aria-label="Seções">
+      <a href="#historico">Histórico</a>
+      <a href="#cartoes">Cartões</a>
+      <a href="#categorias">Para onde vai</a>
+      <a href="#maiores">Maiores</a>
+      <a href="#parcelas">Parcelas</a>
+      <a href="#conferencia">Pago × fatura</a>
+      <a href="#investback">Investback</a>
+      <a href="#cortar">Onde cortar</a>
+      <a href="#simulador" class="cta">Simulador</a>
+    </nav>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="olho" id="periodo-txt">—</p>
+      <h1 id="manchete">—</h1>
+      <p class="tese" id="tese">—</p>
+    </div>
+  </header>
+
+  <div class="filtros">
+    <div class="segmento" role="group" aria-label="Período" id="periodos"></div>
+    <div class="segmento" role="group" aria-label="Cartão" id="f-cartoes"></div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <!-- ===================================================== histórico -->
+  <section class="bloco entra" id="historico">
+    <div class="cab">
+      <p class="olho">Histórico</p>
+      <h2 id="hist-titulo">Fatura mês a mês</h2>
+      <p>Cada barra é uma fatura, pelo mês em que foi cobrada, dividida pelo tipo de gasto. A linha tracejada é a meta do simulador.
+        Períodos longos aparecem por ano, em média mensal.</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda" id="leg-hist"></div>
+      <div class="tela" id="g-hist"></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== cartões -->
+  <section class="bloco entra" id="cartoes">
+    <div class="cab">
+      <p class="olho">Cartões</p>
+      <h2 id="car-titulo">Cada cartão</h2>
+      <p>O número grande é o período escolhido; abaixo, a vida inteira do cartão. Os cartões antigos aparecem apagados quando não têm gasto no período.</p>
+    </div>
+    <div class="plasticos" id="plasticos"></div>
+  </section>
+
+  <!-- ===================================================== categorias -->
+  <section class="bloco entra" id="categorias">
+    <div class="cab">
+      <p class="olho">Para onde vai</p>
+      <h2 id="cat-titulo">Gasto por categoria</h2>
+      <p>Clique numa categoria para ver os grupos. A cor diz se o grupo é essencial, eventual ou dá para cortar.</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda" id="leg-cl"></div>
+      <div class="cats" id="cats"></div>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao"><h3>Onde mais passou o cartão</h3><p class="sub" id="rec-sub">—</p><div class="barras" id="recebs"></div></div>
+      <div class="cartao"><h3>Para quem</h3><p class="sub">Pelas marcações da planilha (carro, viagens…).</p><div class="barras" id="tags"></div></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== maiores -->
+  <section class="bloco entra" id="maiores">
+    <div class="cab">
+      <p class="olho">Maiores gastos</p>
+      <h2 id="mai-titulo">As compras que pesaram</h2>
+      <p>Compras feitas no período, pelo valor total (todas as parcelas somadas).</p>
+    </div>
+    <div class="cartao">
+      <div class="tabela alta"><table class="dados" id="t-mai"><thead><tr><th>Data</th><th class="esq">Compra</th><th class="esq">Categoria</th><th class="esq">Cartão</th><th>Parcelas</th><th>Total</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== parcelas -->
+  <section class="bloco entra" id="parcelas">
+    <div class="cab">
+      <p class="olho">Parcelamento</p>
+      <h2 id="par-titulo">Quanto da fatura é parcela</h2>
+      <p>Em cima, o período escolhido. Embaixo, a dívida já assumida: parcelas que ainda vão cair nas próximas faturas, seja qual for o período.</p>
+    </div>
+    <div class="kpis" id="par-kpis"></div>
+    <div class="cartao" style="margin-top:16px">
+      <h3>Parcela × à vista em cada fatura</h3>
+      <div class="legenda"><span><i style="background:var(--cartao)"></i>À vista</span><span><i style="background:#a68cff"></i>Parcelas</span><span><i style="background:#fff;height:2px"></i>% em parcelas</span></div>
+      <div class="tela" id="g-par"></div>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Parcelamento em aberto</h3>
+        <p class="sub" id="ab-sub">—</p>
+        <div class="tela" id="g-ab"></div>
+      </div>
+      <div class="cartao">
+        <h3>Compras ainda sendo pagas</h3>
+        <div class="tabela"><table class="dados" id="t-ab"><thead><tr><th class="esq">Compra</th><th>Parcelas</th><th>Por mês</th><th>Falta pagar</th><th>Até</th></tr></thead><tbody></tbody><tfoot></tfoot></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== conferência -->
+  <section class="bloco entra" id="conferencia">
+    <div class="cab">
+      <p class="olho">Pago × fatura</p>
+      <h2 id="conf-titulo">O que o banco pagou contra o que a fatura somou</h2>
+      <p>A fatura é a soma dos lançamentos da planilha com aquela data de fatura; o pago é o que saiu do banco para o cartão no mesmo mês.
+        Diferença costuma ser lançamento esquecido, valor digitado errado ou compra que caiu na fatura seguinte.</p>
+    </div>
+    <div class="kpis" id="conf-kpis"></div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Diferença por mês</h3>
+        <div class="legenda"><span><i style="background:var(--ruim)"></i>Banco pagou mais que a planilha</span><span><i style="background:var(--essencial)"></i>Pagou menos</span><span><i style="background:var(--linha-forte)"></i>Sem pagamento registrado</span></div>
+        <div class="tela" id="g-conf"></div>
+      </div>
+      <div class="cartao">
+        <h3>Mês a mês</h3>
+        <div class="tabela alta"><table class="dados" id="t-conf"><thead><tr><th>Fatura</th><th class="esq">Cartão</th><th>Planilha</th><th>Banco</th><th>Diferença</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== investback -->
+  <section class="bloco entra" id="investback">
+    <div class="cab">
+      <p class="olho">Investback</p>
+      <h2 id="ib-titulo">O que volta do cartão XP</h2>
+      <p>O cashback do XP cai num fundo da XP. A taxa efetiva compara o que voltou com o gasto no XP no mesmo período.</p>
+    </div>
+    <div class="kpis" id="ib-kpis"></div>
+    <div class="cartao" style="margin-top:16px">
+      <div class="legenda"><span><i style="background:var(--cartao)"></i>Investback no mês</span><span><i style="background:#fff;height:2px"></i>Taxa efetiva, 12 meses</span></div>
+      <div class="tela" id="g-ib"></div>
+      <p class="sub" id="ib-sub">—</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== onde cortar -->
+  <section class="bloco entra" id="cortar">
+    <div class="cab">
+      <p class="olho">Onde cortar</p>
+      <h2 id="cor-titulo">O que dá para apertar</h2>
+      <p>Os grupos marcados como cortáveis, as compras pequenas e frequentes que somam muito, o que se repete todo mês e o que mais cresceu.</p>
+    </div>
+    <div class="kpis" id="cor-kpis"></div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Cortáveis, do maior para o menor</h3>
+        <p class="sub">Quanto sai por mês, quantas vezes, e quanto sobra num ano cortando metade.</p>
+        <div class="tabela"><table class="dados" id="t-cor"><thead><tr><th class="esq">Grupo</th><th>Por mês</th><th>Vezes/mês</th><th>Ticket</th><th>Metade = no ano</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="cartao">
+        <h3>Gotejamento: compras abaixo de R$ 50</h3>
+        <p class="sub" id="got-sub">—</p>
+        <div class="barras" id="got"></div>
+      </div>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Todo mês tem</h3>
+        <p class="sub" id="rcr-sub">—</p>
+        <div class="tabela"><table class="dados" id="t-rcr"><thead><tr><th class="esq">Onde</th><th class="esq">Grupo</th><th>Meses</th><th>Por mês</th><th>No ano</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="cartao">
+        <h3>O que mais cresceu</h3>
+        <p class="sub" id="cre-sub">—</p>
+        <div class="barras" id="cre"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== simulador -->
+  <section class="bloco entra" id="simulador">
+    <div class="cab">
+      <p class="olho">Simulador</p>
+      <h2>O que precisa para a fatura caber na meta</h2>
+      <p>Escolha a meta da fatura mensal. O simulador parte do seu ritmo de gasto, soma as parcelas que já estão contratadas e mostra o quanto falta cortar, onde, e a partir de quando a fatura fica abaixo da meta.</p>
+    </div>
+    <div class="sim">
+      <div class="cartao">
+        <div class="segmento" role="group" aria-label="Ritmo de gasto usado como base" id="s-bases"></div><span class="base" style="font-size:12px;color:var(--apagada)">ritmo de gasto: média das últimas faturas</span>
+        <div class="ctl forte"><div class="topo"><label for="s-meta">Meta da fatura</label><b id="s-meta-v">—</b></div>
+          <input type="range" id="s-meta" min="1000" max="15000" step="100"><span class="base" id="s-meta-b">—</span></div>
+        <div class="ctl" style="--cor-c:var(--cortavel)"><div class="topo"><label for="s-c2">Cortar dos cortáveis</label><b id="s-c2-v">—</b></div>
+          <input type="range" id="s-c2" min="0" max="100" step="5"><span class="base" id="s-c2-b">—</span></div>
+        <div class="ctl" style="--cor-c:var(--eventual)"><div class="topo"><label for="s-c1">Cortar dos eventuais</label><b id="s-c1-v">—</b></div>
+          <input type="range" id="s-c1" min="0" max="100" step="5"><span class="base" id="s-c1-b">—</span></div>
+        <div class="ctl" style="--cor-c:var(--essencial)"><div class="topo"><label for="s-c0">Cortar dos essenciais</label><b id="s-c0-v">—</b></div>
+          <input type="range" id="s-c0" min="0" max="50" step="5"><span class="base" id="s-c0-b">—</span></div>
+        <div class="ctl" style="--cor-c:#a68cff"><div class="topo"><label for="s-np">Novos parcelamentos</label><b id="s-np-v">—</b></div>
+          <input type="range" id="s-np" min="0" max="100" step="10"><span class="base" id="s-np-b">—</span></div>
+        <div class="botoes"><button type="button" class="botao forte" id="s-aplica">Aplicar a sugestão</button><button type="button" class="botao" id="s-volta">Zerar cortes</button></div>
+      </div>
+      <div style="display:grid;gap:16px;min-width:0">
+        <div class="placar" aria-live="polite">
+          <div class="placar-nums">
+            <div><span class="rotulo">Fatura no seu ritmo</span><div class="numero" id="s-base">—</div><span class="nota" id="s-base-n">—</span></div>
+            <div><span class="rotulo">Com os cortes</span><div class="numero" id="s-novo">—</div><span class="nota" id="s-novo-n">—</span></div>
+            <div><span class="rotulo">Falta cortar</span><div class="numero" id="s-falta">—</div><span class="nota" id="s-falta-n">—</span></div>
+          </div>
+          <div class="medidor" id="s-med"><span></span><i class="alvo"></i></div>
+          <p id="s-texto">—</p>
+        </div>
+        <div class="cartao">
+          <h3>Próximas faturas</h3>
+          <div class="legenda"><span><i style="background:#5d7774"></i>Parcelas já contratadas</span><span><i style="background:#a68cff"></i>Novos parcelamentos</span><span><i style="background:var(--cartao)"></i>Gasto à vista</span><span><i style="background:#fff;height:2px"></i>Meta</span></div>
+          <div class="tela" id="g-sim"></div>
+        </div>
+        <div class="cartao">
+          <h3 id="sug-titulo">Sugestão para chegar lá</h3>
+          <p class="sub" id="sug-sub">—</p>
+          <ol class="passos" id="sug"></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="notas">
+    <h2>De onde vêm estes números</h2>
+    <ul>
+      <li><b>Fonte</b>: os gastos de cartão da planilha (<span id="n-linhas">—</span>, de <span id="n-ini">—</span> a <span id="n-fim">—</span>), o pagamento das faturas no extrato do Itaú e no Nubank, e o investback da XP.</li>
+      <li><b>Mês</b> é sempre o da fatura, quando o gasto foi cobrado, e não o da compra. A exceção são "Maiores gastos", que usam a data da compra. Cartões antigos sem data de fatura cobram no mês da compra.</li>
+      <li><b>Parcelas</b>: o XP grava uma linha por parcela; a compra é remontada juntando as parcelas com a mesma data, descrição e valor. Uma parcela "1" sozinha conta como compra à vista.</li>
+      <li><b>Pago × fatura</b>: o pagamento vem do extrato do banco. Mês sem pagamento registrado aparece como "sem pagamento registrado" e não entra na diferença.</li>
+      <li><b>Cortável, eventual, essencial</b> é a compressibilidade do grupo, a mesma do painel de finanças. Grupo sem marcação herda da área (gastos essenciais viram essencial).</li>
+      <li><b>Simulador</b>: o ritmo é a média das faturas da base, separando o à vista dos novos parcelamentos. As parcelas já contratadas entram como estão; os novos parcelamentos só pesam inteiros depois de passado o número médio de parcelas. A meta fica guardada neste navegador.</li>
+      <li>Gerado em <span id="n-gerado">—</span> a partir do <i>db-demo</i>. Arquivo local, sem conexão com a internet.</li>
+    </ul>
+  </footer>
+</div>
+
+<div class="dica" id="dica" role="tooltip"></div>
+
+<script>
+const D = /*__DADOS__*/null;
+
+(function () {
+  'use strict';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const num = (v, c) => v == null || isNaN(v) ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: c || 0, maximumFractionDigits: c || 0 });
+  const brl = (v, c) => (v < 0 ? '−' : '') + 'R$ ' + num(Math.abs(v), c);
+  const kbrl = (v) => (v < 0 ? '−' : '') + 'R$ ' + (Math.abs(v) >= 1e6 ? num(Math.abs(v) / 1e6, 1) + ' mi' : Math.abs(v) >= 1e4 ? num(Math.abs(v) / 1e3, 0) + ' mil' : Math.abs(v) >= 1e3 ? num(Math.abs(v) / 1e3, 1) + ' mil' : num(Math.abs(v), 0));
+  const pct = (v, c) => v == null || !isFinite(v) ? '—' : num(100 * v, c || 0) + '%';
+  const ts = (s) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+  const fd = (t) => { const d = new Date(t); return String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0') + '/' + d.getUTCFullYear(); };
+  const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const rotMes = (k) => MESES[+k.slice(5) - 1] + '/' + k.slice(2, 4);
+  const listaMeses = (a, b) => { const out = []; let [y, m] = a.split('-').map(Number); const [yb, mb] = b.split('-').map(Number);
+    while (y < yb || (y === yb && m <= mb)) { out.push(y + '-' + String(m).padStart(2, '0')); m++; if (m > 12) { m = 1; y++; } } return out; };
+  const somaMes = (k, n) => { let [y, m] = k.split('-').map(Number); m += n; while (m > 12) { m -= 12; y++; } while (m < 1) { m += 12; y--; } return y + '-' + String(m).padStart(2, '0'); };
+  const soma = (l, f) => l.reduce((s, x) => s + (f ? f(x) : x.g), 0);
+  const guarda = { le: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    grava: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sem armazenamento */ } } };
+
+  const HOJE = D.hoje, MES_HOJE = HOJE.slice(0, 7);
+  const COR_CARTAO = { 'XP': '#b8e05a', 'Nubank': '#a68cff', 'Visa BB': '#e9c46a', 'Citibank': '#3cc8ea', 'Diners': '#ff7eb6' };
+  const COR_CL = ['#6c8cff', '#ffb547', '#ff6f61', '#5d7774', '#8fa8a5'];
+  const NOME_CL = D.classes;
+  const XP = D.cartoes.indexOf('XP');
+  // [data compra, meses até a fatura, gasto, cartão, cat, grupo, classe, parcela, de n, compra, recebedor, tag]
+  const L = D.linhas.map((r) => ({ d: r[0], m: r[0].slice(0, 7), f: somaMes(r[0].slice(0, 7), r[1]), g: r[2], c: r[3],
+    cat: D.cats[r[4]], gr: D.grupos[r[5]], cl: r[6], p: r[7], n: r[8], cp: r[9], rc: D.recebs[r[10]], tag: r[11] >= 0 ? D.tags[r[11]] : null }));
+  const FAT = L.filter((x) => x.f <= MES_HOJE);          // já cobrado
+  const ABERTO = L.filter((x) => x.f > MES_HOJE);        // faturas que ainda vão chegar
+  const TODOS = listaMeses(FAT.reduce((a, x) => x.f < a ? x.f : a, MES_HOJE), MES_HOJE);
+  const PAG = D.pagamentos.map((r) => ({ d: r[0], m: r[0].slice(0, 7), v: r[1], c: r[2] }));
+  const IB = D.investback.map((r) => ({ d: r[0], m: r[0].slice(0, 7), v: r[1] }));
+  const descCompra = (x) => x.cp >= 0 ? D.compras[x.cp][0] : (x.rc || x.gr);
+
+  const dica = $('#dica');
+  function mostra(html, ev) {
+    dica.innerHTML = html; dica.style.opacity = '1';
+    const w = dica.offsetWidth, h = dica.offsetHeight;
+    let x = ev.clientX + 14, y = ev.clientY - h - 12;
+    if (x + w > window.innerWidth - 8) x = ev.clientX - w - 14;
+    if (y < 8) y = ev.clientY + 16;
+    dica.style.left = Math.max(8, x) + 'px'; dica.style.top = y + 'px';
+  }
+  const esconde = () => { dica.style.opacity = '0'; };
+  function anima(el, alvo, fmt) {
+    const de = el._v === undefined ? alvo : el._v;
+    el._v = alvo;
+    if (calmo || de === alvo) { el.textContent = fmt(alvo); return; }
+    const t0 = performance.now();
+    cancelAnimationFrame(el._raf);
+    const passo = (t) => { const p = Math.min(1, (t - t0) / 500), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(de + (alvo - de) * e); if (p < 1) el._raf = requestAnimationFrame(passo); };
+    el._raf = requestAnimationFrame(passo);
+  }
+  function barras(host, linhas, max) {
+    host.innerHTML = '';
+    if (!linhas.length) { host.innerHTML = '<p class="nota">Nada no período.</p>'; return; }
+    linhas.forEach((l) => {
+      const d = document.createElement('div'); d.className = 'barra';
+      d.innerHTML = '<span class="n"><i></i><span></span></span><span class="trilho"><span></span></span><span class="v"><b></b><span></span></span>';
+      d.querySelector('.n i').style.background = l.cor; d.querySelector('.n span').textContent = l.nome; d.querySelector('.n span').title = l.nome;
+      const s = d.querySelector('.trilho span'); s.style.background = l.cor; s.style.width = Math.max(0, 100 * l.v / (max || 1)) + '%';
+      d.querySelector('.v b').textContent = l.txt; d.querySelector('.v span').textContent = l.nota ? ' ' + l.nota : '';
+      if (l.dica) d.addEventListener('mousemove', (ev) => mostra(l.dica, ev)), d.addEventListener('mouseleave', esconde);
+      host.appendChild(d);
+    });
+  }
+  function kpi(alvo, rot, valor, nota, cor, delta, cls) {
+    const d = document.createElement('div'); d.className = 'kpi'; d.style.setProperty('--cor-k', cor);
+    d.innerHTML = '<span class="rotulo"></span><span class="numero"></span><span class="nota"></span>';
+    d.children[0].textContent = rot; d.children[1].textContent = valor; d.children[2].innerHTML = nota;
+    if (cls) d.children[1].className = 'numero ' + cls;
+    if (delta) { const s = document.createElement('span'); s.className = 'delta ' + delta.cls; s.textContent = delta.txt; d.appendChild(s); }
+    alvo.appendChild(d);
+  }
+  // eixo y com passo "redondo"
+  const passoY = (amp) => [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000].find((p) => amp / p <= 6) || 100000;
+
+  // --------------------------------------------------------- filtros
+  const anoFim = +MES_HOJE.slice(0, 4);
+  const PERIODOS = [
+    { id: '12m', nome: 'Últimos 12 meses', meses: TODOS.slice(-12) },
+    { id: 'a0', nome: String(anoFim), meses: TODOS.filter((k) => k.startsWith(String(anoFim))) },
+    { id: 'a1', nome: String(anoFim - 1), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 1))) },
+    { id: 'a2', nome: String(anoFim - 2), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 2))) },
+    { id: 'a3', nome: String(anoFim - 3), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 3))) },
+    { id: 'tudo', nome: 'Tudo', meses: TODOS }
+  ].filter((p) => p.meses.length);
+  const est = { per: PERIODOS.find((p) => p.id === 'a0') || PERIODOS[0], c: -1 };
+  PERIODOS.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = p.nome; b.dataset.id = p.id;
+    b.setAttribute('aria-pressed', p === est.per);
+    b.addEventListener('click', () => { est.per = p; $$('#periodos button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.id === p.id)); recorte(); });
+    $('#periodos').appendChild(b);
+  });
+  [[-1, 'Todos os cartões']].concat(D.cartoes.map((c, i) => [i, c])).forEach(([i, nome]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = nome; b.dataset.c = i;
+    b.setAttribute('aria-pressed', i === est.c);
+    b.addEventListener('click', () => { est.c = i; $$('#f-cartoes button').forEach((x) => x.setAttribute('aria-pressed', +x.dataset.c === i)); recorte(); });
+    $('#f-cartoes').appendChild(b);
+  });
+  const doCartao = (x) => est.c < 0 || x.c === est.c;
+
+  // meses do período em que o filtro de cartão tem fatura (cartões antigos não contam meses vazios)
+  function resumo(meses) {
+    const set = new Set(meses);
+    const sel = FAT.filter((x) => set.has(x.f) && doCartao(x));
+    const r = { sel, total: 0, cl: [0, 0, 0, 0, 0], parc: 0, cat: {}, nCompras: 0, porMes: {} };
+    sel.forEach((x) => {
+      r.total += x.g; r.cl[x.cl] += x.g; r.cat[x.cat] = (r.cat[x.cat] || 0) + x.g;
+      if (x.p > 0) r.parc += x.g;
+      if (x.g > 0 && x.p <= 1) r.nCompras++;
+      r.porMes[x.f] = (r.porMes[x.f] || 0) + x.g;
+    });
+    r.n = Math.max(1, Object.keys(r.porMes).length);
+    r.media = r.total / r.n;
+    return r;
+  }
+  function anterior(p) {
+    const i = TODOS.indexOf(p.meses[0]);
+    return i - p.meses.length < 0 ? null : TODOS.slice(i - p.meses.length, i);
+  }
+  function variacao(a, b, maiorBom) {
+    if (b == null || !isFinite(b) || Math.abs(b) < 1) return null;
+    const v = (a - b) / Math.abs(b), bom = maiorBom ? v >= 0 : v <= 0;
+    return { txt: (v >= 0 ? '▲ ' : '▼ ') + pct(Math.abs(v)) + ' vs período anterior', cls: bom ? 'bom' : 'ruim' };
+  }
+  const ibDe = (meses) => { const set = new Set(meses); return soma(IB.filter((x) => set.has(x.m)), (x) => x.v); };
+  const gastoXP = (meses) => { const set = new Set(meses); return soma(FAT.filter((x) => x.c === XP && set.has(x.f))); };
+  const dividaParc = () => ABERTO.filter((x) => x.p > 0 && doCartao(x));
+
+  // --------------------------------------------------------- topo
+  function abertura(R, P) {
+    const n = est.per.meses.length;
+    $('#periodo-txt').textContent = est.per.nome + ' · faturas de ' + rotMes(est.per.meses[0]) + ' a ' + rotMes(est.per.meses[n - 1])
+      + (est.c >= 0 ? ' · ' + D.cartoes[est.c] : '');
+    if (!R.sel.length) {
+      $('#manchete').textContent = 'Sem fatura neste período.';
+      $('#tese').textContent = 'Escolha outro período ou outro cartão.';
+      $('#kpis').innerHTML = ''; return;
+    }
+    $('#manchete').innerHTML = 'A fatura média foi <em>' + kbrl(R.media) + '</em> por mês.';
+    const top = Object.keys(R.cat).sort((a, b) => R.cat[b] - R.cat[a]);
+    const div = soma(dividaParc());
+    $('#tese').innerHTML = 'Em ' + R.n + (R.n === 1 ? ' fatura' : ' faturas') + ' passaram <b>' + kbrl(R.total) + '</b> no cartão, '
+      + pct(R.cl[2] / R.total) + ' em gastos <b>cortáveis</b> e ' + pct(R.parc / R.total) + ' em parcelas'
+      + (top.length ? '; a maior categoria foi <b>' + top[0].toLowerCase() + '</b> (' + pct(R.cat[top[0]] / R.total) + ')' : '') + '. '
+      + (div > 0 ? 'Hoje há <b>' + kbrl(div) + '</b> parcelados para cair nas próximas faturas.' : 'Não há parcelas em aberto.');
+    const k = $('#kpis'); k.innerHTML = '';
+    kpi(k, 'Fatura média', brl(R.media), 'por mês, ' + R.n + ' faturas', 'var(--cartao)', P && variacao(R.media, P.media, false));
+    kpi(k, 'Total no período', kbrl(R.total), num(R.nCompras) + ' compras · ticket ' + brl(R.total / Math.max(1, R.nCompras)), 'var(--cartao)');
+    kpi(k, 'Cortável', pct(R.cl[2] / R.total), brl(R.cl[2] / R.n) + ' por mês', 'var(--cortavel)', P && P.total ? variacao(R.cl[2] / R.n, P.cl[2] / P.n, false) : null);
+    kpi(k, 'Em parcelas', pct(R.parc / R.total), brl(R.parc / R.n) + ' por mês', '#a68cff');
+    kpi(k, 'Parcelado em aberto', kbrl(div), 'até ' + (dividaParc().length ? rotMes(dividaParc().reduce((a, x) => x.f > a ? x.f : a, '')) : '—'), 'var(--atencao)');
+    const ib = ibDe(est.per.meses);
+    kpi(k, 'Investback', brl(ib), 'no período · ' + pct(ib / Math.max(1, gastoXP(est.per.meses)), 2) + ' do gasto no XP', 'var(--bom)');
+  }
+
+  // --------------------------------------------------------- histórico
+  function historico() {
+    const host = $('#g-hist'), meses = est.per.meses, porAno = meses.length > 36;
+    const chaves = porAno ? Array.from(new Set(meses.map((k) => k.slice(0, 4)))) : meses;
+    const dados = chaves.map((k) => { const ms = porAno ? meses.filter((x) => x.startsWith(k)) : [k]; const r = resumo(ms); return { k, r, div: porAno ? r.n : 1 }; });
+    const usados = [0, 1, 2, 3, 4].filter((c) => dados.some((d) => d.r.cl[c] > 0));
+    $('#leg-hist').innerHTML = usados.map((c) => '<span><i style="background:' + COR_CL[c] + '"></i>' + NOME_CL[c] + '</span>').join('')
+      + '<span><i style="background:#fff;height:2px"></i>Meta (' + brl(sim.meta) + ')</span>';
+    const W = Math.max(320, host.clientWidth), H = 300, m = { t: 16, r: 10, b: 30, l: 52 };
+    const tot = (d) => usados.reduce((s, c) => s + Math.max(0, d.r.cl[c]), 0) / d.div;
+    const vmax = Math.max(sim.meta, Math.max.apply(null, dados.map(tot))) * 1.08 || 1;
+    const Y = (v) => m.t + (vmax - v) * (H - m.t - m.b) / vmax, bw = (W - m.l - m.r) / dados.length;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Fatura por mês">';
+    const pY = passoY(vmax);
+    for (let v = 0; v <= vmax; v += pY) s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v / 1000, v % 1000 ? 1 : 0) + 'k</text>';
+    const passoX = Math.max(1, Math.ceil(dados.length / Math.floor((W - m.l) / 46)));
+    dados.forEach((d, i) => {
+      const x0 = m.l + i * bw; let acc = 0;
+      s += '<g class="col" data-i="' + i + '"><rect x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+      usados.forEach((c) => { const v = Math.max(0, d.r.cl[c]) / d.div; if (v > 0) { s += '<rect x="' + (x0 + bw * 0.16) + '" y="' + Y(acc + v) + '" width="' + Math.max(1.5, bw * 0.68) + '" height="' + Math.max(0.5, Y(acc) - Y(acc + v)) + '" fill="' + COR_CL[c] + '"/>'; acc += v; } });
+      s += '</g>';
+      if (i % passoX === 0) s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + (porAno ? d.k : rotMes(d.k)) + '</text>';
+    });
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(sim.meta) + '" y2="' + Y(sim.meta) + '" stroke="#e8f2f0" stroke-width="1.4" stroke-dasharray="6 4" opacity=".75"/>';
+    host.innerHTML = s + '</svg>';
+    $$('.col', host).forEach((g) => {
+      g.addEventListener('mousemove', (ev) => {
+        const d = dados[+g.dataset.i], r = d.r, dv = d.div;
+        let h = '<span class="q">' + (porAno ? d.k + ' · média por fatura' : 'Fatura de ' + rotMes(d.k)) + '</span>';
+        usados.forEach((c) => { if (r.cl[c]) h += '<i style="background:' + COR_CL[c] + '"></i>' + NOME_CL[c] + ' ' + brl(r.cl[c] / dv) + '<br>'; });
+        h += '<b>Total ' + brl(r.total / dv) + '</b>' + (r.parc ? '<br>em parcelas ' + brl(r.parc / dv) : '');
+        mostra(h, ev);
+      });
+      g.addEventListener('mouseleave', esconde);
+    });
+    const acima = meses.filter((k) => { const r = resumo([k]); return r.sel.length && r.total > sim.meta; }).length;
+    const comFat = meses.filter((k) => resumo([k]).sel.length).length;
+    $('#hist-titulo').textContent = comFat ? acima + ' de ' + comFat + ' faturas passaram da meta de ' + kbrl(sim.meta) : 'Fatura mês a mês';
+  }
+
+  // --------------------------------------------------------- cartões
+  function cartoes(R) {
+    const host = $('#plasticos'); host.innerHTML = '';
+    const set = new Set(est.per.meses);
+    let ativo = null;
+    D.cartoes.forEach((nome, i) => {
+      const vida = L.filter((x) => x.c === i && x.f <= MES_HOJE);
+      const per = vida.filter((x) => set.has(x.f));
+      const mv = Array.from(new Set(vida.map((x) => x.f))).sort(), mp = new Set(per.map((x) => x.f));
+      const tv = soma(vida), tp = soma(per);
+      const nc = per.filter((x) => x.g > 0 && x.p <= 1).length;
+      const cats = {}; per.forEach((x) => { cats[x.cat] = (cats[x.cat] || 0) + x.g; });
+      const top = Object.keys(cats).sort((a, b) => cats[b] - cats[a])[0];
+      const d = document.createElement('div'); d.className = 'plastico' + (per.length ? '' : ' apagado'); d.style.setProperty('--cor-p', COR_CARTAO[nome] || '#8fa8a5');
+      const emUso = mv[mv.length - 1] >= somaMes(MES_HOJE, -2);
+      if (emUso) ativo = nome;
+      d.innerHTML = '<div class="chip"></div><span class="nome">' + nome + '</span>'
+        + '<span class="rotulo">' + (per.length ? 'Fatura média no período' : 'Sem gasto no período') + '</span>'
+        + '<div class="numero">' + (per.length ? brl(tp / mp.size) : '—') + '</div>'
+        + (per.length ? '<span class="nota"><b>' + kbrl(tp) + '</b> em ' + mp.size + ' faturas · ' + num(nc) + ' compras · ticket ' + brl(tp / Math.max(1, nc)) + '</span>'
+          + '<span class="nota">Maior categoria: <b>' + (top || '—') + '</b></span>' : '')
+        + '<span class="nota" style="margin-top:6px">' + (emUso ? '<span class="selo" style="color:var(--bom)">em uso</span> ' : '')
+        + 'Desde ' + rotMes(mv[0]) + (emUso ? '' : ' até ' + rotMes(mv[mv.length - 1])) + ' · ' + kbrl(tv) + ' na vida · ' + brl(tv / mv.length) + '/mês</span>';
+      host.appendChild(d);
+    });
+    $('#car-titulo').textContent = ativo ? 'Hoje tudo passa pelo ' + ativo + '; ' + D.cartoes.length + ' cartões no histórico' : 'Cada cartão';
+  }
+
+  // --------------------------------------------------------- categorias
+  function categorias(R) {
+    $('#leg-cl').innerHTML = [2, 1, 0, 3, 4].map((c) => '<span><i style="background:' + COR_CL[c] + '"></i>' + NOME_CL[c] + '</span>').join('');
+    const porCat = new Map();
+    R.sel.forEach((x) => {
+      const c = porCat.get(x.cat) || { cat: x.cat, total: 0, cl: [0, 0, 0, 0, 0], gr: new Map() };
+      c.total += x.g; c.cl[x.cl] += x.g;
+      const g = c.gr.get(x.gr) || { v: 0, cl: x.cl, n: 0 }; g.v += x.g; g.n += x.g > 0 && x.p <= 1 ? 1 : 0; c.gr.set(x.gr, g); porCat.set(x.cat, c);
+    });
+    const lista = Array.from(porCat.values()).filter((c) => c.total > 1).sort((a, b) => b.total - a.total);
+    const max = lista.length ? lista[0].total : 1;
+    $('#cat-titulo').textContent = lista.length > 1 ? lista[0].cat + ' e ' + lista[1].cat.toLowerCase() + ' levam ' + pct((lista[0].total + lista[1].total) / R.total) + ' da fatura' : 'Gasto por categoria';
+    const box = $('#cats'); box.innerHTML = '';
+    lista.forEach((c) => {
+      const el = document.createElement('div'); el.className = 'cat';
+      const bt = document.createElement('button'); bt.type = 'button'; bt.setAttribute('aria-expanded', 'false');
+      bt.innerHTML = '<span></span><span class="trilho"></span><span class="v"><b></b><span></span></span>';
+      bt.children[0].textContent = c.cat;
+      bt.querySelector('.trilho').innerHTML = [2, 1, 0, 3, 4].map((k) => c.cl[k] > 0 ? '<span style="width:' + (100 * c.cl[k] / max) + '%;background:' + COR_CL[k] + '"></span>' : '').join('');
+      bt.querySelector('.v b').textContent = brl(c.total / R.n) + '/mês';
+      bt.querySelector('.v span').textContent = ' · ' + pct(c.total / R.total);
+      const gw = document.createElement('div'); gw.className = 'grupos';
+      Array.from(c.gr.entries()).sort((a, b) => b[1].v - a[1].v).slice(0, 12).forEach(([g, o]) => {
+        const lin = document.createElement('div'); lin.className = 'gr';
+        lin.innerHTML = '<i></i><span></span><b></b><span></span>';
+        lin.children[0].style.background = COR_CL[o.cl];
+        lin.children[1].textContent = g; lin.children[2].textContent = brl(o.v / R.n) + '/mês'; lin.children[3].textContent = num(o.n) + ' compras · ' + kbrl(o.v);
+        gw.appendChild(lin);
+      });
+      bt.addEventListener('click', () => { el.classList.toggle('aberto'); bt.setAttribute('aria-expanded', el.classList.contains('aberto')); });
+      el.appendChild(bt); el.appendChild(gw); box.appendChild(el);
+    });
+    // estabelecimentos
+    const rc = {}; R.sel.forEach((x) => { if (!x.rc) return; const o = rc[x.rc] || { v: 0, n: 0 }; o.v += x.g; o.n += x.g > 0 && x.p <= 1 ? 1 : 0; rc[x.rc] = o; });
+    const lr = Object.entries(rc).sort((a, b) => b[1].v - a[1].v).slice(0, 10);
+    barras($('#recebs'), lr.map(([n, o]) => ({ nome: n, cor: 'var(--cartao)', v: o.v, txt: brl(o.v / R.n) + '/mês', nota: '· ' + o.n + 'x' })), lr.length ? lr[0][1].v : 1);
+    $('#rec-sub').innerHTML = lr.length ? 'Os 10 estabelecimentos com mais gasto somam <b>' + pct(soma(lr, (x) => x[1].v) / R.total) + '</b> da fatura.' : '';
+    const tg = {}; R.sel.forEach((x) => { if (x.tag) tg[x.tag] = (tg[x.tag] || 0) + x.g; });
+    const lt = Object.entries(tg).filter((t) => t[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    barras($('#tags'), lt.map(([n, v]) => ({ nome: n.replace(/_/g, ' '), cor: '#a68cff', v, txt: kbrl(v), nota: '· ' + pct(v / R.total) })), lt.length ? lt[0][1] : 1);
+  }
+
+  // --------------------------------------------------------- maiores
+  function maiores() {
+    const set = new Set(est.per.meses), vistos = new Set(), lista = [];
+    L.forEach((x) => {
+      if (!set.has(x.m) || !doCartao(x) || x.g <= 0 || x.cp < 0 || vistos.has(x.cp)) return;
+      vistos.add(x.cp);
+      const c = D.compras[x.cp];
+      lista.push({ d: x.d, desc: c[0] || x.rc || x.gr, n: c[1], t: c[2], cat: x.cat, gr: x.gr, c: x.c, cl: x.cl });
+    });
+    lista.sort((a, b) => b.t - a.t);
+    const top = lista.slice(0, 20), tot = resumo(est.per.meses).total;
+    $('#mai-titulo').textContent = top.length ? 'As 20 maiores compras somam ' + kbrl(soma(top, (x) => x.t)) + (tot > 0 ? ', ' + pct(soma(top, (x) => x.t) / tot) + ' do período' : '') : 'As compras que pesaram';
+    $('#t-mai tbody').innerHTML = top.map((x) => '<tr><td>' + fd(ts(x.d)) + '</td><td class="desc">' + x.desc + '</td><td class="esq"><i style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:' + COR_CL[x.cl] + '"></i>' + x.cat + ' · ' + x.gr + '</td><td class="esq">' + D.cartoes[x.c] + '</td><td>' + (x.n ? x.n + 'x ' + brl(x.t / x.n) : 'à vista') + '</td><td><b>' + brl(x.t) + '</b></td></tr>').join('')
+      || '<tr><td colspan="6" class="esq nota">Nenhuma compra no período.</td></tr>';
+  }
+
+  // --------------------------------------------------------- parcelas
+  function parcelas(R) {
+    const set = new Set(est.per.meses), vistos = new Set(), novas = [];
+    L.forEach((x) => { if (x.p > 0 && set.has(x.m) && doCartao(x) && !vistos.has(x.cp)) { vistos.add(x.cp); novas.push({ t: D.compras[x.cp][2], n: x.n, desc: D.compras[x.cp][0] }); } });
+    const vNovas = soma(novas, (x) => x.t), nMedio = novas.length ? soma(novas, (x) => x.t * x.n) / vNovas : 0;
+    const maior = novas.slice().sort((a, b) => b.t - a.t)[0];
+    const k = $('#par-kpis'); k.innerHTML = '';
+    kpi(k, 'Compras parceladas', num(novas.length), 'feitas no período · ' + kbrl(vNovas), '#a68cff');
+    kpi(k, 'Parcelas, em média', nMedio ? num(nMedio, 1) + 'x' : '—', 'ponderado pelo valor', '#a68cff');
+    kpi(k, 'Maior parcelamento', maior ? brl(maior.t) : '—', maior ? maior.desc + ' · ' + maior.n + 'x' : '', '#a68cff');
+    kpi(k, 'Parcela na fatura', pct(R.total ? R.parc / R.total : null), brl(R.parc / R.n) + ' por mês', '#a68cff');
+    $('#par-titulo').textContent = R.total ? pct(R.parc / R.total) + ' da fatura do período foi parcela de compra antiga ou nova' : 'Quanto da fatura é parcela';
+    // gráfico por mês
+    const host = $('#g-par'), meses = est.per.meses.length > 36 ? est.per.meses.slice(-36) : est.per.meses;
+    const dados = meses.map((k2) => { const r = resumo([k2]); return { k: k2, av: r.total - r.parc, pa: r.parc }; });
+    const W = Math.max(320, host.clientWidth), H = 220, m = { t: 14, r: 40, b: 28, l: 52 };
+    const vmax = Math.max(1, Math.max.apply(null, dados.map((d) => d.av + d.pa))) * 1.08;
+    const Y = (v) => m.t + (vmax - v) * (H - m.t - m.b) / vmax, Yp = (p) => m.t + (1 - p) * (H - m.t - m.b), bw = (W - m.l - m.r) / dados.length;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Parcelas e à vista por fatura">';
+    const pY = passoY(vmax);
+    for (let v = 0; v <= vmax; v += pY) s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v / 1000, v % 1000 ? 1 : 0) + 'k</text>';
+    [0, .5, 1].forEach((p) => { s += '<text class="ax" x="' + (W - m.r + 6) + '" y="' + (Yp(p) + 4) + '">' + pct(p) + '</text>'; });
+    const passoX = Math.max(1, Math.ceil(dados.length / Math.floor((W - m.l) / 46)));
+    const pts = [];
+    dados.forEach((d, i) => {
+      const x0 = m.l + i * bw, w = Math.max(1.5, bw * 0.68);
+      if (d.av > 0) s += '<rect x="' + (x0 + bw * 0.16) + '" y="' + Y(d.av) + '" width="' + w + '" height="' + (Y(0) - Y(d.av)) + '" fill="#b8e05a"/>';
+      if (d.pa > 0) s += '<rect x="' + (x0 + bw * 0.16) + '" y="' + Y(Math.max(0, d.av) + d.pa) + '" width="' + w + '" height="' + (Y(Math.max(0, d.av)) - Y(Math.max(0, d.av) + d.pa)) + '" fill="#a68cff"/>';
+      if (d.av + d.pa > 0) pts.push([x0 + bw / 2, Yp(d.pa / (d.av + d.pa))]);
+      if (i % passoX === 0) s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + rotMes(d.k) + '</text>';
+      s += '<rect class="pm" data-i="' + i + '" x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+    });
+    if (pts.length > 1) s += '<path d="' + pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('') + '" fill="none" stroke="#e8f2f0" stroke-width="1.5" opacity=".7"/>';
+    host.innerHTML = s + '</svg>';
+    $$('.pm', host).forEach((r) => {
+      r.addEventListener('mousemove', (ev) => { const d = dados[+r.dataset.i]; const t = d.av + d.pa;
+        mostra('<span class="q">Fatura de ' + rotMes(d.k) + '</span>À vista ' + brl(d.av) + '<br>Parcelas ' + brl(d.pa) + (t ? ' (' + pct(d.pa / t) + ')' : ''), ev); });
+      r.addEventListener('mouseleave', esconde);
+    });
+    if (est.per.meses.length > 36) $('#g-par').insertAdjacentHTML('beforeend', '<p class="nota">Mostrando as últimas 36 faturas do período.</p>');
+    emAberto();
+  }
+
+  // dívida parcelada: não depende do período
+  function emAberto() {
+    const lin = dividaParc();
+    const porCompra = new Map();
+    lin.forEach((x) => { const o = porCompra.get(x.cp) || { cp: x.cp, n: x.n, por: x.g, falta: 0, resta: 0, ate: x.f, cl: x.cl }; o.falta += x.g; o.resta++; if (x.f > o.ate) o.ate = x.f; porCompra.set(x.cp, o); });
+    const comp = Array.from(porCompra.values()).sort((a, b) => b.falta - a.falta);
+    const tot = soma(comp, (x) => x.falta);
+    const aVista = soma(ABERTO.filter((x) => x.p === 0 && doCartao(x)));
+    const prox = somaMes(MES_HOJE, 1);
+    const ate = comp.length ? comp.reduce((a, x) => x.ate > a ? x.ate : a, '') : null;
+    $('#ab-sub').innerHTML = comp.length ? '<b>' + brl(tot) + '</b> em ' + comp.length + ' compras, até ' + rotMes(ate) + '. '
+      + 'A fatura de ' + rotMes(prox) + ' já tem ' + brl(soma(lin.filter((x) => x.f === prox))) + ' de parcelas'
+      + (aVista > 0 ? ' e ' + brl(aVista) + ' de compras à vista lançadas até agora.' : '.') : 'Nenhuma parcela em aberto.';
+    $('#t-ab tbody').innerHTML = comp.map((o) => '<tr><td class="desc">' + D.compras[o.cp][0] + '</td><td>faltam ' + o.resta + ' de ' + o.n + '</td><td>' + brl(o.por, 2) + '</td><td><b>' + brl(o.falta) + '</b></td><td>' + rotMes(o.ate) + '</td></tr>').join('');
+    $('#t-ab tfoot').innerHTML = comp.length ? '<tr><td><b>Total</b></td><td></td><td><b>' + brl(soma(comp, (o) => o.por), 2) + '</b></td><td><b>' + brl(tot) + '</b></td><td></td></tr>' : '';
+    // escada das próximas faturas
+    const host = $('#g-ab');
+    if (!comp.length) { host.innerHTML = ''; return; }
+    const meses = listaMeses(prox, ate);
+    const porM = meses.map((k) => soma(lin.filter((x) => x.f === k)));
+    const W = Math.max(300, host.clientWidth), H = 180, m = { t: 12, r: 8, b: 26, l: 48 };
+    const vmax = Math.max.apply(null, porM) * 1.15, bw = (W - m.l - m.r) / meses.length;
+    const Y = (v) => m.t + (vmax - v) * (H - m.t - m.b) / vmax;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Parcelas por fatura futura">';
+    const pY = passoY(vmax);
+    for (let v = 0; v <= vmax; v += pY) s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v) + '</text>';
+    meses.forEach((k, i) => {
+      const x0 = m.l + i * bw;
+      s += '<rect x="' + (x0 + bw * 0.15) + '" y="' + Y(porM[i]) + '" width="' + bw * 0.7 + '" height="' + (Y(0) - Y(porM[i])) + '" rx="2" fill="#a68cff"/>'
+        + '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (Y(porM[i]) - 4) + '" text-anchor="middle" style="fill:var(--fraca)">' + num(porM[i]) + '</text>'
+        + '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + rotMes(k) + '</text>';
+    });
+    host.innerHTML = s + '</svg>';
+  }
+
+  // --------------------------------------------------------- pago × fatura
+  // fatura de cada mês e cartão contra o que saiu do banco no mesmo mês
+  const CONF = (() => {
+    const o = {};
+    FAT.forEach((x) => { const k = x.c + '|' + x.f; (o[k] = o[k] || { c: x.c, m: x.f, fat: 0, pago: 0, np: 0 }).fat += x.g; });
+    PAG.forEach((p) => { if (p.m > MES_HOJE) return; const k = p.c + '|' + p.m; const r = o[k] = o[k] || { c: p.c, m: p.m, fat: 0, pago: 0, np: 0 }; r.pago += p.v; r.np++; });
+    // só cartões com pagamento registrado em algum mês (XP e Nubank)
+    const comPag = new Set(PAG.map((p) => p.c));
+    return Object.values(o).filter((r) => comPag.has(r.c)).sort((a, b) => a.m < b.m ? -1 : a.m > b.m ? 1 : a.c - b.c);
+  })();
+  function conferencia() {
+    const set = new Set(est.per.meses);
+    const sel = CONF.filter((r) => set.has(r.m) && (est.c < 0 || r.c === est.c));
+    const com = sel.filter((r) => r.np), sem = sel.filter((r) => !r.np && r.fat > 0);
+    const dif = com.map((r) => r.pago - r.fat), iguais = dif.filter((d) => Math.abs(d) < 1).length;
+    const k = $('#conf-kpis'); k.innerHTML = '';
+    kpi(k, 'Faturas conferidas', num(com.length), sem.length ? '<span class="aviso">' + sem.length + ' sem pagamento registrado</span>' : 'todas com pagamento', 'var(--cartao)');
+    kpi(k, 'Batem centavo a centavo', com.length ? pct(iguais / com.length) : '—', iguais + ' de ' + com.length, 'var(--bom)');
+    kpi(k, 'Banco pagou', kbrl(soma(com, (r) => r.pago)), 'contra ' + kbrl(soma(com, (r) => r.fat)) + ' na planilha', 'var(--cartao)');
+    const dt = soma(dif, (d) => d), dAbs = soma(dif, (d) => Math.abs(d));
+    kpi(k, 'Diferença líquida', brl(dt), 'soma das diferenças: ' + brl(dAbs) + ' para um lado ou outro', Math.abs(dt) < 50 ? 'var(--bom)' : 'var(--atencao)', null, Math.abs(dt) < 50 ? 'bom' : 'aviso');
+    $('#conf-titulo').textContent = com.length ? iguais + ' de ' + com.length + ' faturas batem; no total o banco pagou ' + brl(Math.abs(dt)) + (dt >= 0 ? ' a mais' : ' a menos') + ' que a planilha' : 'O que o banco pagou contra o que a fatura somou';
+    $('#t-conf tbody').innerHTML = sel.slice().reverse().map((r) => {
+      const d = r.pago - r.fat;
+      return '<tr><td>' + rotMes(r.m) + '</td><td class="esq">' + D.cartoes[r.c] + '</td><td>' + brl(r.fat, 2) + '</td><td>' + (r.np ? brl(r.pago, 2) : '<span class="nota">sem registro</span>') + '</td><td>'
+        + (!r.np ? '' : Math.abs(d) < 1 ? '<span class="bom">bate</span>' : '<b class="' + (d > 0 ? 'ruim' : 'aviso') + '">' + (d > 0 ? '+' : '') + brl(d, 2) + '</b>') + '</td></tr>';
+    }).join('') || '<tr><td colspan="5" class="esq nota">Sem faturas de XP ou Nubank no período.</td></tr>';
+    // gráfico de diferenças
+    const host = $('#g-conf');
+    const W = Math.max(300, host.clientWidth), H = 220, m = { t: 14, r: 8, b: 28, l: 52 };
+    const amp = Math.max(100, Math.max.apply(null, sel.map((r) => r.np ? Math.abs(r.pago - r.fat) : 0))) * 1.15;
+    const Y = (v) => m.t + (amp - v) * (H - m.t - m.b) / (2 * amp), bw = (W - m.l - m.r) / Math.max(1, sel.length);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Diferença entre pago e fatura">';
+    const pY = passoY(amp);
+    for (let v = -Math.floor(amp / pY) * pY; v <= amp; v += pY) s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"' + (v === 0 ? ' style="stroke:var(--linha-forte)"' : '') + '/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v) + '</text>';
+    const passoX = Math.max(1, Math.ceil(sel.length / Math.floor((W - m.l) / 46)));
+    sel.forEach((r, i) => {
+      const x0 = m.l + i * bw, d = r.pago - r.fat;
+      if (!r.np) s += '<rect x="' + (x0 + bw * 0.2) + '" y="' + Y(amp * 0.15) + '" width="' + bw * 0.6 + '" height="' + (Y(-amp * 0.15) - Y(amp * 0.15)) + '" fill="#2a4a51" opacity=".6"/>';
+      else if (Math.abs(d) >= 1) s += '<rect x="' + (x0 + bw * 0.2) + '" y="' + Y(Math.max(0, d)) + '" width="' + bw * 0.6 + '" height="' + Math.max(1, Math.abs(Y(d) - Y(0))) + '" fill="' + (d > 0 ? '#ff6f61' : '#6c8cff') + '"/>';
+      else s += '<circle cx="' + (x0 + bw / 2) + '" cy="' + Y(0) + '" r="2.5" fill="#4fd1a5"/>';
+      if (i % passoX === 0) s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + rotMes(r.m) + '</text>';
+      s += '<rect class="cm" data-i="' + i + '" x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+    });
+    host.innerHTML = s + '</svg>';
+    $$('.cm', host).forEach((el) => {
+      el.addEventListener('mousemove', (ev) => { const r = sel[+el.dataset.i], d = r.pago - r.fat;
+        mostra('<span class="q">' + D.cartoes[r.c] + ' · fatura de ' + rotMes(r.m) + '</span>Planilha ' + brl(r.fat, 2) + '<br>Banco ' + (r.np ? brl(r.pago, 2) : 'sem registro') + (r.np ? '<br><b>' + (Math.abs(d) < 1 ? 'bate' : (d > 0 ? '+' : '') + brl(d, 2)) + '</b>' : ''), ev); });
+      el.addEventListener('mouseleave', esconde);
+    });
+  }
+
+  // --------------------------------------------------------- investback
+  function investback() {
+    const meses = est.per.meses, set = new Set(meses);
+    const sel = IB.filter((x) => set.has(x.m)), tot = soma(sel, (x) => x.v), gx = gastoXP(meses);
+    const k = $('#ib-kpis'); k.innerHTML = '';
+    const tudo = soma(IB, (x) => x.v);
+    kpi(k, 'No período', brl(tot, 2), sel.length + ' créditos', 'var(--bom)');
+    kpi(k, 'Por mês', brl(tot / meses.length, 2), 'média do período', 'var(--bom)');
+    kpi(k, 'Taxa efetiva', pct(gx ? tot / gx : null, 2), 'sobre ' + kbrl(gx) + ' gastos no XP', 'var(--cartao)');
+    kpi(k, 'Desde o início', brl(tudo, 2), 'desde ' + (IB.length ? rotMes(IB[0].m) : '—'), 'var(--bom)');
+    $('#ib-titulo').textContent = tot > 0 ? 'Voltaram ' + brl(tot) + ' no período, ' + pct(gx ? tot / gx : null, 2) + ' do que passou no XP' : 'O que volta do cartão XP';
+    // série completa desde o primeiro crédito, com a taxa móvel de 12 meses
+    const host = $('#g-ib');
+    if (!IB.length) { host.innerHTML = ''; return; }
+    const ms = listaMeses(IB[0].m, MES_HOJE);
+    const v = ms.map((mm) => soma(IB.filter((x) => x.m === mm), (x) => x.v));
+    const taxa = ms.map((mm, i) => { if (i < 11) return null; const j = ms.slice(i - 11, i + 1); const g = gastoXP(j); return g ? soma(IB.filter((x) => j.includes(x.m)), (x) => x.v) / g : null; });
+    const W = Math.max(320, host.clientWidth), H = 220, m = { t: 14, r: 44, b: 28, l: 48 };
+    const corte = Math.max.apply(null, v.slice().sort((a, b) => a - b).slice(0, Math.max(1, v.length - 1))) * 1.6;  // o pico de dez/24 não achata o resto
+    const vmax = Math.max(50, corte), tmax = Math.max(0.005, Math.max.apply(null, taxa.filter((t) => t != null)) * 1.2);
+    const Y = (x) => m.t + (vmax - Math.min(x, vmax)) * (H - m.t - m.b) / vmax, Yt = (t) => m.t + (tmax - t) * (H - m.t - m.b) / tmax, bw = (W - m.l - m.r) / ms.length;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Investback por mês">';
+    const pY = passoY(vmax);
+    for (let x = 0; x <= vmax; x += pY) s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(x) + '" y2="' + Y(x) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(x) + 4) + '" text-anchor="end">' + num(x) + '</text>';
+    [0, tmax / 2, tmax].forEach((t) => { s += '<text class="ax" x="' + (W - m.r + 6) + '" y="' + (Yt(t) + 4) + '">' + pct(t, 1) + '</text>'; });
+    const a = ms.indexOf(meses[0]), b = ms.indexOf(meses[meses.length - 1]);
+    if (b >= 0) s += '<rect x="' + (m.l + Math.max(0, a) * bw) + '" y="' + m.t + '" width="' + ((b - Math.max(0, a) + 1) * bw) + '" height="' + (H - m.t - m.b) + '" fill="#b8e05a" opacity=".06"/>';
+    ms.forEach((mm, i) => {
+      const x0 = m.l + i * bw;
+      if (v[i] > 0) s += '<rect x="' + (x0 + bw * 0.18) + '" y="' + Y(v[i]) + '" width="' + Math.max(1.5, bw * 0.64) + '" height="' + (Y(0) - Y(v[i])) + '" fill="#b8e05a"' + (v[i] > vmax ? ' opacity=".7"' : '') + '/>';
+      if (v[i] > vmax) s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (m.t + 10) + '" text-anchor="middle" style="fill:var(--tinta)">' + num(v[i]) + '</text>';
+      if (mm.endsWith('-01')) s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + mm.slice(0, 4) + '</text>';
+      s += '<rect class="im" data-i="' + i + '" x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+    });
+    const pts = taxa.map((t, i) => t == null ? null : [m.l + i * bw + bw / 2, Yt(t)]).filter(Boolean);
+    if (pts.length > 1) s += '<path d="' + pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('') + '" fill="none" stroke="#e8f2f0" stroke-width="1.6" opacity=".75"/>';
+    host.innerHTML = s + '</svg>';
+    $$('.im', host).forEach((el) => {
+      el.addEventListener('mousemove', (ev) => { const i = +el.dataset.i;
+        mostra('<span class="q">' + rotMes(ms[i]) + '</span>Investback ' + brl(v[i], 2) + (taxa[i] != null ? '<br>Taxa 12 meses ' + pct(taxa[i], 2) : ''), ev); });
+      el.addEventListener('mouseleave', esconde);
+    });
+    const pico = IB.slice().sort((x, y) => y.v - x.v)[0];
+    const sem = ms.filter((mm, i) => mm >= somaMes(MES_HOJE, -11) && !v[i]).length;
+    $('#ib-sub').innerHTML = 'O maior crédito foi <b>' + brl(pico.v, 2) + '</b> em ' + rotMes(pico.m) + ', fora do padrão de R$ 50 a R$ 200 por mês'
+      + (sem ? '; nos últimos 12 meses, ' + sem + (sem === 1 ? ' mês ficou' : ' meses ficaram') + ' sem crédito (costuma vir dobrado no mês seguinte).' : '.')
+      + ' A taxa de 12 meses gira em torno de <b>' + pct(taxa[taxa.length - 1], 2) + '</b> hoje.';
+  }
+
+  // --------------------------------------------------------- onde cortar
+  function cortar(R) {
+    const n = R.n;
+    const gr = {}; R.sel.forEach((x) => { const o = gr[x.gr] = gr[x.gr] || { v: 0, q: 0, cl: x.cl, cat: x.cat }; o.v += x.g; if (x.g > 0 && x.p <= 1) o.q++; });
+    const cort = Object.entries(gr).filter(([, o]) => o.cl === 2 && o.v > 0).sort((a, b) => b[1].v - a[1].v);
+    const vc = soma(cort, (c) => c[1].v);
+    const pequenas = R.sel.filter((x) => x.g > 0 && x.g < 50 && x.p === 0);
+    const k = $('#cor-kpis'); k.innerHTML = '';
+    kpi(k, 'Cortáveis', brl(vc / n), 'por mês · ' + pct(R.total ? vc / R.total : null) + ' da fatura', 'var(--cortavel)');
+    kpi(k, 'Metade deles', brl(vc / n / 2), 'por mês a menos · ' + kbrl(vc / n / 2 * 12) + ' no ano', 'var(--bom)');
+    kpi(k, 'Compras < R$ 50', num(pequenas.length / n, 0) + '/mês', brl(soma(pequenas) / n) + ' por mês', 'var(--atencao)');
+    $('#cor-titulo').textContent = vc > 0 ? 'Cortáveis somam ' + brl(vc / n) + ' por mês; metade disso são ' + kbrl(vc / n / 2 * 12) + ' no ano' : 'O que dá para apertar';
+    $('#t-cor tbody').innerHTML = cort.slice(0, 12).map(([g, o]) => '<tr><td class="esq"><b>' + g + '</b> <span class="nota">' + o.cat.toLowerCase() + '</span></td><td><b>' + brl(o.v / n) + '</b></td><td>' + num(o.q / n, 1) + '</td><td>' + brl(o.v / Math.max(1, o.q)) + '</td><td class="bom">' + brl(o.v / n / 2 * 12) + '</td></tr>').join('')
+      || '<tr><td colspan="5" class="esq nota">Nada cortável no período.</td></tr>';
+    // gotejamento por grupo
+    const pg = {}; pequenas.forEach((x) => { const o = pg[x.gr] = pg[x.gr] || { v: 0, q: 0, cl: x.cl }; o.v += x.g; o.q++; });
+    const lp = Object.entries(pg).sort((a, b) => b[1].v - a[1].v).slice(0, 8);
+    barras($('#got'), lp.map(([g, o]) => ({ nome: g, cor: COR_CL[o.cl], v: o.v, txt: brl(o.v / n) + '/mês', nota: '· ' + num(o.q / n, 1) + 'x de ' + brl(o.v / o.q) })), lp.length ? lp[0][1].v : 1);
+    $('#got-sub').innerHTML = pequenas.length ? '<b>' + num(pequenas.length) + ' compras pequenas</b> no período, ' + pct(soma(pequenas) / R.total) + ' da fatura. Uma a uma não pesam; juntas, são ' + brl(soma(pequenas) / n) + ' por mês.' : 'Nenhuma compra pequena no período.';
+    recorrentes();
+    // crescimento contra o período anterior
+    const ant = anterior(est.per);
+    if (!ant) { $('#cre').innerHTML = ''; $('#cre-sub').textContent = 'Sem período anterior para comparar.'; return; }
+    const P = resumo(ant);
+    const ga = {}; P.sel.forEach((x) => { ga[x.gr] = (ga[x.gr] || 0) + x.g; });
+    const cres = Object.entries(gr).map(([g, o]) => ({ g, cl: o.cl, d: o.v / n - (ga[g] || 0) / P.n, a: (ga[g] || 0) / P.n, v: o.v / n })).filter((c) => c.d > 20).sort((a, b) => b.d - a.d).slice(0, 8);
+    barras($('#cre'), cres.map((c) => ({ nome: c.g, cor: COR_CL[c.cl], v: c.d, txt: '+' + brl(c.d) + '/mês', nota: c.a > 1 ? '· de ' + brl(c.a) : '· novo' })), cres.length ? cres[0].d : 1);
+    $('#cre-sub').innerHTML = 'Grupos que mais subiram por mês contra ' + rotMes(ant[0]) + '–' + rotMes(ant[ant.length - 1]) + '. Compras grandes e pontuais (revisão, eletrodoméstico) também aparecem aqui.';
+  }
+
+  // o que aparece quase todo mês com valor parecido: assinatura, mensalidade
+  function recorrentes() {
+    const meses = TODOS.slice(-6), set = new Set(meses);
+    const por = {};
+    FAT.filter((x) => set.has(x.f) && x.p === 0 && x.g > 0 && x.rc && doCartao(x)).forEach((x) => {
+      const o = por[x.rc] = por[x.rc] || { m: {}, n: 0, gr: x.gr, cl: x.cl }; o.m[x.f] = (o.m[x.f] || 0) + x.g; o.n++;
+    });
+    const lista = Object.entries(por).map(([rc, o]) => {
+      const vs = Object.values(o.m), med = soma(vs, (v) => v) / vs.length;
+      const dp = Math.sqrt(soma(vs, (v) => (v - med) * (v - med)) / vs.length);
+      return { rc, gr: o.gr, cl: o.cl, meses: vs.length, med, cv: med ? dp / med : 9, n: o.n };
+    }).filter((r) => r.meses >= 4 && r.cv < 0.25 && r.n <= r.meses * 1.5 && r.med >= 10).sort((a, b) => b.med - a.med);
+    $('#rcr-sub').innerHTML = lista.length ? '<b>' + lista.length + ' cobranças</b> aparecem em pelo menos 4 das últimas 6 faturas, com valor estável: <b>' + brl(soma(lista, (r) => r.med)) + '</b> por mês, ' + kbrl(12 * soma(lista, (r) => r.med)) + ' no ano. Vale revisar uma a uma.'
+      : 'Nenhuma cobrança fixa encontrada nas últimas 6 faturas.';
+    $('#t-rcr tbody').innerHTML = lista.slice(0, 14).map((r) => '<tr><td class="esq"><b>' + r.rc + '</b></td><td class="esq"><i style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:' + COR_CL[r.cl] + '"></i>' + r.gr + '</td><td>' + r.meses + ' de 6</td><td>' + brl(r.med, 2) + '</td><td>' + brl(12 * r.med) + '</td></tr>').join('');
+  }
+
+  // --------------------------------------------------------- simulador
+  const BASES = [
+    { id: 'm12', nome: '12 meses', meses: TODOS.slice(-12) },
+    { id: 'm6', nome: '6 meses', meses: TODOS.slice(-6) },
+    { id: 'm3', nome: '3 meses', meses: TODOS.slice(-3) },
+  ];
+  const base12 = resumo(BASES[0].meses);
+  const metaGuardada = +guarda.le('cartao-meta');
+  const sim = { base: BASES[0], meta: metaGuardada >= 1000 ? metaGuardada : Math.round(base12.media * 0.8 / 100) * 100, corte: [0, 0, 0], np: 100 };
+
+  // ritmo: à vista por classe, e compras parceladas novas por classe (valor cheio, no mês da compra)
+  function ritmo(b) {
+    const set = new Set(b.meses), n = b.meses.length;
+    const av = [0, 0, 0, 0, 0], pa = [0, 0, 0, 0, 0], grupos = {};
+    let pn = 0, pv = 0;
+    FAT.forEach((x) => {
+      if (set.has(x.f) && x.p === 0) { av[x.cl] += x.g / n; const o = grupos[x.gr] = grupos[x.gr] || { v: 0, cl: x.cl }; o.v += x.g / n; }
+    });
+    const vistos = new Set();
+    L.forEach((x) => {
+      if (x.p > 0 && set.has(x.m) && !vistos.has(x.cp)) {
+        vistos.add(x.cp); const t = D.compras[x.cp][2];
+        pa[x.cl] += t / n; pv += t; pn += t * x.n;
+        const o = grupos[x.gr] = grupos[x.gr] || { v: 0, cl: x.cl }; o.v += t / n;
+      }
+    });
+    return { av, pa, nMedio: pv ? pn / pv : 1, grupos };
+  }
+  const corteDe = (cl) => cl <= 2 ? sim.corte[cl] / 100 : 0;
+  function projeta(R0) {
+    // regime: o que a fatura vira depois que as parcelas antigas acabarem
+    let av = 0, pa = 0;
+    for (let c = 0; c < 5; c++) { av += R0.av[c] * (1 - corteDe(c)); pa += R0.pa[c] * (1 - corteDe(c)) * sim.np / 100; }
+    const contratado = {}; ABERTO.filter((x) => x.p > 0).forEach((x) => { contratado[x.f] = (contratado[x.f] || 0) + x.g; });
+    const N = Math.max(1, Math.round(R0.nMedio));
+    // a fatura do mês que vem já tem compras à vista lançadas; a projeção começa na seguinte
+    const meses = listaMeses(somaMes(MES_HOJE, 2), somaMes(MES_HOJE, 13));
+    const serie = meses.map((k, i) => ({ k, ant: contratado[k] || 0, novo: pa * Math.min(i + 1, N) / N, av, get t() { return this.ant + this.novo + this.av; } }));
+    return { regime: av + pa, av, pa, N, serie };
+  }
+
+  BASES.forEach((b) => {
+    const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = b.nome; bt.dataset.id = b.id;
+    bt.setAttribute('aria-pressed', b === sim.base);
+    bt.addEventListener('click', () => { sim.base = b; $$('#s-bases button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.id === b.id)); simula(); });
+    $('#s-bases').appendChild(bt);
+  });
+  const rMeta = $('#s-meta'), rC = [$('#s-c0'), $('#s-c1'), $('#s-c2')], rNp = $('#s-np');
+  rMeta.value = sim.meta; rNp.value = sim.np; rC.forEach((r, i) => { r.value = sim.corte[i]; });
+  rMeta.addEventListener('input', () => { sim.meta = +rMeta.value; guarda.grava('cartao-meta', sim.meta); simula(); historico(); });
+  rC.forEach((r, i) => r.addEventListener('input', () => { sim.corte[i] = +r.value; simula(); }));
+  rNp.addEventListener('input', () => { sim.np = +rNp.value; simula(); });
+  $('#s-volta').addEventListener('click', () => { sim.corte = [0, 0, 0]; sim.np = 100; rC.forEach((r) => { r.value = 0; }); rNp.value = 100; simula(); });
+  $('#s-aplica').addEventListener('click', () => {
+    const s = sim.sug; if (!s) return;
+    sim.corte = s.corte.slice(); sim.np = 100; rNp.value = 100;
+    rC.forEach((r, i) => { r.value = sim.corte[i]; }); simula();
+  });
+
+  // sugestão: corta primeiro os cortáveis (até metade de cada grupo), depois os eventuais (até 30%)
+  function sugestao(R0, falta) {
+    const passos = [], LIM = { 2: 0.5, 1: 0.3 };
+    let resta = falta;
+    [2, 1].forEach((cl) => {
+      Object.entries(R0.grupos).filter(([, o]) => o.cl === cl && o.v > 20).sort((a, b) => b[1].v - a[1].v).forEach(([g, o]) => {
+        if (resta <= 0) return;
+        const corte = Math.min(o.v * LIM[cl], resta);
+        passos.push({ g, cl, v: o.v, corte, p: corte / o.v }); resta -= corte;
+      });
+    });
+    // em % por classe, para os controles
+    const corte = [0, 0, 0];
+    [1, 2].forEach((cl) => { const base = R0.av[cl] + R0.pa[cl]; const c = soma(passos.filter((p) => p.cl === cl), (p) => p.corte); corte[cl] = base ? Math.min(100, Math.ceil(100 * c / base / 5) * 5) : 0; });
+    return { passos, resta, corte };
+  }
+
+  function simula() {
+    const R0 = ritmo(sim.base);
+    // sem cortes, para comparar
+    const cortesSalvos = sim.corte.slice(), npSalvo = sim.np;
+    sim.corte = [0, 0, 0]; sim.np = 100; const P0 = projeta(R0); sim.corte = cortesSalvos; sim.np = npSalvo;
+    const P = projeta(R0);
+    $('#s-meta-v').textContent = brl(sim.meta);
+    $('#s-meta-b').textContent = 'fatura média dos últimos 12 meses: ' + brl(base12.media);
+    const linhaCl = (c) => R0.av[c] + R0.pa[c];
+    [0, 1, 2].forEach((c) => {
+      $('#s-c' + c + '-v').textContent = sim.corte[c] + '%';
+      $('#s-c' + c + '-b').textContent = 'no ritmo: ' + brl(linhaCl(c)) + '/mês · corte de ' + brl(linhaCl(c) * sim.corte[c] / 100);
+    });
+    const paTot = soma([0, 1, 2, 3, 4], (c) => R0.pa[c] * (1 - corteDe(c)));
+    $('#s-np-v').textContent = sim.np + '%';
+    $('#s-np-b').textContent = 'parcelados novos no ritmo: ' + brl(soma([0, 1, 2, 3, 4], (c) => R0.pa[c])) + '/mês em ~' + P.N + 'x · ' + (sim.np < 100 ? 'adiar ' + brl(paTot * (1 - sim.np / 100)) + '/mês' : 'como hoje');
+    const falta = Math.max(0, P.regime - sim.meta);
+    anima($('#s-base'), P0.regime, (v) => brl(v));
+    anima($('#s-novo'), P.regime, (v) => brl(v));
+    anima($('#s-falta'), falta, (v) => brl(v));
+    $('#s-base-n').textContent = 'sem cortes, quando as parcelas antigas acabarem';
+    $('#s-novo-n').textContent = P.regime <= sim.meta ? 'cabe na meta, sobra ' + brl(sim.meta - P.regime) : brl(P.regime - sim.meta) + ' acima da meta';
+    $('#s-novo').className = 'numero ' + (P.regime <= sim.meta ? 'bom' : 'ruim');
+    $('#s-falta-n').textContent = falta > 0 ? pct(falta / P.regime) + ' da fatura, ' + kbrl(falta * 12) + ' no ano' : 'nada: meta atingida';
+    const escala = Math.max(P0.regime, sim.meta) * 1.15;
+    $('#s-med span').style.width = Math.min(100, 100 * P.regime / escala) + '%';
+    $('#s-med span').style.background = P.regime <= sim.meta ? 'var(--bom)' : 'var(--ruim)';
+    $('#s-med .alvo').style.left = (100 * sim.meta / escala) + '%';
+    const abaixo = P.serie.find((p) => p.t <= sim.meta);
+    const fimParc = P.serie.filter((p) => p.ant > 0).map((p) => p.k).pop();
+    const ib = gastoXP(BASES[0].meses) ? ibDe(BASES[0].meses) / gastoXP(BASES[0].meses) : 0;
+    $('#s-texto').innerHTML = (P.regime <= sim.meta
+      ? 'Com esses cortes a fatura fica em <b>' + brl(P.regime) + '</b>, dentro da meta de ' + brl(sim.meta) + '. '
+        + (abaixo ? 'Já a partir da fatura de <b>' + rotMes(abaixo.k) + '</b>' : 'Só depois de 12 meses') + ' ela cabe' + (fimParc ? ', com as parcelas antigas terminando em ' + rotMes(fimParc) : '') + '.'
+      : 'No ritmo escolhido, faltam <b class="ruim">' + brl(falta) + ' por mês</b> para a meta de ' + brl(sim.meta) + '. A sugestão abaixo mostra onde tirar.')
+      + (ib ? ' O investback acompanha: ~' + brl(P.regime * ib) + ' por mês nessa fatura (hoje ' + pct(ib, 2) + ').' : '');
+    graficoSim(P);
+    // sugestão sempre sobre o ritmo sem cortes
+    const S = sugestao(R0, Math.max(0, P0.regime - sim.meta));
+    sim.sug = S;
+    $('#sug-titulo').textContent = P0.regime <= sim.meta ? 'O seu ritmo já cabe na meta' : 'Sugestão para cortar ' + brl(P0.regime - sim.meta) + ' por mês';
+    $('#sug-sub').innerHTML = P0.regime <= sim.meta ? 'Sem cortes a fatura fica em ' + brl(P0.regime) + '. Dá para baixar a meta.'
+      : 'Primeiro os cortáveis, até metade de cada grupo; se não bastar, até 30% dos eventuais. Essenciais ficam de fora.'
+        + (S.resta > 1 ? ' <span class="aviso">Mesmo assim faltam ' + brl(S.resta) + ': a meta pede mexer nos essenciais ou nas parcelas.</span>' : '')
+        + ' "Aplicar a sugestão" leva isso para os controles (cortáveis ' + S.corte[2] + '%, eventuais ' + S.corte[1] + '%).';
+    const resto = S.passos.slice(10);
+    $('#sug').innerHTML = S.passos.slice(0, 10).map((p) => '<li><i style="background:' + COR_CL[p.cl] + '"></i><span><b>' + p.g + '</b>: de ' + brl(p.v) + ' para ' + brl(p.v - p.corte) + ' por mês (−' + pct(p.p) + ')</span><span class="v">−' + brl(p.corte) + '</span></li>').join('')
+      + (resto.length ? '<li><i style="background:var(--apagada)"></i><span>Mais <b>' + resto.length + ' grupos</b> menores: ' + resto.slice(0, 6).map((p) => p.g.toLowerCase()).join(', ') + (resto.length > 6 ? '…' : '') + '</span><span class="v">−' + brl(soma(resto, (p) => p.corte)) + '</span></li>' : '');
+  }
+  function graficoSim(P) {
+    const host = $('#g-sim'), serie = P.serie;
+    const W = Math.max(320, host.clientWidth), H = 220, m = { t: 14, r: 10, b: 28, l: 52 };
+    const vmax = Math.max(sim.meta, Math.max.apply(null, serie.map((p) => p.t))) * 1.12;
+    const Y = (v) => m.t + (vmax - v) * (H - m.t - m.b) / vmax, bw = (W - m.l - m.r) / serie.length;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Projeção das próximas faturas">';
+    const pY = passoY(vmax);
+    for (let v = 0; v <= vmax; v += pY) s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + num(v / 1000, v % 1000 ? 1 : 0) + 'k</text>';
+    serie.forEach((p, i) => {
+      const x0 = m.l + i * bw; let acc = 0;
+      [['ant', '#5d7774'], ['novo', '#a68cff'], ['av', '#b8e05a']].forEach(([c, cor]) => { const v = p[c]; if (v > 0) { s += '<rect x="' + (x0 + bw * 0.16) + '" y="' + Y(acc + v) + '" width="' + bw * 0.68 + '" height="' + (Y(acc) - Y(acc + v)) + '" fill="' + cor + '"/>'; acc += v; } });
+      s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + rotMes(p.k) + '</text>'
+        + '<rect class="sm" data-i="' + i + '" x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+      if (p.t <= sim.meta) s += '<circle cx="' + (x0 + bw / 2) + '" cy="' + (Y(p.t) - 7) + '" r="3" fill="#4fd1a5"/>';
+    });
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(sim.meta) + '" y2="' + Y(sim.meta) + '" stroke="#e8f2f0" stroke-width="1.5" stroke-dasharray="6 4"/>';
+    host.innerHTML = s + '</svg>';
+    $$('.sm', host).forEach((el) => {
+      el.addEventListener('mousemove', (ev) => { const p = serie[+el.dataset.i];
+        mostra('<span class="q">Fatura de ' + rotMes(p.k) + '</span>Parcelas já contratadas ' + brl(p.ant) + '<br>Novos parcelamentos ' + brl(p.novo) + '<br>À vista ' + brl(p.av) + '<br><b class="' + (p.t <= sim.meta ? 'bom' : 'ruim') + '">Total ' + brl(p.t) + '</b>', ev); });
+      el.addEventListener('mouseleave', esconde);
+    });
+  }
+
+  // --------------------------------------------------------- montagem
+  $('#n-linhas').textContent = num(L.length) + ' lançamentos';
+  $('#n-ini').textContent = fd(ts(L[0].d)); $('#n-fim').textContent = fd(ts(L[L.length - 1].d));
+  $('#n-gerado').textContent = D.gerado;
+
+  const obs = 'IntersectionObserver' in window ? new IntersectionObserver((ents) => {
+    ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visto'); obs.unobserve(e.target); } });
+  }, { threshold: 0.05 }) : null;
+  $$('.entra').forEach((s) => { if (obs) obs.observe(s); else s.classList.add('visto'); });
+
+  function recorte() {
+    const R = resumo(est.per.meses), ant = anterior(est.per);
+    abertura(R, ant ? resumo(ant) : null);
+    historico(); cartoes(R); categorias(R); maiores(); parcelas(R); conferencia(); investback(); cortar(R);
+  }
+  recorte(); simula();
+  let tm;
+  window.addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(() => { recorte(); simula(); }, 150); });
+})();
+</script>
+</body>
+</html>

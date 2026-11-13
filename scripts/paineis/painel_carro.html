@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carro na Ponta do Lápis</title>
+<style>
+  /* Mesmo mundo dos outros painéis. O carro é ciano; cada custo tem a sua
+     cor: âmbar combustível, azul oficina, ciano-claro seguro, violeta IPVA,
+     menta estacionamento, ouro acessórios, coral multas. */
+  :root {
+    color-scheme: dark;
+    --bg: #071013;
+    --bg-alto: #0a171b;
+    --painel: #0e1d21;
+    --painel-2: #12262b;
+    --linha: #1d343a;
+    --linha-forte: #2a4a51;
+    --tinta: #e8f2f0;
+    --fraca: #8fa8a5;
+    --apagada: #5d7774;
+    --carro: #3cc8ea;
+    --bom: #4fd1a5;
+    --ruim: #ff6f61;
+    --atencao: #ffb547;
+    --raio: 14px;
+    --display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    --texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 560px at 6% -10%, rgba(60, 200, 234, .11), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(255, 181, 71, .07), transparent 60%),
+      var(--bg);
+    color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.5;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 80px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px 96px; } }
+
+  .barra-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0;
+    border-bottom: 1px solid var(--linha); font-size: 13px; color: var(--fraca); flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 10px; color: var(--tinta); font-weight: 600; letter-spacing: .02em; }
+  .marca svg { width: 26px; height: 26px; }
+  .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav a { color: var(--fraca); text-decoration: none; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; transition: color .15s, border-color .15s; }
+  .nav a:hover, .nav a:focus-visible { color: var(--tinta); border-color: var(--linha-forte); outline: none; }
+  .nav a.cta { color: var(--bg); background: var(--carro); font-weight: 600; }
+
+  .hero { padding: 48px 0 24px; display: grid; gap: 28px; }
+  .hero > *, .grade > *, .grade-3 > *, .sim > *, .filtros > * { min-width: 0; }
+  .olho { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--carro); font-weight: 600; margin: 0 0 14px; }
+  .hero h1 { font-family: var(--display); font-weight: 600; font-stretch: 85%; font-size: clamp(34px, 5.4vw, 66px);
+    line-height: 1.04; letter-spacing: -.015em; margin: 0; max-width: 22ch; text-wrap: balance; }
+  .hero h1 em { font-style: normal; color: var(--carro); }
+  .hero .tese { max-width: 68ch; color: var(--fraca); font-size: 18px; margin: 18px 0 0; text-wrap: pretty; }
+  .hero .tese b { color: var(--tinta); font-weight: 600; }
+
+  .filtros { display: flex; gap: 12px 20px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; z-index: 10;
+    padding: 12px 0; background: linear-gradient(180deg, var(--bg) 70%, transparent); }
+  .segmento { display: inline-grid; grid-auto-flow: column; padding: 4px; gap: 4px; background: var(--bg-alto);
+    border: 1px solid var(--linha); border-radius: 12px; max-width: 100%; overflow-x: auto; }
+  .segmento button { font: inherit; font-size: 13px; color: var(--fraca); background: transparent; border: 0; border-radius: 9px;
+    padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+  .segmento button[aria-pressed="true"] { background: var(--painel-2); color: var(--tinta); box-shadow: 0 0 0 1px var(--linha-forte); }
+  .segmento button:focus-visible { outline: 2px solid var(--carro); outline-offset: 1px; }
+  .chave { display: inline-flex; gap: 10px; align-items: center; cursor: pointer; font-size: 14px; color: var(--fraca); }
+  .chave input { appearance: none; flex: none; width: 38px; height: 22px; border-radius: 99px; margin: 0; background: var(--linha-forte);
+    position: relative; cursor: pointer; transition: background .2s; }
+  .chave input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--tinta); transition: transform .2s; }
+  .chave input:checked { background: var(--carro); }
+  .chave input:checked::after { transform: translateX(16px); }
+  .chave input:focus-visible { outline: 2px solid var(--carro); outline-offset: 2px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px; }
+  .kpi { background: linear-gradient(180deg, var(--painel-2), var(--painel)); border: 1px solid var(--linha);
+    border-top: 2px solid var(--cor-k, var(--linha)); border-radius: var(--raio); padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .kpi .numero { font-size: 30px; }
+  .rotulo { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); font-weight: 600; }
+  .numero { font-family: var(--display); font-weight: 600; line-height: 1.1; letter-spacing: -.01em; }
+  .nota { font-size: 13px; color: var(--fraca); }
+  .nota b { color: var(--tinta); }
+  .delta { font-size: 12px; font-weight: 600; }
+  .bom { color: var(--bom); }
+  .ruim { color: var(--ruim); }
+  .est { display: inline-block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--atencao);
+    border: 1px solid rgba(255, 181, 71, .45); border-radius: 6px; padding: 0 5px; margin-left: 6px; vertical-align: 2px; }
+
+  section.bloco { padding: 56px 0 0; scroll-margin-top: 64px; }
+  .cab { display: grid; gap: 8px; margin-bottom: 24px; max-width: 76ch; }
+  .cab h2 { font-family: var(--display); font-weight: 600; font-stretch: 90%; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .cab p { margin: 0; color: var(--fraca); text-wrap: pretty; }
+  .cab p b { color: var(--tinta); font-weight: 600; }
+  .cab .olho { margin: 0; }
+  .grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+  .grade-3 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 22px; min-width: 0;
+    display: flex; flex-direction: column; gap: 12px; }
+  .cartao h3 { margin: 0; font-size: 17px; font-weight: 600; }
+  .cartao .sub { margin: 0; color: var(--fraca); font-size: 14px; }
+  .cartao .sub b { color: var(--tinta); }
+  .tela { width: 100%; position: relative; }
+  .tela svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg .grid { stroke: var(--linha); stroke-width: 1; }
+  svg .ax { fill: var(--apagada); font-size: 11px; font-family: var(--texto); }
+
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--fraca); align-items: center; }
+  .legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .legenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* barras horizontais (custo por tipo, sistemas, oficinas) */
+  .barras { display: grid; gap: 6px; }
+  .barra { display: grid; grid-template-columns: minmax(120px, 190px) 1fr minmax(150px, auto); gap: 14px; align-items: center; font-size: 14px; padding: 4px 0; }
+  .barra .trilho { height: 12px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; display: flex; }
+  .barra .trilho span { height: 100%; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+  .barra .v { text-align: right; color: var(--fraca); font-size: 13px; white-space: nowrap; }
+  .barra .v b { color: var(--tinta); }
+  .barra .n { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+  .barra .n i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  @media (max-width: 560px) { .barra { grid-template-columns: 1fr auto; } .barra .trilho { grid-column: 1 / -1; grid-row: 2; } }
+
+  /* tabelas */
+  .tabela { width: 100%; overflow-x: auto; }
+  .tabela.alta { max-height: 420px; overflow-y: auto; }
+  table.dados { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.dados th, table.dados td { padding: 9px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--linha); }
+  table.dados th { color: var(--fraca); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; position: sticky; top: 0; background: var(--painel); }
+  table.dados th:first-child, table.dados td:first-child { text-align: left; }
+  table.dados td.esq, table.dados th.esq { text-align: left; }
+  table.dados tbody tr:hover td { background: var(--painel-2); }
+  table.dados tr.incompleto td { color: var(--apagada); }
+  table.dados tr.incompleto td b { color: var(--apagada); }
+  .aviso { color: var(--atencao); }
+  .pilula { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; }
+
+  /* vencendo */
+  .km-hoje { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+  .km-hoje label { display: grid; gap: 4px; font-size: 13px; color: var(--fraca); }
+  .km-hoje input { font: inherit; font-family: var(--display); font-size: 24px; font-weight: 600; width: 160px; color: var(--tinta);
+    background: var(--bg-alto); border: 1px solid var(--linha-forte); border-radius: 10px; padding: 6px 12px; }
+  .km-hoje input:focus-visible { outline: 2px solid var(--carro); outline-offset: 1px; }
+  .botao { font: inherit; font-size: 13px; color: var(--tinta); background: var(--painel-2); border: 1px solid var(--linha-forte);
+    border-radius: 9px; padding: 7px 12px; cursor: pointer; }
+  .botao:hover { border-color: var(--carro); }
+  .botao:focus-visible { outline: 2px solid var(--carro); outline-offset: 1px; }
+  .contagem { display: flex; gap: 8px; flex-wrap: wrap; }
+  .itens { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+  .item { background: var(--painel); border: 1px solid var(--linha); border-left: 3px solid var(--cor-s); border-radius: 12px; padding: 14px 16px;
+    display: grid; gap: 8px; min-width: 0; }
+  .item .t { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .item .t b { font-weight: 600; font-size: 15px; }
+  .item .t .pilula { color: var(--cor-s); flex: none; }
+  .item .prog { height: 6px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; }
+  .item .prog span { display: block; height: 100%; background: var(--cor-s); border-radius: 99px; }
+  .item .d { font-size: 13px; color: var(--fraca); }
+  .item .d b { color: var(--tinta); font-weight: 600; }
+
+  /* simulador */
+  .sim { display: grid; gap: 16px; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 980px) { .sim { grid-template-columns: 1fr; } }
+  .ctl { display: grid; gap: 6px; padding: 11px 0; border-bottom: 1px solid var(--linha); }
+  .ctl:last-of-type { border-bottom: 0; }
+  .ctl .topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+  .ctl .topo b { font-family: var(--display); font-size: 18px; color: var(--cor-c, var(--carro)); white-space: nowrap; }
+  .ctl .base { font-size: 12px; color: var(--apagada); }
+  .ctl input[type="range"] { width: 100%; accent-color: var(--cor-c, var(--carro)); height: 20px; cursor: pointer; background: transparent; margin: 0; }
+  .ctl input[type="range"]:focus-visible { outline: 2px solid var(--carro); outline-offset: 2px; border-radius: 6px; }
+  .placar { border-radius: var(--raio); padding: 24px; border: 1px solid var(--linha-forte);
+    background: radial-gradient(600px 240px at 100% 0, rgba(60, 200, 234, .13), transparent 70%), linear-gradient(180deg, var(--painel-2), var(--painel));
+    display: grid; gap: 18px; }
+  .placar-nums { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+  .placar .numero { font-size: clamp(28px, 3vw, 40px); }
+  .placar p { margin: 0; font-size: 14px; color: var(--fraca); }
+  .placar p b { color: var(--tinta); }
+  .agenda { display: grid; gap: 10px; }
+  .agenda .m { display: grid; grid-template-columns: 64px 1fr; gap: 12px; font-size: 13px; color: var(--fraca); align-items: baseline; }
+  .agenda .m b { font-family: var(--display); font-size: 15px; color: var(--tinta); text-transform: capitalize; }
+
+  .notas { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--fraca); display: grid; gap: 12px; max-width: 86ch; }
+  .notas h2 { font-size: 15px; color: var(--tinta); margin: 0; font-weight: 600; }
+  .notas ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .notas b { color: var(--tinta); font-weight: 600; }
+
+  .dica { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .12s; background: #0b1a1e;
+    border: 1px solid var(--linha-forte); border-radius: 10px; padding: 8px 12px; font-size: 13px; color: var(--tinta);
+    box-shadow: 0 12px 30px rgba(0,0,0,.45); white-space: nowrap; }
+  .dica .q { color: var(--fraca); display: block; font-size: 12px; margin-bottom: 2px; }
+  .dica i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+
+  .entra { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .entra.visto { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .entra { opacity: 1; transform: none; transition: none; } * { transition-duration: 0s !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="barra-topo">
+    <div class="marca">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M6 19.5 8.6 12.4A3 3 0 0 1 11.4 10.5h9.2a3 3 0 0 1 2.8 1.9L26 19.5" stroke="#3cc8ea" stroke-width="2.2" stroke-linejoin="round"/>
+        <rect x="4" y="19" width="24" height="6" rx="2.4" stroke="#3cc8ea" stroke-width="2.2"/>
+        <circle cx="10" cy="25.5" r="2.2" fill="#3cc8ea"/><circle cx="22" cy="25.5" r="2.2" fill="#3cc8ea"/>
+      </svg>
+      Carro na Ponta do Lápis
+    </div>
+    <nav class="nav" aria-label="Seções">
+      <a href="#custo">Custo</a>
+      <a href="#oficina">Oficina</a>
+      <a href="#vencendo">O que vence</a>
+      <a href="#simulador" class="cta">Simulador</a>
+    </nav>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="olho" id="periodo-txt">—</p>
+      <h1 id="manchete">—</h1>
+      <p class="tese" id="tese">—</p>
+    </div>
+  </header>
+
+  <div class="filtros">
+    <div class="segmento" role="group" aria-label="Período" id="periodos"></div>
+    <label class="chave"><input type="checkbox" id="t-compra"> Incluir compra de carro</label>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <!-- ===================================================== custo -->
+  <section class="bloco entra" id="custo">
+    <div class="cab">
+      <p class="olho">Analítica</p>
+      <h2 id="custo-titulo">Quanto custa ter carro</h2>
+      <p>Tudo o que saiu do bolso por causa do carro, pelo financeiro. Uber, ônibus, avião e carro alugado em viagem ficam de fora.
+        A oficina aparece aqui pelo valor pago; o detalhe do que foi trocado está na seção seguinte.</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda" id="leg-baldes"></div>
+      <div class="tela" id="g-mensal"></div>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Para onde vai</h3>
+        <p class="sub" id="tipos-sub">Média por mês no período.</p>
+        <div class="barras" id="tipos"></div>
+      </div>
+      <div class="cartao" id="sedan-cartao">
+        <h3>Sedan, vendido</h3>
+        <p class="sub" id="sedan-sub">—</p>
+      </div>
+    </div>
+    <div class="cartao" style="margin-top:16px">
+      <h3>Ano a ano</h3>
+      <p class="sub" id="anos-sub">—</p>
+      <div class="tabela"><table class="dados" id="t-anos"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== oficina -->
+  <section class="bloco entra" id="oficina">
+    <div class="cab">
+      <p class="olho">Diagnóstica</p>
+      <h2 id="of-titulo">O histórico da oficina</h2>
+      <p>Cada bolha é uma ida à oficina: a altura é o valor, o tamanho é o número de itens da nota. Passe o mouse para ver o que foi feito.</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda" id="leg-carros"></div>
+      <div class="tela" id="g-visitas"></div>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Por sistema do carro</h3>
+        <p class="sub" id="sis-sub">—</p>
+        <div class="barras" id="sistemas"></div>
+      </div>
+      <div class="cartao">
+        <h3>Custo de oficina por mil km</h3>
+        <p class="sub">Todo o histórico de cada carro: o que foi gasto na oficina dividido pelos km rodados entre a primeira e a última visita.</p>
+        <div class="barras" id="por-km"></div>
+        <p class="sub" id="por-km-nota">—</p>
+      </div>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>As visitas</h3>
+        <div class="tabela alta"><table class="dados" id="t-visitas">
+          <thead><tr><th>Data</th><th class="esq">Carro</th><th>Km</th><th class="esq">Oficina</th><th>Itens</th><th>Preventiva</th><th>Total</th></tr></thead>
+          <tbody></tbody></table></div>
+      </div>
+      <div class="cartao">
+        <h3>Onde</h3>
+        <p class="sub">Oficinas e lojas por valor no período.</p>
+        <div class="barras" id="locais"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== vencendo -->
+  <section class="bloco entra" id="vencendo">
+    <div class="cab">
+      <p class="olho">Plano do fabricante · SUV</p>
+      <h2 id="vc-titulo">O que está vencendo</h2>
+      <p>Cada item vence pelo que chegar primeiro: os km ou os meses do fabricante. A quilometragem de hoje é estimada pelo ritmo das visitas;
+        <b>digite o valor do painel</b> do carro para o alerta ficar exato.</p>
+    </div>
+    <div class="cartao">
+      <div class="km-hoje">
+        <label>Km de hoje no painel do SUV<input type="number" id="km-hoje" inputmode="numeric" min="0" step="10"></label>
+        <p class="nota" id="km-nota" style="margin:0;max-width:52ch">—</p>
+        <button type="button" class="botao" id="km-volta">Voltar à estimativa</button>
+      </div>
+      <div class="contagem" id="vc-cont"></div>
+    </div>
+    <div class="itens" id="vc-itens" style="margin-top:16px"></div>
+    <div class="cab" style="margin:32px 0 16px"><h2 style="font-size:clamp(20px,2.4vw,26px)">Sem registro desde que o carro é seu</h2>
+      <p id="vc-sem-sub">—</p></div>
+    <div class="itens" id="vc-sem"></div>
+  </section>
+
+  <!-- ===================================================== simulador -->
+  <section class="bloco entra" id="simulador">
+    <div class="cab">
+      <p class="olho">Simulador</p>
+      <h2>Quanto o SUV vai custar nos próximos 12 meses</h2>
+      <p id="sim-sub">—</p>
+    </div>
+    <div class="sim">
+      <div class="cartao" id="sim-ctl">
+        <div id="sim-sliders"></div>
+        <button type="button" class="botao" id="sim-volta" style="justify-self:start">Voltar às premissas do histórico</button>
+      </div>
+      <div style="display:grid;gap:16px;min-width:0">
+        <div class="placar" aria-live="polite">
+          <div class="placar-nums">
+            <div><span class="rotulo">Em 12 meses</span><div class="numero" id="s-ano">—</div><span class="nota" id="s-ano-n">—</span></div>
+            <div><span class="rotulo">Por mês</span><div class="numero" id="s-mes">—</div><span class="nota" id="s-mes-n">—</span></div>
+            <div><span class="rotulo">Por km</span><div class="numero" id="s-km">—</div><span class="nota" id="s-km-n">—</span></div>
+          </div>
+          <div class="barras" id="s-partes"></div>
+          <p id="s-texto">—</p>
+        </div>
+        <div class="cartao">
+          <h3>O que vence no caminho</h3>
+          <p class="sub" id="s-agenda-sub">—</p>
+          <div class="agenda" id="s-agenda"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="notas">
+    <h2>De onde vêm estes números</h2>
+    <ul>
+      <li><b>Custo</b>: lançamentos analíticos da categoria Transporte (<span id="n-linhas">—</span>, de <span id="n-ini">—</span> a <span id="n-fim">—</span>), agrupados em combustível, oficina, seguro, IPVA e documentos, estacionamento e pedágio, acessórios e multas.
+        Compras parceladas entram na data da compra, como no painel de finanças. Reembolso de peça do carro abate "acessórios".</li>
+      <li><b>Oficina</b>: as notas da planilha de manutenção, item a item, com quilometragem. A mesma revisão aparece no financeiro; por isso o custo total sai só de lá e a oficina só detalha.</li>
+      <li><b>Quilometragem é estimada</b>: o hodômetro só é anotado na oficina. Entre duas visitas, os km são repartidos por igual entre os dias; depois da última, segue o ritmo do SUV (<span id="n-ritmo">—</span>).
+        Entre a compra do SUV e a primeira visita dele à oficina, os km usam o mesmo ritmo, para trás.</li>
+      <li><b>Sedan</b>: vendido em parcelas depois da troca de carro. Os gastos dele depois da última visita não entram no custo nem no simulador e aparecem à parte.</li>
+      <li><b>O que vence</b>: o plano do fabricante do SUV, pela view <i>gold.vw_manutencao_prevista</i>. "Em breve" é menos de 1.000 km ou 1 mês. Item sem registro não tem como ser datado: pode ter sido feito pelo dono anterior.</li>
+      <li><b>Simulador</b>: combustível = km ÷ consumo × preço do litro; oficina = km × custo de oficina por km do histórico dos dois carros; seguro, estacionamento e IPVA pelo último ano.
+        O preço da gasolina é suposição (não há litros no lake), e o consumo padrão sai do gasto com combustível ÷ esse preço ÷ km estimados.</li>
+      <li>Gerado em <span id="n-gerado">—</span> a partir do <i>db-demo</i>. Arquivo local, sem conexão com a internet.</li>
+    </ul>
+  </footer>
+</div>
+
+<div class="dica" id="dica" role="tooltip"></div>
+
+<script>
+const D = /*__DADOS__*/null;
+
+(function () {
+  'use strict';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const num = (v, c) => v == null || isNaN(v) ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: c || 0, maximumFractionDigits: c || 0 });
+  const brl = (v, c) => (v < 0 ? '−' : '') + 'R$ ' + num(Math.abs(v), c);
+  const kbrl = (v) => (v < 0 ? '−' : '') + 'R$ ' + (Math.abs(v) >= 1e6 ? num(Math.abs(v) / 1e6, 1) + ' mi' : Math.abs(v) >= 1e4 ? num(Math.abs(v) / 1e3, 0) + ' mil' : Math.abs(v) >= 1e3 ? num(Math.abs(v) / 1e3, 1) + ' mil' : num(Math.abs(v), 0));
+  const pct = (v, c) => v == null || !isFinite(v) ? '—' : num(100 * v, c || 0) + '%';
+  const DIA = 864e5;
+  const ts = (s) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+  const fd = (t) => { const d = new Date(t); return String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0') + '/' + d.getUTCFullYear(); };
+  const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const rotMes = (k) => MESES[+k.slice(5) - 1] + '/' + k.slice(2, 4);
+  const mesDe = (t) => { const d = new Date(t); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0'); };
+  const somaMeses = (t, n) => { const d = new Date(t); const alvo = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1);
+    const ult = new Date(Date.UTC(new Date(alvo).getUTCFullYear(), new Date(alvo).getUTCMonth() + 1, 0)).getUTCDate();
+    return Date.UTC(new Date(alvo).getUTCFullYear(), new Date(alvo).getUTCMonth(), Math.min(d.getUTCDate(), ult)); };
+  const MES_MS = 30.4375 * DIA;
+
+  const COR_B = { combustivel: '#ffb547', manutencao: '#6c8cff', seguro: '#3cc8ea', impostos: '#a68cff', estacionamento: '#4fd1a5',
+    acessorios: '#e9c46a', multas: '#ff6f61', compra: '#5d7774' };
+  const COR_C = ['#3cc8ea', '#ffb547', '#a68cff', '#8fa8a5'];
+  const BALDES = D.baldes.map((b) => b[0]), NOME_B = Object.fromEntries(D.baldes);
+  const ATIVO = 0, SEDAN = 1;
+  const HOJE = ts(D.hoje), SAIDA_PAJ = ts(D.saida_sedan);
+
+  // custo: [data, valor, balde, carro]
+  const C = D.custos.map((r) => ({ t: ts(r[0]), m: r[0].slice(0, 7), v: r[1], b: BALDES[r[2]], c: r[3] }));
+  // Sedan com a família: fora do custo, à parte
+  C.forEach((x) => { x.fam = x.c === SEDAN && x.t > SAIDA_PAJ; });
+  // oficina: [data, carro, visita, km, valor, categoria, sistema, servico, preventiva, item, local]
+  const O = D.oficina.map((r) => ({ t: ts(r[0]), m: r[0].slice(0, 7), c: r[1], vis: r[2], km: r[3], v: r[4], cat: r[5], sis: D.sistemas[r[6]],
+    serv: r[7], prev: r[8], item: r[9], loc: D.locais[r[10]] }));
+  const VISITAS = (() => {
+    const mp = new Map();
+    O.forEach((x) => { const k = x.c + '-' + x.vis; const v = mp.get(k) || { c: x.c, vis: x.vis, t: x.t, m: x.m, km: 0, v: 0, n: 0, prev: 0, loc: x.loc, itens: [] };
+      v.km = Math.max(v.km, x.km); v.v += x.v; v.n++; v.prev += x.prev ? x.v : 0; v.itens.push(x); if (x.loc !== 'Não informado') v.loc = x.loc; mp.set(k, v); });
+    return Array.from(mp.values()).sort((a, b) => a.t - b.t);
+  })();
+
+  const T0 = Math.min.apply(null, C.map((x) => x.t)), MES_FIM = mesDe(Math.max(HOJE, Math.max.apply(null, C.map((x) => x.t))));
+  const listaMeses = (a, b) => { const out = []; let [y, m] = a.split('-').map(Number); const [yb, mb] = b.split('-').map(Number);
+    while (y < yb || (y === yb && m <= mb)) { out.push(y + '-' + String(m).padStart(2, '0')); m++; if (m > 12) { m = 1; y++; } } return out; };
+  const TODOS = listaMeses(mesDe(T0), MES_FIM);
+
+  const dica = $('#dica');
+  function mostra(html, ev) {
+    dica.innerHTML = html; dica.style.opacity = '1';
+    const w = dica.offsetWidth, h = dica.offsetHeight;
+    let x = ev.clientX + 14, y = ev.clientY - h - 12;
+    if (x + w > window.innerWidth - 8) x = ev.clientX - w - 14;
+    if (y < 8) y = ev.clientY + 16;
+    dica.style.left = Math.max(8, x) + 'px'; dica.style.top = y + 'px';
+  }
+  const esconde = () => { dica.style.opacity = '0'; };
+  function anima(el, alvo, fmt) {
+    const de = el._v === undefined ? alvo : el._v;
+    el._v = alvo;
+    if (calmo || de === alvo) { el.textContent = fmt(alvo); return; }
+    const t0 = performance.now();
+    cancelAnimationFrame(el._raf);
+    const passo = (t) => { const p = Math.min(1, (t - t0) / 500), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(de + (alvo - de) * e); if (p < 1) el._raf = requestAnimationFrame(passo); };
+    el._raf = requestAnimationFrame(passo);
+  }
+  function barras(host, linhas, max) {
+    host.innerHTML = '';
+    linhas.forEach((l) => {
+      const d = document.createElement('div'); d.className = 'barra';
+      d.innerHTML = '<span class="n"><i></i><span></span></span><span class="trilho"><span></span></span><span class="v"><b></b><span></span></span>';
+      d.querySelector('.n i').style.background = l.cor; d.querySelector('.n span').textContent = l.nome;
+      const s = d.querySelector('.trilho span'); s.style.background = l.cor; s.style.width = Math.max(0, 100 * l.v / (max || 1)) + '%';
+      d.querySelector('.v b').textContent = l.txt; d.querySelector('.v span').textContent = l.nota ? ' ' + l.nota : '';
+      host.appendChild(d);
+    });
+  }
+
+  // --------------------------------------------------------- períodos
+  const anoFim = +MES_FIM.slice(0, 4);
+  const PERIODOS = [
+    { id: '12m', nome: 'Últimos 12 meses', meses: TODOS.slice(-12) },
+    { id: 'a0', nome: String(anoFim), meses: TODOS.filter((k) => k.startsWith(String(anoFim))) },
+    { id: 'a1', nome: String(anoFim - 1), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 1))) },
+    { id: 'a2', nome: String(anoFim - 2), meses: TODOS.filter((k) => k.startsWith(String(anoFim - 2))) },
+    { id: 'completo', nome: 'Desde ' + D.completo_desde, meses: TODOS.filter((k) => +k.slice(0, 4) >= D.completo_desde) },
+    { id: 'tudo', nome: 'Tudo', meses: TODOS }
+  ].filter((p) => p.meses.length);
+  // antes deste ano o financeiro quase não registra o carro: o custo fica subestimado
+  const INCOMPLETO = (meses) => +meses[0].slice(0, 4) < D.completo_desde;
+  const est = { per: PERIODOS.find((p) => p.id === 'a0') || PERIODOS[0], compra: false };
+  PERIODOS.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = p.nome; b.dataset.id = p.id;
+    b.setAttribute('aria-pressed', p === est.per);
+    b.addEventListener('click', () => { est.per = p; $$('#periodos button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.id === p.id)); recorte(); });
+    $('#periodos').appendChild(b);
+  });
+  $('#t-compra').addEventListener('change', (e) => { est.compra = e.target.checked; recorte(); });
+
+  const kmDe = (meses) => meses.reduce((s, k) => s + (D.km_mes[k] || 0), 0);
+  function resumo(meses) {
+    const set = new Set(meses);
+    const sel = C.filter((x) => set.has(x.m) && !x.fam && (est.compra || x.b !== 'compra'));
+    const r = { n: meses.length, sel, total: 0, por: {}, km: kmDe(meses) };
+    BALDES.forEach((b) => { r.por[b] = 0; });
+    sel.forEach((x) => { r.total += x.v; r.por[x.b] += x.v; });
+    r.semCompra = r.total - r.por.compra;
+    // custo por km só com os meses que têm km: carro sem hodômetro anotado fica fora
+    const comKm = sel.filter((x) => D.km_mes[x.m] && x.b !== 'compra').reduce((s, x) => s + x.v, 0);
+    r.porKm = r.km ? comKm / r.km : null;
+    return r;
+  }
+  function anterior(p) {
+    const i = TODOS.indexOf(p.meses[0]);
+    return i - p.meses.length < 0 ? null : TODOS.slice(i - p.meses.length, i);
+  }
+
+  // --------------------------------------------------------- topo
+  function kpi(alvo, rot, valor, nota, cor, delta, estimado) {
+    const d = document.createElement('div'); d.className = 'kpi'; d.style.setProperty('--cor-k', cor);
+    d.innerHTML = '<span class="rotulo"></span><span class="numero"></span><span class="nota"></span>';
+    d.children[0].textContent = rot;
+    if (estimado) { const e = document.createElement('span'); e.className = 'est'; e.textContent = 'est.'; d.children[0].appendChild(e); }
+    d.children[1].textContent = valor; d.children[2].textContent = nota;
+    if (delta) { const s = document.createElement('span'); s.className = 'delta ' + delta.cls; s.textContent = delta.txt; d.appendChild(s); }
+    alvo.appendChild(d);
+  }
+  function variacao(a, b) {
+    if (b == null || !isFinite(b) || Math.abs(b) < 1) return null;
+    const v = (a - b) / Math.abs(b);
+    return { txt: (v >= 0 ? '▲ ' : '▼ ') + pct(Math.abs(v)) + ' vs período anterior', cls: v <= 0 ? 'bom' : 'ruim' };
+  }
+  function abertura(R, P) {
+    const n = R.n, base = R.semCompra;
+    $('#periodo-txt').textContent = est.per.nome + ' · ' + rotMes(est.per.meses[0]) + ' a ' + rotMes(est.per.meses[n - 1]);
+    $('#manchete').innerHTML = 'Ter carro custou <em>' + kbrl(base / n) + '</em> por mês' + (R.km > 0 ? ', ' + brl(R.porKm, 2) + ' por km.' : '.');
+    const top = BALDES.filter((b) => b !== 'compra').sort((a, b) => R.por[b] - R.por[a]);
+    $('#tese').innerHTML = 'Em ' + n + (n === 1 ? ' mês' : ' meses') + ' foram <b>' + kbrl(base) + '</b>'
+      + (R.por.compra > 0 ? ' sem contar <b>' + kbrl(R.por.compra) + '</b> de compra de carro' : '') + '. '
+      + '<b>' + NOME_B[top[0]] + '</b> e <b>' + NOME_B[top[1]].toLowerCase() + '</b> são ' + pct((R.por[top[0]] + R.por[top[1]]) / base) + ' disso.'
+      + (R.km > 0 ? ' Rodando uns <b>' + num(R.km / n / 10) + '0 km por mês</b> (estimado).' : '')
+      + (INCOMPLETO(est.per.meses) ? ' <span class="aviso">Antes de ' + D.completo_desde + ' o financeiro quase não registra oficina e combustível: este custo está subestimado.</span>' : '');
+    const k = $('#kpis'); k.innerHTML = '';
+    kpi(k, 'Custo por mês', brl(base / n), kbrl(base) + ' no período', 'var(--carro)', P && variacao(base / n, P.semCompra / P.n));
+    kpi(k, 'Custo por km', R.km ? brl(R.porKm, 2) : '—', R.km ? num(R.km) + ' km no período' : 'sem km no período', 'var(--carro)', P && P.km ? variacao(R.porKm, P.porKm) : null, true);
+    kpi(k, 'Combustível por mês', brl(R.por.combustivel / n), pct(R.por.combustivel / base) + ' do custo', COR_B.combustivel, P && variacao(R.por.combustivel / n, P.por.combustivel / P.n));
+    kpi(k, 'Oficina por mês', brl(R.por.manutencao / n), pct(R.por.manutencao / base) + ' do custo', COR_B.manutencao, P && variacao(R.por.manutencao / n, P.por.manutencao / P.n));
+    const fixo = R.por.seguro + R.por.impostos;
+    kpi(k, 'Seguro + IPVA por mês', brl(fixo / n), 'o que se paga parado', COR_B.impostos, P && variacao(fixo / n, (P.por.seguro + P.por.impostos) / P.n));
+  }
+
+  // --------------------------------------------------------- custo
+  function legendaBaldes() {
+    $('#leg-baldes').innerHTML = BALDES.filter((b) => est.compra || b !== 'compra').map((b) => '<span><i style="background:' + COR_B[b] + '"></i>' + NOME_B[b] + '</span>').join('');
+  }
+  function mensal() {
+    const host = $('#g-mensal'), meses = est.per.meses;
+    // mais de 36 meses: um ponto por ano, senão as barras somem
+    const porAno = meses.length > 36;
+    const chaves = porAno ? Array.from(new Set(meses.map((k) => k.slice(0, 4)))) : meses;
+    const dados = chaves.map((k) => {
+      const ms = porAno ? meses.filter((x) => x.startsWith(k)) : [k];
+      const r = resumo(ms);
+      return { k, r, div: porAno ? ms.length : 1 };
+    });
+    const bs = BALDES.filter((b) => est.compra || b !== 'compra');
+    const W = Math.max(320, host.clientWidth), H = 280, m = { t: 16, r: 10, b: 30, l: 52 };
+    const alt = (d) => bs.reduce((s, b) => s + Math.max(0, d.r.por[b]), 0) / d.div;
+    const vmax = Math.max(1, Math.max.apply(null, dados.map(alt))) * 1.08;
+    const Y = (v) => m.t + (vmax - v) * (H - m.t - m.b) / vmax;
+    const bw = (W - m.l - m.r) / dados.length;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Custo do carro por ' + (porAno ? 'ano (média mensal)' : 'mês') + '">';
+    const passoY = vmax > 40000 ? 20000 : vmax > 15000 ? 5000 : vmax > 6000 ? 2000 : vmax > 3000 ? 1000 : 500;
+    for (let v = 0; v <= vmax; v += passoY) s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + (v >= 1000 ? num(v / 1000, v % 1000 ? 1 : 0) + 'k' : v) + '</text>';
+    const passoX = Math.max(1, Math.ceil(dados.length / Math.floor((W - m.l) / 46)));
+    dados.forEach((d, i) => {
+      const x0 = m.l + i * bw, w = Math.max(2, bw * 0.7);
+      s += '<g class="col" data-i="' + i + '"><rect x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+      let acc = 0;
+      bs.forEach((b) => { const v = Math.max(0, d.r.por[b]) / d.div; if (v > 0) { s += '<rect x="' + (x0 + bw * 0.15) + '" y="' + Y(acc + v) + '" width="' + w + '" height="' + Math.max(0.5, Y(acc) - Y(acc + v)) + '" fill="' + COR_B[b] + '"/>'; acc += v; } });
+      s += '</g>';
+      if (i % passoX === 0) s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + (porAno ? d.k : rotMes(d.k)) + '</text>';
+    });
+    host.innerHTML = s + '</svg>';
+    $$('.col', host).forEach((g) => {
+      g.addEventListener('mousemove', (ev) => {
+        const d = dados[+g.dataset.i];
+        let h = '<span class="q">' + (porAno ? d.k + ' · média por mês' : rotMes(d.k)) + '</span>';
+        bs.forEach((b) => { if (d.r.por[b]) h += '<i style="background:' + COR_B[b] + '"></i>' + NOME_B[b] + ' ' + brl(d.r.por[b] / d.div) + '<br>'; });
+        h += '<b>Total ' + brl(d.r.total / d.div) + '</b>';
+        if (d.r.km) h += '<br>~' + num(d.r.km / d.div) + ' km';
+        mostra(h, ev);
+      });
+      g.addEventListener('mouseleave', esconde);
+    });
+  }
+  function tipos(R) {
+    // só o que foi gasto: multas tem um valor recebido que pode deixar o balde negativo
+    const bs = BALDES.filter((b) => (est.compra || b !== 'compra') && R.por[b] > 0.5).sort((a, b) => R.por[b] - R.por[a]);
+    const max = Math.max.apply(null, bs.map((b) => R.por[b]));
+    barras($('#tipos'), bs.map((b) => ({ nome: NOME_B[b], cor: COR_B[b], v: R.por[b], txt: brl(R.por[b] / R.n) + '/mês', nota: '· ' + pct(R.por[b] / R.total) })), max);
+    $('#tipos-sub').textContent = 'Média por mês em ' + R.n + (R.n === 1 ? ' mês.' : ' meses.');
+    $('#custo-titulo').textContent = bs.length > 1 ? NOME_B[bs[0]] + ' e ' + NOME_B[bs[1]].toLowerCase() + ' são ' + pct((R.por[bs[0]] + R.por[bs[1]]) / R.total) + ' do custo do carro' : 'Quanto custa ter carro';
+  }
+  function anos() {
+    const anosL = Array.from(new Set(TODOS.map((k) => k.slice(0, 4))));
+    const bs = BALDES.filter((b) => b !== 'compra');
+    const salva = est.compra; est.compra = false;
+    const linhas = anosL.map((a) => { const ms = TODOS.filter((k) => k.startsWith(a)); return { a, r: resumo(ms), n: ms.length }; }).reverse();
+    est.compra = salva;
+    $('#t-anos thead').innerHTML = '<tr><th>Ano</th><th>Por mês</th><th>Combust.</th><th>Oficina</th><th>Seguro</th><th>IPVA</th><th>Km/mês</th><th>R$/km</th></tr>';
+    $('#anos-sub').innerHTML = 'Média por mês em cada ano, sem compra de carro. Km e custo por km são estimados pelo hodômetro anotado na oficina. '
+      + '<span class="aviso">Antes de ' + D.completo_desde + ' (em cinza) o financeiro quase não registra oficina e combustível</span>: os anos em cinza ficam fora das médias.';
+    $('#t-anos tbody').innerHTML = linhas.map((l) => '<tr' + (+l.a < D.completo_desde ? ' class="incompleto"' : '') + '><td>' + l.a + (l.n < 12 ? ' <span class="nota">(' + l.n + 'm)</span>' : '') + '</td><td><b>' + brl(l.r.semCompra / l.n) + '</b></td>'
+      + ['combustivel', 'manutencao', 'seguro', 'impostos'].map((b) => '<td>' + brl(l.r.por[b] / l.n) + '</td>').join('')
+      + '<td>' + (l.r.km ? num(l.r.km / l.n) : '—') + '</td><td>' + (l.r.km ? brl(l.r.porKm, 2) : '—') + '</td></tr>').join('');
+  }
+  function sedan() {
+    const g = C.filter((x) => x.fam), v = D.vendas.filter((x) => x[2] === 'Sedan');
+    const tot = g.reduce((s, x) => s + x.v, 0), rec = v.reduce((s, x) => s + x[1], 0);
+    $('#sedan-sub').innerHTML = 'Desde ' + fd(SAIDA_PAJ) + ' o Sedan não entra no custo. Ainda saíram <b>' + brl(tot) + '</b> com ele ('
+      + g.map((x) => NOME_B[x.b].toLowerCase() + ' ' + brl(x.v) + ' em ' + fd(x.t)).join(', ') + ')'
+      + (v.length ? ', e entraram <b>' + brl(rec) + '</b> da venda em ' + v.length + ' parcelas (a última em ' + fd(ts(v[v.length - 1][0])) + ').' : '.');
+  }
+
+  // --------------------------------------------------------- oficina
+  function legendaCarros() {
+    const usados = Array.from(new Set(VISITAS.map((v) => v.c)));
+    $('#leg-carros').innerHTML = usados.map((c) => '<span><i style="background:' + COR_C[c] + ';border-radius:50%"></i>' + D.carros[c] + '</span>').join('');
+  }
+  function visitas() {
+    const set = new Set(est.per.meses), sel = VISITAS.filter((v) => set.has(v.m));
+    const host = $('#g-visitas');
+    const W = Math.max(320, host.clientWidth), H = 260, m = { t: 20, r: 18, b: 30, l: 52 };
+    const t0 = ts(est.per.meses[0] + '-01'), t1 = Math.min(HOJE, Date.UTC(+est.per.meses[est.per.meses.length - 1].slice(0, 4), +est.per.meses[est.per.meses.length - 1].slice(5), 0));
+    const vmax = Math.max(500, Math.max.apply(null, sel.map((v) => v.v).concat([0]))) * 1.12;
+    // raiz: uma revisão de R$ 5 mil e uma troca de óleo de R$ 200 precisam caber juntas
+    const Y = (v) => m.t + (1 - Math.sqrt(v / vmax)) * (H - m.t - m.b), X = (t) => m.l + (t - t0) / Math.max(DIA, t1 - t0) * (W - m.l - m.r);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Idas à oficina">';
+    [100, 500, 1000, 2500, 5000].filter((v) => v < vmax).forEach((v) => { s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + (v >= 1000 ? (v / 1000) + 'k' : v) + '</text>'; });
+    const anosEixo = []; for (let y = new Date(t0).getUTCFullYear(); y <= new Date(t1).getUTCFullYear(); y++) anosEixo.push(y);
+    if (est.per.meses.length > 24) anosEixo.forEach((y) => { const t = Date.UTC(y, 0, 1); if (t >= t0) s += '<text class="ax" x="' + X(t) + '" y="' + (H - 8) + '" text-anchor="middle">' + y + '</text>'; });
+    else est.per.meses.forEach((k, i) => { if (i % 2 === 0) s += '<text class="ax" x="' + X(ts(k + '-15')) + '" y="' + (H - 8) + '" text-anchor="middle">' + rotMes(k) + '</text>'; });
+    sel.forEach((v, i) => {
+      const r = 4 + Math.sqrt(v.n) * 2.6;
+      s += '<circle class="vis" data-i="' + i + '" cx="' + X(v.t) + '" cy="' + Y(v.v) + '" r="' + r + '" fill="' + COR_C[v.c] + '" fill-opacity=".55" stroke="' + COR_C[v.c] + '" stroke-width="1.5"/>';
+    });
+    if (!sel.length) s += '<text class="ax" x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle" style="font-size:14px">Nenhuma ida à oficina neste período</text>';
+    host.innerHTML = s + '</svg>';
+    $$('.vis', host).forEach((c) => {
+      c.addEventListener('mousemove', (ev) => {
+        const v = sel[+c.dataset.i];
+        const top = v.itens.slice().sort((a, b) => b.v - a.v).slice(0, 6);
+        mostra('<span class="q">' + fd(v.t) + ' · ' + D.carros[v.c] + ' · ' + num(v.km) + ' km</span><b>' + brl(v.v) + '</b> · ' + v.loc + '<br>'
+          + top.map((x) => x.cat + (x.item ? ': ' + x.item.slice(0, 36) : '') + ' ' + brl(x.v)).join('<br>') + (v.n > 6 ? '<br>+ ' + (v.n - 6) + ' itens' : ''), ev);
+      });
+      c.addEventListener('mouseleave', esconde);
+    });
+    const tot = sel.reduce((s2, v) => s2 + v.v, 0), prev = sel.reduce((s2, v) => s2 + v.prev, 0);
+    $('#of-titulo').textContent = sel.length ? sel.length + (sel.length === 1 ? ' ida' : ' idas') + ' à oficina, ' + kbrl(tot) + ', ' + pct(prev / (tot || 1)) + ' preventiva' : 'O histórico da oficina';
+
+    // tabela
+    $('#t-visitas tbody').innerHTML = sel.slice().reverse().map((v) => '<tr><td>' + fd(v.t) + '</td><td class="esq"><span style="color:' + COR_C[v.c] + '">●</span> ' + D.carros[v.c]
+      + '</td><td>' + num(v.km) + '</td><td class="esq">' + v.loc + '</td><td>' + v.n + '</td><td>' + pct(v.prev / (v.v || 1)) + '</td><td><b>' + brl(v.v) + '</b></td></tr>').join('')
+      || '<tr><td colspan="7" class="esq nota">Nenhuma ida à oficina neste período.</td></tr>';
+
+    // sistemas
+    const itens = O.filter((x) => set.has(x.m)), porS = new Map();
+    itens.forEach((x) => { const p = porS.get(x.sis) || { v: 0, prev: 0 }; p.v += x.v; p.prev += x.prev ? x.v : 0; porS.set(x.sis, p); });
+    const ls = Array.from(porS.entries()).sort((a, b) => b[1].v - a[1].v);
+    const COR_S = ['#6c8cff', '#ff6f61', '#a68cff', '#ffb547', '#3cc8ea', '#4fd1a5', '#8fa8a5', '#5d7774'];
+    barras($('#sistemas'), ls.map(([n, p]) => ({ nome: n, cor: COR_S[D.sistemas.indexOf(n)] || '#5d7774', v: p.v, txt: brl(p.v), nota: '· ' + pct(p.prev / (p.v || 1)) + ' prev.' })), ls.length ? ls[0][1].v : 1);
+    const mo = porS.get('Mão de obra');
+    $('#sis-sub').innerHTML = itens.length ? 'Valor pago por sistema no período e quanto foi preventivo.' + (mo ? ' Mão de obra é <b>' + pct(mo.v / tot) + '</b> do total.' : '') : 'Sem itens neste período.';
+
+    // locais
+    const porL = new Map();
+    sel.forEach((v) => { const p = porL.get(v.loc) || { v: 0, n: 0 }; p.v += v.v; p.n++; porL.set(v.loc, p); });
+    const ll = Array.from(porL.entries()).sort((a, b) => b[1].v - a[1].v).slice(0, 8);
+    barras($('#locais'), ll.map(([n, p]) => ({ nome: n, cor: '#6c8cff', v: p.v, txt: brl(p.v), nota: '· ' + p.n + (p.n === 1 ? ' visita' : ' visitas') })), ll.length ? ll[0][1].v : 1);
+  }
+  function porKm() {
+    const linhas = [];
+    [ATIVO, SEDAN].forEach((c) => {
+      const vs = VISITAS.filter((v) => v.c === c); if (vs.length < 2) return;
+      const km = vs[vs.length - 1].km - vs[0].km, tot = vs.reduce((s, v) => s + v.v, 0);
+      linhas.push({ nome: D.carros[c], cor: COR_C[c], v: tot / km * 1000, txt: brl(tot / km * 1000) + '/mil km', nota: '· ' + num(km / 1000, 1) + ' mil km' });
+    });
+    barras($('#por-km'), linhas, Math.max.apply(null, linhas.map((l) => l.v)));
+    const asx = VISITAS.filter((v) => v.c === ATIVO);
+    $('#por-km-nota').innerHTML = 'O SUV tem só ' + asx.length + ' visitas em ' + num(asx[asx.length - 1].km - asx[0].km) + ' km, e a mais cara delas custou (' + brl(Math.max.apply(null, asx.map((v) => v.v))) + '): o número dele ainda vai baixar. '
+      + 'O do Sedan, com ' + VISITAS.filter((v) => v.c === SEDAN).length + ' visitas em nove anos, é a referência mais estável e é o que o simulador usa como base (somado ao SUV).';
+  }
+
+  // --------------------------------------------------------- vencendo
+  const KM = D.km;
+  const kmEst = Math.round(KM.ultimo_km + KM.ritmo_dia * (HOJE - ts(KM.ultima)) / DIA);
+  const inp = $('#km-hoje');
+  let kmHoje = kmEst;
+  try { const s = localStorage.getItem('carro-km-hoje'); if (s && +s > KM.ultimo_km) kmHoje = +s; } catch (e) { /* sem armazenamento */ }
+  inp.value = kmHoje;
+  const COR_SIT = { 'Vencido': '#ff6f61', 'Vence em breve': '#ffb547', 'Em dia': '#4fd1a5', 'Sem registro': '#8fa8a5' };
+
+  function avalia(p, km, hoje) {
+    if (!p.ult) return { sit: 'Sem registro' };
+    const tUlt = ts(p.ult);
+    const kmRest = p.ikm && p.ult_km != null ? p.ult_km + p.ikm - km : null;
+    const tVence = p.imes ? somaMeses(tUlt, p.imes) : null;
+    const mesesRest = tVence ? (tVence - hoje) / MES_MS : null;
+    const fKm = kmRest != null ? (km - p.ult_km) / p.ikm : 0, fT = p.imes ? (hoje - tUlt) / (p.imes * MES_MS) : 0;
+    // data em que vence: o primeiro entre o tempo e o km no ritmo atual
+    const tKm = kmRest != null ? hoje + kmRest / Math.max(1, KM.ritmo_dia) * DIA : null;
+    const quando = [tVence, tKm].filter((x) => x != null).reduce((a, b) => Math.min(a, b), Infinity);
+    const crit = tKm != null && (tVence == null || tKm < tVence) ? 'km' : 'tempo';
+    const sit = (kmRest != null && kmRest <= 0) || (mesesRest != null && mesesRest <= 0) ? 'Vencido'
+      : (kmRest != null && kmRest <= 1000) || (mesesRest != null && mesesRest <= 1) ? 'Vence em breve' : 'Em dia';
+    return { sit, kmRest, mesesRest, frac: Math.max(fKm, fT), quando, crit };
+  }
+  function vencendo() {
+    const km = kmHoje, estimado = km === kmEst;
+    $('#km-nota').innerHTML = estimado
+      ? 'Estimado: <b>' + num(KM.ultimo_km) + ' km</b> na revisão de ' + fd(ts(KM.ultima)) + ' + ' + num(KM.ritmo_dia, 1) + ' km por dia desde então. <span class="est">est.</span>'
+      : 'Valor digitado por você (fica salvo neste navegador). A estimativa seria <b>' + num(kmEst) + ' km</b>.';
+    $('#km-volta').hidden = estimado;
+    const av = D.plano.map((p) => Object.assign({ p }, avalia(p, km, HOJE)));
+    const com = av.filter((a) => a.sit !== 'Sem registro').sort((a, b) => a.quando - b.quando);
+    const sem = av.filter((a) => a.sit === 'Sem registro');
+    const conta = {}; av.forEach((a) => { conta[a.sit] = (conta[a.sit] || 0) + 1; });
+    $('#vc-cont').innerHTML = ['Vencido', 'Vence em breve', 'Em dia', 'Sem registro'].filter((s) => conta[s]).map((s) => '<span class="pilula" style="color:' + COR_SIT[s] + '">' + conta[s] + ' ' + s.toLowerCase() + '</span>').join('');
+    const prox = com[0];
+    $('#vc-titulo').textContent = conta['Vencido'] ? conta['Vencido'] + (conta['Vencido'] === 1 ? ' item vencido' : ' itens vencidos') + ' no SUV'
+      : prox ? 'Nada vencido: o próximo é ' + prox.p.item.toLowerCase() + ', em ' + MESES[new Date(prox.quando).getUTCMonth()] + '/' + String(new Date(prox.quando).getUTCFullYear()).slice(2) : 'O que está vencendo';
+    $('#vc-itens').innerHTML = com.map((a) => {
+      const p = a.p, cor = COR_SIT[a.sit];
+      const partes = [];
+      if (a.kmRest != null) partes.push(a.kmRest <= 0 ? '<b>' + num(-a.kmRest) + ' km</b> atrasado' : 'faltam <b>' + num(a.kmRest) + ' km</b>');
+      if (a.mesesRest != null) partes.push(a.mesesRest <= 0 ? '<b>' + num(-a.mesesRest, 1) + ' meses</b> atrasado' : 'ou <b>' + num(a.mesesRest, a.mesesRest < 2 ? 1 : 0) + ' meses</b>');
+      const q = new Date(a.quando);
+      return '<div class="item" style="--cor-s:' + cor + '"><div class="t"><b>' + p.item + '</b><span class="pilula">' + a.sit + '</span></div>'
+        + '<div class="prog"><span style="width:' + Math.min(100, 100 * a.frac) + '%"></span></div>'
+        + '<div class="d">' + p.acao + ' a cada ' + (p.ikm ? num(p.ikm) + ' km' : '') + (p.ikm && p.imes ? ' ou ' : '') + (p.imes ? p.imes + ' meses' : '') + '. Última em ' + fd(ts(p.ult)) + (p.ult_km ? ', ' + num(p.ult_km) + ' km' : '') + '.<br>'
+        + partes.join(' ') + ' → <b>' + (a.sit === 'Vencido' ? 'já venceu' : MESES[q.getUTCMonth()] + '/' + String(q.getUTCFullYear()).slice(2)) + '</b>, pelo ' + a.crit + '.</div></div>';
+    }).join('');
+    $('#vc-sem-sub').innerHTML = 'Estes itens do plano não aparecem em nenhuma nota desde que o SUV é seu (' + num(KM.km_primeira) + ' km na primeira visita). '
+      + 'Podem ter sido feitos pelo dono anterior; vale <b>confirmar na próxima revisão</b>. O marco abaixo é o próximo múltiplo do intervalo do fabricante.';
+    $('#vc-sem').innerHTML = sem.map((a) => {
+      const p = a.p, marco = p.ikm ? Math.ceil(km / p.ikm) * p.ikm : null;
+      return '<div class="item" style="--cor-s:' + COR_SIT['Sem registro'] + '"><div class="t"><b>' + p.item + '</b><span class="pilula">' + p.acao + '</span></div>'
+        + '<div class="d">' + (p.sistema || '') + ' · a cada ' + (p.ikm ? num(p.ikm) + ' km' : '') + (p.ikm && p.imes ? ' ou ' : '') + (p.imes ? p.imes + ' meses' : '') + '.'
+        + (marco ? '<br>Próximo marco: <b>' + num(marco) + ' km</b>, daqui a ~' + num((marco - km) / 1000, 1) + ' mil km.' : '') + '</div></div>';
+    }).join('');
+  }
+  inp.addEventListener('input', () => {
+    const v = Math.round(+inp.value);
+    if (!(v > 0)) return;
+    kmHoje = v;
+    try { localStorage.setItem('carro-km-hoje', String(v)); } catch (e) { /* sem armazenamento */ }
+    vencendo(); simula();
+  });
+  $('#km-volta').addEventListener('click', () => {
+    kmHoje = kmEst; inp.value = kmEst;
+    try { localStorage.removeItem('carro-km-hoje'); } catch (e) { /* sem armazenamento */ }
+    vencendo(); simula();
+  });
+
+  // --------------------------------------------------------- simulador
+  const S0 = D.sim;
+  const CTL = [
+    { id: 'km_mes', nome: 'Km rodados por mês', min: 200, max: 3000, passo: 50, fmt: (v) => num(v) + ' km', base: 'histórico: ' + num(S0.km_mes) + ' km (estimado)', cor: '#3cc8ea' },
+    { id: 'preco', nome: 'Preço da gasolina', min: 4.5, max: 9, passo: 0.05, fmt: (v) => brl(v, 2) + '/l', base: 'suposição: ajuste para o seu posto', cor: '#ffb547' },
+    { id: 'consumo', nome: 'Consumo', min: 4, max: 15, passo: 0.1, fmt: (v) => num(v, 1) + ' km/l', base: 'histórico: ' + num(S0.consumo, 1) + ' km/l (estimado)', cor: '#ffb547' },
+    { id: 'manut_km', nome: 'Oficina por km', min: 0, max: 1.2, passo: 0.01, fmt: (v) => brl(v, 2) + '/km', base: 'histórico dos dois carros: ' + brl(S0.manut_km, 2), cor: '#6c8cff' },
+    { id: 'seguro_mes', nome: 'Seguro por mês', min: 0, max: 900, passo: 5, fmt: (v) => brl(v), base: 'último ano: ' + brl(S0.seguro_mes), cor: '#3cc8ea' },
+    { id: 'ipva_ano', nome: 'IPVA e licenciamento por ano', min: 0, max: 8000, passo: 50, fmt: (v) => brl(v), base: 'parte estimada do SUV em ' + anoFim + ': ' + brl(S0.ipva_ano), cor: '#a68cff' },
+    { id: 'estac_mes', nome: 'Estacionamento e pedágio por mês', min: 0, max: 800, passo: 5, fmt: (v) => brl(v), base: 'último ano: ' + brl(S0.estac_mes), cor: '#4fd1a5' },
+  ];
+  const sim = {};
+  function montaSim() {
+    const host = $('#sim-sliders'); host.innerHTML = '';
+    CTL.forEach((c) => {
+      sim[c.id] = S0[c.id];
+      const d = document.createElement('div'); d.className = 'ctl'; d.style.setProperty('--cor-c', c.cor);
+      d.innerHTML = '<div class="topo"><label for="s-' + c.id + '"></label><b></b></div><input type="range" id="s-' + c.id + '"><span class="base"></span>';
+      d.querySelector('label').textContent = c.nome; d.querySelector('.base').textContent = c.base;
+      const r = d.querySelector('input'); r.min = c.min; r.max = c.max; r.step = c.passo; r.value = S0[c.id];
+      r.addEventListener('input', () => { sim[c.id] = +r.value; simula(); });
+      host.appendChild(d);
+    });
+  }
+  $('#sim-volta').addEventListener('click', () => { CTL.forEach((c) => { sim[c.id] = S0[c.id]; $('#s-' + c.id).value = S0[c.id]; }); simula(); });
+
+  function simula() {
+    CTL.forEach((c) => { $('#s-' + c.id).closest('.ctl').querySelector('.topo b').textContent = c.fmt(sim[c.id]); });
+    const km = sim.km_mes * 12;
+    const partes = [
+      ['combustivel', km / sim.consumo * sim.preco],
+      ['manutencao', km * sim.manut_km],
+      ['seguro', sim.seguro_mes * 12],
+      ['impostos', sim.ipva_ano],
+      ['estacionamento', sim.estac_mes * 12],
+    ];
+    const tot = partes.reduce((s, p) => s + p[1], 0);
+    anima($('#s-ano'), tot, (v) => kbrl(v));
+    anima($('#s-mes'), tot / 12, (v) => brl(v));
+    anima($('#s-km'), tot / km, (v) => brl(v, 2));
+    const g12 = S0.gasto12, base12 = ['combustivel', 'manutencao', 'seguro', 'impostos', 'estacionamento'].reduce((s, b) => s + (g12[b] || 0), 0);
+    const dif = tot - base12;
+    $('#s-ano-n').innerHTML = 'nos últimos 12 meses: ' + kbrl(base12);
+    $('#s-mes-n').textContent = num(km) + ' km no ano';
+    $('#s-km-n').textContent = 'combustível sozinho: ' + brl(sim.preco / sim.consumo, 2) + '/km';
+    barras($('#s-partes'), partes.slice().sort((a, b) => b[1] - a[1]).map(([b, v]) => ({ nome: NOME_B[b], cor: COR_B[b], v, txt: brl(v / 12) + '/mês', nota: '· ' + pct(v / tot) })), Math.max.apply(null, partes.map((p) => p[1])));
+    // de onde vem a diferença para o último ano: a linha que mais mudou
+    const difs = partes.map(([b, v]) => [b, v - (g12[b] || 0)]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+    const [bd, vd] = difs[0];
+    $('#s-texto').innerHTML = (Math.abs(dif) < 300 ? 'Praticamente o mesmo dos últimos 12 meses.' : 'São <b>' + kbrl(Math.abs(dif)) + (dif > 0 ? ' a mais' : ' a menos') + '</b> que os últimos 12 meses nas mesmas contas'
+        + (Math.abs(vd) > Math.abs(dif) * 0.5 ? '; a maior diferença é <b>' + NOME_B[bd].toLowerCase() + '</b> (' + kbrl(g12[bd] || 0) + ' no último ano'
+          + (bd === 'manutencao' && (g12.manutencao || 0) > 2 * S0.manut_km * S0.km12 ? ', com a revisão dos 100 mil km' : '')
+          + ', ' + kbrl(partes.find((p) => p[0] === bd)[1]) + ' aqui).' : '.'))
+      + ' Acessórios e multas ficam de fora (' + brl(((g12.acessorios || 0) + (g12.multas || 0))) + ' no último ano): são eventuais.'
+      + ' Cada 100 km a mais por mês somam <b>' + brl(100 * 12 * (sim.preco / sim.consumo + sim.manut_km)) + '</b> por ano.';
+    agenda();
+  }
+  // o que vence nos próximos 12 meses rodando sim.km_mes, a partir do km de hoje
+  function agenda() {
+    const ritmoDia = sim.km_mes * 12 / 365.25, fim = somaMeses(HOJE, 12);
+    const eventos = [];
+    D.plano.forEach((p) => {
+      if (!p.ult) return;
+      let tUlt = ts(p.ult), kmUlt = p.ult_km;
+      for (let n = 0; n < 6; n++) {
+        const tT = p.imes ? somaMeses(tUlt, p.imes) : Infinity;
+        const kmAgoraUlt = kmUlt != null ? kmUlt : null;
+        // km do carro na data t: hoje + ritmo; antes de hoje, a estimativa
+        const kmEm = (t) => kmHoje + (t - HOJE) / DIA * ritmoDia;
+        const tK = p.ikm && kmAgoraUlt != null ? HOJE + (kmAgoraUlt + p.ikm - kmHoje) / ritmoDia * DIA : Infinity;
+        const t = Math.max(HOJE, Math.min(tT, tK));
+        if (t > fim) break;
+        eventos.push({ t, p, crit: tK < tT ? 'km' : 'tempo', atrasado: Math.min(tT, tK) < HOJE });
+        tUlt = t; kmUlt = Math.round(kmEm(t));
+      }
+    });
+    eventos.sort((a, b) => a.t - b.t);
+    const porMes = new Map();
+    eventos.forEach((e) => { const k = mesDe(e.t); const l = porMes.get(k) || []; l.push(e); porMes.set(k, l); });
+    $('#s-agenda-sub').innerHTML = eventos.length ? '<b>' + eventos.length + ' intervenções</b> do plano do fabricante em 12 meses, rodando ' + num(sim.km_mes) + ' km por mês. '
+      + 'O custo delas já está na linha "Oficina", pelo custo por km do histórico.' : 'Nenhum item do plano vence em 12 meses neste ritmo.';
+    $('#s-agenda').innerHTML = Array.from(porMes.entries()).map(([k, l]) => '<div class="m"><b>' + rotMes(k) + '</b><span>'
+      + l.map((e) => e.p.item + (e.atrasado ? ' <span class="ruim">(atrasado)</span>' : '')).join(' · ') + '</span></div>').join('');
+  }
+
+  // --------------------------------------------------------- montagem
+  $('#sim-sub').textContent = 'Comece pelo histórico e mexa no que você controla: quanto roda, quanto paga no litro, quanto o carro faz por litro. '
+    + 'As linhas fixas vêm do último ano.';
+  $('#n-linhas').textContent = num(C.length) + ' lançamentos';
+  $('#n-ini').textContent = fd(T0); $('#n-fim').textContent = fd(Math.max.apply(null, C.map((x) => x.t)));
+  $('#n-ritmo').textContent = num(KM.ritmo_dia, 1) + ' km por dia';
+  $('#n-gerado').textContent = D.gerado;
+
+  const obs = 'IntersectionObserver' in window ? new IntersectionObserver((ents) => {
+    ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visto'); obs.unobserve(e.target); } });
+  }, { threshold: 0.05 }) : null;
+  $$('.entra').forEach((s) => { if (obs) obs.observe(s); else s.classList.add('visto'); });
+
+  function recorte() {
+    const R = resumo(est.per.meses), ant = anterior(est.per);
+    abertura(R, ant ? resumo(ant) : null);
+    legendaBaldes(); mensal(); tipos(R);
+    visitas();
+  }
+  legendaCarros(); anos(); sedan(); porKm();
+  montaSim();
+  recorte(); vencendo(); simula();
+  let tm;
+  window.addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(() => { mensal(); visitas(); }, 150); });
+})();
+</script>
+</body>
+</html>

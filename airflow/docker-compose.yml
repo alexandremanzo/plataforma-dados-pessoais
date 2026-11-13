@@ -1,0 +1,210 @@
+# =============================================================
+# manzo-dados | Airflow local
+# -------------------------------------------------------------
+# Sobe com:  docker compose up -d
+# Interface: http://localhost:8080
+#
+# TRES PONTOS QUE FAZEM ISSO FUNCIONAR, e que o compose anterior
+# nao tinha:
+#
+# 1. O CONTAINER PRECISA ALCANCAR O SQL SERVER DO HOST.
+#    Dentro do container, "localhost" e o proprio container, nao a
+#    maquina. O endereco correto e host.docker.internal. Alem disso,
+#    Trusted_Connection nao existe em Linux: a autenticacao tem que
+#    ser por usuario e senha.
+#
+# 2. O CONTAINER PRECISA ENXERGAR AS PLANILHAS.
+#    A pasta do Dropbox e montada em /opt/dados, e PATH_DADOS_ORIGEM
+#    aponta para la. As variaveis definidas aqui tem precedencia
+#    sobre o .env do projeto, porque load_dotenv nao sobrescreve o
+#    ambiente - e por isso o mesmo codigo roda no host e no container
+#    sem nenhuma adaptacao.
+#
+# 3. O CODIGO DO PROJETO E MONTADO, NAO COPIADO.
+#    Editar um script no host reflete no proximo run, sem rebuild.
+#
+# Credenciais ficam em airflow/.env, que nao e versionado.
+# =============================================================
+
+# Nome de projeto explicito. Sem isso o Compose usa o nome da pasta -
+# "airflow" - e colide com qualquer outro setup de Airflow na maquina,
+# recriando containers alheios e misturando os dois stacks.
+name: manzo-airflow
+
+x-airflow-comum: &airflow-comum
+  build:
+    context: .
+    # O BUILD PRECISA DO BUILDER "manzo", nao do padrao. Os RUN do build
+    # correm na rede do builder, e o builder padrao (driver docker) usa a
+    # bridge do daemon a 1500 - onde o pip trava baixando wheel grande.
+    # `build.network: manzo-airflow_default` NAO resolve: o BuildKit recusa
+    # rede nomeada nesse driver. O que resolve e um builder docker-container
+    # preso a rede de 1350:
+    #
+    #   docker buildx create --name manzo --driver docker-container \
+    #       --driver-opt network=manzo-airflow_default --bootstrap
+    #   docker compose build --builder manzo
+    #
+    # Ver "PMTU" em docs/operacao.md para o diagnostico e o conserto
+    # permanente no daemon.json.
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${WEBSERVER_SECRET_KEY}
+    AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: '30'
+    PYTHONUNBUFFERED: '1'
+
+    # --- Conexao com o SQL Server do host ---
+    DB_SERVER: host.docker.internal
+    DB_DATABASE: ${DB_DATABASE}
+    DB_DRIVER: ODBC Driver 18 for SQL Server
+    DB_AUTH: sql
+    DB_USER: ${DB_USER}
+    DB_PASSWORD: ${DB_PASSWORD}
+    DB_TRUST_CERT: 'yes'
+    DB_TIMEOUT: '30'
+
+    # --- Envio de e-mail ---
+    # Um unico conjunto de valores, dois consumidores: o Airflow usa as
+    # chaves AIRFLOW__SMTP__ para o alerta imediato de falha, e o script
+    # do resumo usa as neutras, porque ele tambem roda a mao no host.
+    AIRFLOW__SMTP__SMTP_HOST: ${SMTP_HOST}
+    AIRFLOW__SMTP__SMTP_PORT: ${SMTP_PORT}
+    AIRFLOW__SMTP__SMTP_STARTTLS: 'true'
+    AIRFLOW__SMTP__SMTP_SSL: 'false'
+    AIRFLOW__SMTP__SMTP_USER: ${SMTP_USER}
+    AIRFLOW__SMTP__SMTP_PASSWORD: ${SMTP_PASSWORD}
+    AIRFLOW__SMTP__SMTP_MAIL_FROM: ${SMTP_FROM}
+    SMTP_HOST: ${SMTP_HOST}
+    SMTP_PORT: ${SMTP_PORT}
+    SMTP_USER: ${SMTP_USER}
+    SMTP_PASSWORD: ${SMTP_PASSWORD}
+    SMTP_FROM: ${SMTP_FROM}
+    SMTP_PARA: ${SMTP_PARA}
+
+    # --- Caminhos dentro do container ---
+    PATH_DADOS_ORIGEM: /opt/dados
+    PATH_REPORT: /opt/report
+    PATH_PLANILHAS: /opt/planilhas
+    PATH_EXAMES: /opt/exames
+    # Toda pasta de origem nova entra aqui, no .env da raiz e no
+    # _HOST do airflow/.env - tres lugares, ver docs/operacao.md.
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    # O projeto inteiro, para os scripts e o config_db
+    - ..:/opt/projeto
+    # As planilhas de origem, com permissao de escrita porque a
+    # exportacao do consolidado grava de volta na mesma pasta.
+    # Sintaxe longa de proposito: o caminho tem espacos ("1. Particular")
+    # e a forma curta "origem:destino" quebraria ao separar pelos
+    # dois-pontos.
+    - type: bind
+      source: ${PATH_DADOS_HOST}
+      target: /opt/dados
+    - type: bind
+      source: ${PATH_REPORT_HOST}
+      target: /opt/report
+    # Planilhas nao financeiras (avaliacao fisica). Somente leitura: a
+    # carga so le, e o :ro impede que um erro de codigo escreva de
+    # volta num arquivo que so existe digitado a mao.
+    - type: bind
+      source: ${PATH_PLANILHAS_HOST}
+      target: /opt/planilhas
+      read_only: true
+    # Imagens dos exames de bioimpedancia. Somente leitura pelo mesmo
+    # motivo, e com mais razao: sao os documentos originais, e nao ha
+    # como regerar um exame perdido.
+    - type: bind
+      source: ${PATH_EXAMES_HOST}
+      target: /opt/exames
+      read_only: true
+  user: "${AIRFLOW_UID:-50000}:0"
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Roda uma vez, prepara o banco de metadados e cria o usuario.
+  airflow-init:
+    <<: *airflow-comum
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username "${AIRFLOW_ADMIN_USER}" \
+          --password "${AIRFLOW_ADMIN_PASSWORD}" \
+          --firstname Alexandre --lastname Manzo \
+          --role Admin --email "${AIRFLOW_ADMIN_EMAIL}" || true
+    restart: "no"
+
+  airflow-webserver:
+    <<: *airflow-comum
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-comum
+    command: scheduler
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
+# MTU 1350 NA REDE DOS CONTAINERS, e nao os 1500 do padrao.
+#
+# O caminho de saida do WSL2 descarta pacote de tamanho cheio sem devolver
+# o ICMP que avisaria - um PMTU blackhole. O sintoma e silencioso e
+# enganoso: DNS resolve, TCP conecta, HEAD pequeno responde, e qualquer
+# transferencia grande trava sem erro. Foi assim que o `docker compose
+# build` morreu baixando 1,8 MB do PyPI, enquanto o host baixava o mesmo
+# arquivo em 3 s.
+#
+# Medido em container descartavel, mesma imagem, so o MTU mudando:
+#     1500 -> trava alem de 70 s      1400 -> 14 a 20 s
+#     1350 -> 2,2 s                   1300 -> 2,2 s (sem ganho)
+# 1350 e o maior valor comprovadamente rapido. Mudar isto exige
+# `docker compose down` antes do `up -d`: rede existente nao e recriada.
+networks:
+  default:
+    driver_opts:
+      com.docker.network.driver.mtu: "1350"
+
+volumes:
+  postgres-db:

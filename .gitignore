@@ -1,0 +1,46 @@
+# Configuracao local - nunca versionar
+.env
+*.env
+!.env.example
+!airflow/.env.example
+
+# Credenciais e segredos
+*.key
+*.pem
+credentials*.json
+profiles.yml
+
+# Lista privada da varredura de dados pessoais (fica fora do repo, mas
+# se alguem a copiar para ca, ela nao sobe)
+.pii_termos.txt
+
+# Dados reais nunca entram: a demo gera os seus, ficticios
+data/
+dados_origem/
+*.xlsx
+*.xls
+*.pbix
+*.pbit
+
+# Power BI: cache local do modelo (contem os dados importados)
+.pbi/
+*.abf
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+.ipynb_checkpoints/
+.ruff_cache/
+
+# Airflow
+airflow/logs/
+airflow.db
+airflow.cfg
+airflow-webserver.pid
+
+# Sistema
+.DS_Store
+Thumbs.db

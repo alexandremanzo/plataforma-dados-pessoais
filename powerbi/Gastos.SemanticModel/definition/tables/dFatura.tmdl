@@ -1,0 +1,90 @@
+/// Calendário pela data da FATURA. Existe porque a parcela é gravada no mês da compra, não no da cobrança.
+table dFatura
+	lineageTag: 4f50e259-7e94-57fc-8f19-bcc65116a719
+
+	column SK_FATURA
+		dataType: int64
+		isHidden
+		lineageTag: f50b2d54-94e5-5e4f-b2c0-dfd1c1d8a65d
+		summarizeBy: none
+		sourceColumn: SK_FATURA
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Vencimento da fatura.
+	column DT_FATURA
+		dataType: dateTime
+		formatString: dd/MM/yyyy
+		lineageTag: 698e5344-67f3-51f2-86d8-3b94c9478651
+		summarizeBy: none
+		sourceColumn: DT_FATURA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_ANO_FATURA
+		dataType: int64
+		formatString: 0
+		lineageTag: c1516829-b96a-5fea-aa2a-a2f57fec4061
+		summarizeBy: none
+		sourceColumn: NR_ANO_FATURA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_MES_FATURA
+		dataType: int64
+		isHidden
+		lineageTag: ef236bb1-4cd5-5b2d-8c47-17af284d655f
+		summarizeBy: none
+		sourceColumn: NR_MES_FATURA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_MES_FATURA
+		dataType: string
+		lineageTag: f79c9ace-0476-56e4-901c-917b51571d7b
+		sortByColumn: NR_MES_FATURA
+		summarizeBy: none
+		sourceColumn: NM_MES_FATURA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_MES_ABREV_FATURA
+		dataType: string
+		lineageTag: f9a99dae-916a-56b0-a004-c1e21ae38b58
+		sortByColumn: NR_MES_FATURA
+		summarizeBy: none
+		sourceColumn: NM_MES_ABREV_FATURA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_ANO_MES_FATURA
+		dataType: string
+		lineageTag: 4723de07-afe5-5af1-9486-4d4d4252fd04
+		summarizeBy: none
+		sourceColumn: NM_ANO_MES_FATURA
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dFatura = m
+		mode: import
+		source = ```
+				let
+				    // A MESMA dimensao de calendario, servindo de eixo para a DATA DA
+				    // FATURA. Duas tabelas em vez de uma com relacao inativa porque
+				    // "quando comprei" e "em que fatura caiu" sao perguntas diferentes e
+				    // aparecem lado a lado na mesma tela.
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_calendario"]}[Data],
+				    Usadas = Table.SelectColumns(Tabela, {
+				                 "SK_DATA", "DT_DATA", "NR_ANO", "NR_MES", "NM_MES",
+				                 "NM_MES_ABREV", "NM_ANO_MES"}, MissingField.UseNull),
+				    Renom  = Table.RenameColumns(Usadas, {
+				                 {"SK_DATA", "SK_FATURA"}, {"DT_DATA", "DT_FATURA"},
+				                 {"NR_ANO", "NR_ANO_FATURA"}, {"NR_MES", "NR_MES_FATURA"},
+				                 {"NM_MES", "NM_MES_FATURA"}, {"NM_MES_ABREV", "NM_MES_ABREV_FATURA"},
+				                 {"NM_ANO_MES", "NM_ANO_MES_FATURA"}})
+				in
+				    Renom
+				```
+
+	annotation PBI_ResultType = Table

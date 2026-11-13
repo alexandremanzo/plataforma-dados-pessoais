@@ -1,0 +1,23 @@
+model Model
+	culture: pt-BR
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: pt-BR
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["pServidor", "pBanco", "fato_movto_financ", "dim_calendario", "dim_grupo_financ", "dim_categoria_financ", "dim_origem", "Composicao", "Indicadores", "_Medidas"]
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table fato_movto_financ
+ref table dim_calendario
+ref table dim_grupo_financ
+ref table dim_categoria_financ
+ref table dim_origem
+ref table Composicao
+ref table Indicadores
+ref table _Medidas
+

@@ -1,0 +1,54 @@
+/// Cópia de gold.dim_origem.
+table dim_origem
+	lineageTag: ef05b994-11a6-5a5d-9042-1bc8d49ef6b1
+
+	column SK_ORIGEM
+		dataType: int64
+		isHidden
+		lineageTag: 85d9cbea-20f2-5515-b6a9-8d8d686bcf7c
+		summarizeBy: none
+		sourceColumn: SK_ORIGEM
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_ORIGEM
+		dataType: string
+		lineageTag: eaeada38-ceba-5fa9-9ab9-f318619d3f90
+		summarizeBy: none
+		sourceColumn: NM_ORIGEM
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_INSTITUICAO
+		dataType: string
+		lineageTag: 3ac7350d-c500-51d5-9633-5e13aa98d961
+		summarizeBy: none
+		sourceColumn: NM_INSTITUICAO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Seis valores, não dois: Cartão de crédito, Conta corrente, Dinheiro e débito, Vale-alimentação, Conta de investimento e Não informado.
+	column DS_TIPO_CONTA
+		dataType: string
+		lineageTag: 5e7e0589-0fc9-531d-8f5b-d1589b6dec42
+		summarizeBy: none
+		sourceColumn: DS_TIPO_CONTA
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_origem = m
+		mode: import
+		source =
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_origem"]}[Data],
+				
+				    // Copia da gold: so a selecao das colunas que esta aba usa. Nada e
+				    // transformado aqui - o que precisa ser derivado e coluna
+				    // calculada, que fica visivel no modelo.
+				    Final  = Table.SelectColumns(Tabela, {"SK_ORIGEM", "NM_ORIGEM", "NM_INSTITUICAO", "DS_TIPO_CONTA"}, MissingField.UseNull)
+				in
+				    Final
+
+	annotation PBI_ResultType = Exception
+

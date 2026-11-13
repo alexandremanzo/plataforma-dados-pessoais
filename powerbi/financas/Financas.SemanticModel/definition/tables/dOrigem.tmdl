@@ -1,0 +1,49 @@
+/// Conta ou cartão de onde veio o lançamento.
+table dOrigem
+	lineageTag: a16ffef9-c702-54b3-8bfd-31e3de78f8b7
+
+	column SK_ORIGEM
+		dataType: int64
+		isHidden
+		lineageTag: 76ac4529-0e6d-558c-a2b8-84ddcc801616
+		summarizeBy: none
+		sourceColumn: SK_ORIGEM
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_ORIGEM
+		dataType: string
+		lineageTag: 547fa501-0e8c-5467-a020-05e424d49c2e
+		summarizeBy: none
+		sourceColumn: NM_ORIGEM
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_INSTITUICAO
+		dataType: string
+		lineageTag: 0b0a7488-71b6-5065-bab1-f12418a33055
+		summarizeBy: none
+		sourceColumn: NM_INSTITUICAO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Conta corrente ou Cartão de crédito.
+	column DS_TIPO_CONTA
+		dataType: string
+		lineageTag: 4643b865-6a35-50a3-92aa-79e871232204
+		summarizeBy: none
+		sourceColumn: DS_TIPO_CONTA
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dOrigem = m
+		mode: import
+		source = ```
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_origem"]}[Data]
+				in
+				    Tabela
+				```
+
+	annotation PBI_ResultType = Table

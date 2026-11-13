@@ -1,0 +1,364 @@
+/// Abriga as medidas.
+table _Medidas
+	lineageTag: ca605349-e35f-52d4-b085-90c8c8f5813a
+
+	/// Tudo que entrou no período, fora aporte, resgate e transferência.
+	measure 'Receita total' =
+			// Os tres filtros que se repetem em tudo:
+			//   ANALITICO            nao conta o cartao duas vezes (a compra e o
+			//                        pagamento da fatura)
+			//   <> "Nao e gasto"     aporte, resgate e transferencia ficam fora
+			//   KEEPFILTERS          sem ele, o filtro booleano SUBSTITUI o filtro
+			//                        da coluna, e fatiar por classe mostraria o
+			//                        mesmo total em todas as linhas
+			CALCULATE (
+			    SUM ( fato_movto_financ[VL_TRANSACAO] ),
+			    KEEPFILTERS ( fato_movto_financ[DS_TIPO_FLUXO] = "RECEITA" ),
+			    KEEPFILTERS ( fato_movto_financ[DS_NIVEL] = "ANALITICO" ),
+			    KEEPFILTERS ( dim_grupo_financ[DS_CLASSE] <> "Nao e gasto" )
+			)
+		formatString: "R$" #,0.00
+		lineageTag: e0fa4d27-f81c-5990-b09a-dea0d9eafb28
+
+	/// Tudo que saiu no período, fora aporte, resgate e transferência.
+	measure 'Despesa total' =
+			// A base grava despesa NEGATIVA, entao a medida inverte o sinal. A VAR
+			// existe porque inverter o sinal de um resultado vazio e onde o DAX
+			// trata branco como zero em algumas construcoes - e no calendario isso
+			// poria "R$ 0,00" em todo dia sem gasto, em vez de deixar vazio.
+			VAR _v =
+			    CALCULATE (
+			        SUM ( fato_movto_financ[VL_TRANSACAO] ),
+			        KEEPFILTERS ( fato_movto_financ[DS_TIPO_FLUXO] = "DESPESA" ),
+			    KEEPFILTERS ( fato_movto_financ[DS_NIVEL] = "ANALITICO" ),
+			    KEEPFILTERS ( dim_grupo_financ[DS_CLASSE] <> "Nao e gasto" )
+			    )
+			RETURN
+			    IF ( NOT ISBLANK ( _v ), - _v )
+		formatString: "R$" #,0.00
+		lineageTag: 3ea296b1-7d33-51ef-b10a-30761d6cfd21
+
+	/// Receita menos despesa. Negativo significa período fechado no vermelho.
+	measure 'Saldo total' = [Receita total] - [Despesa total]
+		formatString: "R$" #,0.00
+		lineageTag: bc15817b-1804-5821-b2bb-45a49fdf7fe1
+
+	/// Só a renda do trabalho. O acento é obrigatório: o modelo distingue acento.
+	measure 'Receita salário' = CALCULATE ( [Receita total], KEEPFILTERS ( dim_grupo_financ[NM_GRUPO] IN { "Salário" } ) )
+		formatString: "R$" #,0.00
+		lineageTag: 06a42e51-5fbe-506c-a98a-47483a162d0d
+
+	/// O que sobraria contando apenas o salário — o 'salário limpo' do esboço.
+	measure 'Saldo sobre salário' = [Receita salário] - [Despesa total]
+		formatString: "R$" #,0.00
+		lineageTag: 46690b40-1204-5be0-bde4-5b7a401c5668
+
+	/// Quanto da receita foi consumido.
+	measure '% despesa sobre receita' = DIVIDE ( [Despesa total], [Receita total] )
+		formatString: 0.0%
+		lineageTag: dc0081fb-6617-54c6-adda-3d451b32731d
+
+	/// Margem líquida.
+	measure '% saldo sobre receita total' = DIVIDE ( [Saldo total], [Receita total] )
+		formatString: 0.0%
+		lineageTag: 95a02ae8-4329-5ecc-a533-150679239b6c
+
+	/// Quanto do salário sobrou depois de toda a despesa.
+	measure '% saldo sobre salário' = DIVIDE ( [Saldo sobre salário], [Receita salário] )
+		formatString: 0.0%
+		lineageTag: 25e75789-59cd-56de-a1dd-f026310b0fd3
+
+	/// O mês por extenso, para o cabeçalho.
+	measure 'Período selecionado' =
+			VAR _n = DISTINCTCOUNT ( dim_calendario[NM_ANO_MES] )
+			RETURN
+			    IF (
+			        _n = 1,
+			        SELECTEDVALUE ( dim_calendario[NM_MES] ) & " / "
+			            & FORMAT ( SELECTEDVALUE ( dim_calendario[NR_ANO] ), "0" ),
+			        FORMAT ( _n, "#,0" ) & " meses selecionados"
+			    )
+		lineageTag: 6c8f6158-03c8-53dc-a5d0-33b3450dbc13
+
+	/// Subtítulo do cartão de receita: quanto é salário e quanto é outras.
+	measure 'Abertura da receita' =
+			// O subtitulo do cartao de receita. O esboco traz "100% da Renda", que
+			// nao informa nada - receita e 100% dela mesma. No lugar, a abertura.
+			"salário " & FORMAT ( [% salário na receita], "0.0%" )
+			    & " · outras " & FORMAT ( 1 - [% salário na receita], "0.0%" )
+		lineageTag: 8f447aad-b191-50a4-8279-d78865bcf0e2
+
+	/// Subtítulo do cartão de despesa.
+	measure 'Selo da despesa' = FORMAT ( [% despesa sobre receita], "0.0%" ) & " da receita"
+		lineageTag: 1082920c-702d-5369-9ec1-f4e38a84cac2
+
+	/// Subtítulo do cartão de saldo, com o sinal visível.
+	measure 'Selo da margem' =
+			VAR _t = [% saldo sobre receita total]
+			RETURN
+			    IF ( _t >= 0, "▲ ", "▼ " ) & FORMAT ( _t, "0.0%" ) & " margem líquida"
+		lineageTag: ee724980-1f12-5861-9f82-78fe563e2cc5
+
+	/// Subtítulo do cartão de saldo sobre salário, com o sinal visível.
+	measure 'Selo do salário limpo' =
+			VAR _t = [% saldo sobre salário]
+			RETURN
+			    IF ( _t >= 0, "▲ ", "▼ " ) & FORMAT ( _t, "0.0%" ) & " salário limpo"
+		lineageTag: daefb493-1002-58e3-b3c2-697b482a0705
+
+	/// Receita que não é salário: PLR, FGTS, previdência, venda de bem.
+	measure 'Outras receitas' = [Receita total] - [Receita salário]
+		formatString: "R$" #,0.00
+		lineageTag: e4ebd229-6861-56f7-9551-aed6bf1f20bd
+
+	/// Despesa nos grupos marcados como essenciais.
+	measure 'Despesa essencial' = CALCULATE ( [Despesa total], KEEPFILTERS ( dim_grupo_financ[DS_CLASSE] = "Essencial" ) )
+		formatString: "R$" #,0.00
+		lineageTag: 7f294bfd-186b-5331-a2a7-bf5d3c024204
+
+	/// Tudo que não é essencial. É subtração e não soma das outras classes: se nascer uma classe nova na dimensão, a subtração continua certa.
+	measure 'Despesa outras' = [Despesa total] - [Despesa essencial]
+		formatString: "R$" #,0.00
+		lineageTag: 328ad9f3-1b88-5cf1-8ca6-989fb1e0c6b7
+
+	/// Despesa nos grupos com potencial de corte.
+	measure 'Despesa compressível' = CALCULATE ( [Despesa total], KEEPFILTERS ( dim_grupo_financ[DS_CLASSE] = "Compressivel" ) )
+		formatString: "R$" #,0.00
+		lineageTag: d3ab74c8-3691-55f7-ab49-f30c86940d27
+
+	/// Despesa que acontece mas não se repete.
+	measure 'Despesa eventual' = CALCULATE ( [Despesa total], KEEPFILTERS ( dim_grupo_financ[DS_CLASSE] = "Eventual" ) )
+		formatString: "R$" #,0.00
+		lineageTag: ecc09986-400c-5c2b-8651-3fbfda5bcd93
+
+	/// Despesa em grupo que ainda não foi classificado. Lacuna visível, de propósito.
+	measure 'Despesa a classificar' = CALCULATE ( [Despesa total], KEEPFILTERS ( dim_grupo_financ[DS_CLASSE] = "A classificar" ) )
+		formatString: "R$" #,0.00
+		lineageTag: e2beb69f-b2fd-5e9d-9b75-4ce0a735e6d1
+
+	/// O valor de cada linha do bloco de composição.
+	measure 'Valor da composição' =
+			SWITCH (
+			    SELECTEDVALUE ( Composicao[Item] ),
+			    "Receita Salário",                  [Receita salário],
+			    "Outras Receitas",                  [Outras receitas],
+			    "Despesas Essenciais",              [Despesa essencial],
+			    "Despesas Outras (Não Essenciais)", [Despesa outras]
+			)
+		formatString: "R$" #,0.00
+		lineageTag: 9c6dcf6b-f3de-5f26-a3cf-3516d0a75988
+
+	/// Quanto da receita é renda do trabalho.
+	measure '% salário na receita' = DIVIDE ( [Receita salário], [Receita total] )
+		formatString: 0.0%
+		lineageTag: 384a6048-0027-50aa-affb-170e8fc62a47
+
+	/// Peso do não essencial na despesa.
+	measure '% despesa outras' = DIVIDE ( [Despesa outras], [Despesa total] )
+		formatString: 0.0%
+		lineageTag: 01db205c-c358-5bbb-9cc4-7d5857fca12d
+
+	/// O saldo calculado só com salário, dividido pela receita TOTAL. Diferente de [% saldo sobre salário], que divide pelo próprio salário.
+	measure '% saldo salário sobre receita total' = DIVIDE ( [Saldo sobre salário], [Receita total] )
+		formatString: 0.0%
+		lineageTag: 7142bbde-51dc-50d1-9bbb-2b1df7392cd5
+
+	/// O valor de cada linha do bloco de indicadores.
+	measure 'Valor do indicador' =
+			SWITCH (
+			    SELECTEDVALUE ( Indicadores[Indicador] ),
+			    "% Salário em relação à Receita Total",         [% salário na receita],
+			    "% Despesas Outras em relação à Despesa Total", [% despesa outras],
+			    "% Saldo (apenas Salário) x Receita Total",     [% saldo salário sobre receita total]
+			)
+		formatString: 0.0%
+		lineageTag: 441391f8-40be-5b81-9d7c-b5276b1d6d30
+
+	/// A parte da despesa que passou em cartão de crédito.
+	measure 'Despesa no cartão' = CALCULATE ( [Despesa total], KEEPFILTERS ( dim_origem[DS_TIPO_CONTA] = "Cartão de crédito" ) )
+		formatString: "R$" #,0.00
+		lineageTag: 14d5a9b2-76b9-5f4f-821c-e34f06a4b134
+
+	/// O resto. É SUBTRAÇÃO porque DS_TIPO_CONTA tem seis valores, não dois: filtrar por 'Conta corrente' perderia débito, vale e os demais.
+	measure 'Despesa fora do cartão' = [Despesa total] - [Despesa no cartão]
+		formatString: "R$" #,0.00
+		lineageTag: e14b4860-467c-58eb-894b-edd91cebfee8
+
+	/// Peso do cartão na despesa.
+	measure '% no cartão' = DIVIDE ( [Despesa no cartão], [Despesa total] )
+		formatString: 0.0%
+		lineageTag: 89b2ac17-d728-5e5c-bdb0-d7daa36c8fdf
+
+	/// Peso do que não passou no cartão.
+	measure '% fora do cartão' = DIVIDE ( [Despesa fora do cartão], [Despesa total] )
+		formatString: 0.0%
+		lineageTag: 2c55fe16-ed10-5833-89a8-7cab5bcc7ffa
+
+	/// Peso da categoria na despesa do período.
+	measure '% da categoria na despesa' = DIVIDE ( [Despesa total], CALCULATE ( [Despesa total], REMOVEFILTERS ( dim_categoria_financ ) ) )
+		formatString: 0.0%
+		lineageTag: 38800636-1b6f-5536-a91c-2eaf2b093b67
+
+	/// 1 a 5, na ordem de valor. O corte vem da medida: do sexto em diante tudo volta branco e a tabela descarta a linha sozinha.
+	measure 'Posição da categoria' =
+			VAR _r = RANKX ( ALLSELECTED ( dim_categoria_financ[NM_CATEGORIA] ),
+			                 [Despesa total], , DESC )
+			RETURN
+			    IF ( _r <= 5, _r )
+		formatString: 0
+		lineageTag: 1316d82c-267b-5641-8f37-5c80fb995138
+
+	/// Despesa da categoria, só para as cinco maiores.
+	measure 'Despesa da categoria' =
+			VAR _r = RANKX ( ALLSELECTED ( dim_categoria_financ[NM_CATEGORIA] ),
+			                 [Despesa total], , DESC )
+			RETURN
+			    IF ( _r <= 5, [Despesa total] )
+		formatString: "R$" #,0.00
+		lineageTag: 839d0c51-e0aa-5573-96bd-ac6e1e023cb1
+
+	/// Peso da categoria, só para as cinco maiores.
+	measure '% da categoria' =
+			VAR _r = RANKX ( ALLSELECTED ( dim_categoria_financ[NM_CATEGORIA] ),
+			                 [Despesa total], , DESC )
+			RETURN
+			    IF ( _r <= 5, [% da categoria na despesa] )
+		formatString: 0.0%
+		lineageTag: 05919105-dec3-5461-9a38-4cf9873d70b5
+
+	/// Alias de [Despesa total]. Dentro do calendário, 'despesa total' num quadrinho de um dia lê errado.
+	measure 'Gasto do dia' = [Despesa total]
+		formatString: "R$" #,0.00
+		lineageTag: b7bf0542-5243-579f-8b14-9d7d167d57e3
+
+	/// Quanto o dia representa do mês.
+	measure '% do dia no mês' = DIVIDE ( [Despesa total], CALCULATE ( [Despesa total], ALLEXCEPT ( dim_calendario, dim_calendario[NM_ANO_MES] ) ) )
+		formatString: 0.0%
+		lineageTag: eec49ce7-1223-5f4f-97a8-b91cf16c5499
+
+	/// Despesa do mês dividida pelos dias corridos do mês.
+	measure 'Gasto médio do dia no mês' =
+			VAR _mes =
+			    CALCULATE ( [Despesa total], ALLEXCEPT ( dim_calendario, dim_calendario[NM_ANO_MES] ) )
+			VAR _dias =
+			    CALCULATE ( COUNTROWS ( dim_calendario ), ALLEXCEPT ( dim_calendario, dim_calendario[NM_ANO_MES] ) )
+			RETURN
+			    DIVIDE ( _mes, _dias )
+		formatString: "R$" #,0.00
+		lineageTag: 4ccc4ced-1caf-599a-9d81-584cbc91a9e2
+
+	/// Acima disso o dia é pico no calendário. Separado para o limiar não ficar escondido dentro de um IF.
+	measure 'Limite de pico' = 1000
+		formatString: "R$" #,0.00
+		lineageTag: 0614f36b-c129-5337-9403-0e54ea6d7d80
+
+	/// Cor de fundo do quadrinho do calendário. Ligue em Elementos da célula > Cor de plano de fundo > Formatar por: Valor do campo.
+	measure 'Cor do dia' =
+			// A ordem do SWITCH e a ordem de PRIORIDADE: um pico num domingo pinta
+			// de pico, nao de fim de semana - e a informacao mais rara das duas.
+			VAR _v = [Despesa total]
+			VAR _fds = SELECTEDVALUE ( dim_calendario[FL_FIM_SEMANA] ) = "S"
+			VAR _fer = SELECTEDVALUE ( dim_calendario[FL_FERIADO] ) = "S"
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( _v ),         "#F8FAFC",
+			        _v > [Limite de pico],  "#FEE2E2",
+			        _fer,                   "#EDE9FE",
+			        _fds,                   "#FEF3C7",
+			        "#FFFFFF"
+			    )
+		lineageTag: e4422c27-23c9-5b48-9f5b-396f0d0e7c28
+
+	/// Peso do que pode ser cortado.
+	measure '% compressível' = DIVIDE ( [Despesa compressível], [Despesa total] )
+		formatString: 0.0%
+		lineageTag: 0412f373-c304-5871-ae42-d7d504501b96
+
+	/// Soma dos três maiores grupos compressíveis — a meta do esboço.
+	measure 'Meta pelos 3 maiores' =
+			// O que o esboco desenha como meta: o total dos tres grupos que voce
+			// vai atacar. Mais honesto que uma fracao de tudo - corta-se grupo,
+			// nao percentual.
+			SUMX (
+			    TOPN ( 3, ALLSELECTED ( dim_grupo_financ[NM_GRUPO] ), [Despesa compressível], DESC ),
+			    [Despesa compressível]
+			)
+		formatString: "R$" #,0.00
+		lineageTag: aabfd41e-01c6-578f-b89b-b81db41471db
+
+	/// Quanto a meta representa da despesa.
+	measure '% da meta sobre a despesa' = DIVIDE ( [Meta pelos 3 maiores], [Despesa total] )
+		formatString: 0.0%
+		lineageTag: 871f4455-669d-5175-9633-52b79fbad4b8
+
+	/// Quanto a meta representa da receita.
+	measure '% da meta sobre a receita' = DIVIDE ( [Meta pelos 3 maiores], [Receita total] )
+		formatString: 0.0%
+		lineageTag: 3b2af446-4d72-529e-8174-086bbbdc35e3
+
+	/// O selo do bloco de oportunidades.
+	measure 'Economia potencial' =
+			"Economia potencial de " & FORMAT ( [% da meta sobre a despesa], "0.0%" )
+			    & " da despesa"
+		lineageTag: 0e512d2c-d26b-50a6-8640-21a8d53e5fea
+
+	/// 1 a 3, na ordem de valor entre os grupos compressíveis.
+	measure 'Posição da oportunidade' =
+			VAR _r = RANKX ( ALLSELECTED ( dim_grupo_financ[NM_GRUPO] ),
+			                 [Despesa compressível], , DESC )
+			RETURN
+			    IF ( _r <= 3, _r )
+		formatString: 0
+		lineageTag: bc185232-4ad6-5ba9-9f6e-1979a13410a7
+
+	/// Valor dos três maiores grupos compressíveis.
+	measure 'Valor da oportunidade' =
+			VAR _r = RANKX ( ALLSELECTED ( dim_grupo_financ[NM_GRUPO] ),
+			                 [Despesa compressível], , DESC )
+			RETURN
+			    IF ( _r <= 3, [Despesa compressível] )
+		formatString: "R$" #,0.00
+		lineageTag: c8398a18-9314-5743-b99b-6710f804fdee
+
+	/// O saldo do mês se a meta for cumprida.
+	measure 'Saldo com o corte' = [Saldo total] + [Meta pelos 3 maiores]
+		formatString: "R$" #,0.00
+		lineageTag: fe124c9b-e10d-5f1b-8826-16357e42d240
+
+	/// A meta repetida por doze meses.
+	measure 'Economia anualizada' = [Meta pelos 3 maiores] * 12
+		formatString: "R$" #,0.00
+		lineageTag: 5265d957-7432-53a0-bc82-be50eda17d0f
+
+	/// A frase de impacto, com os números do período.
+	measure 'Impacto do corte' =
+			VAR _eco = [Meta pelos 3 maiores]
+			VAR _saldo = [Saldo total]
+			VAR _rec = [Receita total]
+			RETURN
+			    "Cortando " & FORMAT ( _eco, "R$ #,0.00" ) & " dos três maiores grupos, o saldo vai de "
+			        & FORMAT ( _saldo, "R$ #,0.00" ) & " para " & FORMAT ( _saldo + _eco, "R$ #,0.00" )
+			        & ", e a margem de " & FORMAT ( DIVIDE ( _saldo, _rec ), "0.0%" )
+			        & " para " & FORMAT ( DIVIDE ( _saldo + _eco, _rec ), "0.0%" ) & "."
+		lineageTag: 3c36e66f-4d17-57da-ba44-747909ae37a3
+
+	column Marcador
+		dataType: int64
+		isHidden
+		lineageTag: 41db1e6c-b4a6-5be0-9ce5-ee195de26ec3
+		summarizeBy: none
+		sourceColumn: Marcador
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Medidas = m
+		mode: import
+		source =
+				let
+				    T = #table(type table [Marcador = Int64.Type], {{1}})
+				in
+				    T
+
+	annotation PBI_ResultType = Table
+

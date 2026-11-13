@@ -1,0 +1,171 @@
+/// Cópia de gold.dim_calendario, mais a semana do mês.
+table dim_calendario
+	lineageTag: 55d70de4-9da2-54b1-a4ce-ad8bfacacc09
+
+	column SK_DATA
+		dataType: int64
+		isHidden
+		lineageTag: 9d1d966c-da30-5dba-a1dd-0030f5130e11
+		summarizeBy: none
+		sourceColumn: SK_DATA
+
+		annotation SummarizationSetBy = Automatic
+
+	column DT_DATA
+		dataType: dateTime
+		formatString: dd/MM/yyyy
+		lineageTag: ae60a32e-1f3a-55f4-b743-aa3b32398293
+		summarizeBy: none
+		sourceColumn: DT_DATA
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column NR_ANO
+		dataType: int64
+		formatString: 0
+		lineageTag: 7f2a2913-d75b-57b1-b6b3-7f291de269f4
+		summarizeBy: none
+		sourceColumn: NR_ANO
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_MES
+		dataType: int64
+		isHidden
+		lineageTag: 05065652-4a5d-5def-9b80-2a95e2beab37
+		summarizeBy: none
+		sourceColumn: NR_MES
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_MES
+		dataType: string
+		lineageTag: 0dd73eac-396c-5f51-9aca-4fdd472e19dd
+		summarizeBy: none
+		sourceColumn: NM_MES
+		sortByColumn: NR_MES
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_MES_ABREV
+		dataType: string
+		lineageTag: 80547458-3bd2-550f-931e-20a1674998ac
+		summarizeBy: none
+		sourceColumn: NM_MES_ABREV
+		sortByColumn: NR_MES
+
+		annotation SummarizationSetBy = Automatic
+
+	/// AAAA-MM. É a CHAVE: ordena sozinha e é o que as medidas comparam.
+	column NM_ANO_MES
+		dataType: string
+		lineageTag: f3db0be0-6cce-52ce-9941-d17ea4110c97
+		summarizeBy: none
+		sourceColumn: NM_ANO_MES
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Set/2026. É o RÓTULO, para seletor e eixo.
+	column NM_MES_ANO
+		dataType: string
+		lineageTag: deb3e658-ff09-5ed5-9ccc-ae97e134a5ae
+		summarizeBy: none
+		sourceColumn: NM_MES_ANO
+		sortByColumn: NM_ANO_MES
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_DIA
+		dataType: int64
+		formatString: 0
+		lineageTag: f6c32520-8e8b-51af-aa8a-923ec1ba73c4
+		summarizeBy: none
+		sourceColumn: NR_DIA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_DIA_SEMANA
+		dataType: int64
+		isHidden
+		lineageTag: 8dd84626-1eb3-5402-b47b-6737f803c3fa
+		summarizeBy: none
+		sourceColumn: NR_DIA_SEMANA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_DIA_SEMANA
+		dataType: string
+		lineageTag: 43a22429-fcb7-5d27-aab9-0aba164098f5
+		summarizeBy: none
+		sourceColumn: NM_DIA_SEMANA
+		sortByColumn: NR_DIA_SEMANA
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_DIA_SEMANA_ABREV
+		dataType: string
+		lineageTag: b3e8a47c-43fb-501d-8375-43c1935e86bf
+		summarizeBy: none
+		sourceColumn: NM_DIA_SEMANA_ABREV
+		sortByColumn: NR_DIA_SEMANA
+
+		annotation SummarizationSetBy = Automatic
+
+	column FL_FIM_SEMANA
+		dataType: string
+		lineageTag: f67dc4ca-3b52-5635-948c-922f96739383
+		summarizeBy: none
+		sourceColumn: FL_FIM_SEMANA
+
+		annotation SummarizationSetBy = Automatic
+
+	column FL_FERIADO
+		dataType: string
+		lineageTag: 800b2674-b2e4-5b1d-a844-6224ed364f3e
+		summarizeBy: none
+		sourceColumn: FL_FERIADO
+
+		annotation SummarizationSetBy = Automatic
+
+	column NM_FERIADO
+		dataType: string
+		lineageTag: c4908ed9-e487-5714-9d28-1e33ce3f7e61
+		summarizeBy: none
+		sourceColumn: NM_FERIADO
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Semana dentro do mês, 1 a 6. É a linha do calendário — não existe na gold, nasce aqui.
+	column NR_SEMANA_MES =
+			// A linha do calendario. WEEKDAY(_,1) devolve 1 para domingo, que e a
+			// coluna em que o calendario comeca; o deslocamento empurra o dia 1
+			// para a posicao certa na primeira linha.
+			VAR _primeiro = DATE ( dim_calendario[NR_ANO], dim_calendario[NR_MES], 1 )
+			VAR _desloc = WEEKDAY ( _primeiro, 1 ) - 1
+			RETURN
+			    INT ( ( dim_calendario[NR_DIA] + _desloc - 1 ) / 7 ) + 1
+		dataType: int64
+		formatString: 0
+		lineageTag: 5a119c82-8894-5767-8ab2-8df7b4bdcb98
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_calendario = m
+		mode: import
+		source =
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_calendario"]}[Data],
+				
+				    // Copia da gold: so a selecao das colunas que esta aba usa. Nada e
+				    // transformado aqui - o que precisa ser derivado e coluna
+				    // calculada, que fica visivel no modelo.
+				    Final  = Table.SelectColumns(Tabela, {"SK_DATA", "DT_DATA", "NR_ANO", "NR_MES", "NM_MES", "NM_MES_ABREV", "NM_ANO_MES", "NM_MES_ANO", "NR_DIA", "NR_DIA_SEMANA", "NM_DIA_SEMANA", "NM_DIA_SEMANA_ABREV", "FL_FIM_SEMANA", "FL_FERIADO", "NM_FERIADO"}, MissingField.UseNull)
+				in
+				    Final
+
+	annotation PBI_ResultType = Exception
+

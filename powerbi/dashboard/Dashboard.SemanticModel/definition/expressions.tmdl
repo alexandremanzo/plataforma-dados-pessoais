@@ -1,0 +1,12 @@
+/// Servidor do SQL Server. Único ponto a mudar se o banco se mover.
+expression pServidor = "localhost" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 0a7c609c-cedd-5e3b-9f17-2fa80943270e
+
+	annotation PBI_ResultType = Text
+
+/// Banco de dados.
+expression pBanco = "db-manzo" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 20eef11c-6a0b-5174-9222-e71910ba79d3
+
+	annotation PBI_ResultType = Text
+

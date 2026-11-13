@@ -1,0 +1,23 @@
+relationship relData
+	fromColumn: Movimentacao.SK_DATA
+	toColumn: dCalendario.SK_DATA
+
+relationship relFatura
+	fromColumn: Movimentacao.SK_DATA_FATURA
+	toColumn: dFatura.SK_FATURA
+
+relationship relOrigem
+	fromColumn: Movimentacao.SK_ORIGEM
+	toColumn: dOrigem.SK_ORIGEM
+
+relationship relArea
+	fromColumn: Movimentacao.SK_AREA_FINANC
+	toColumn: dArea.SK_AREA_FINANC
+
+relationship relCategoria
+	fromColumn: Movimentacao.SK_CATEGORIA_FINANC
+	toColumn: dCategoria.SK_CATEGORIA_FINANC
+
+relationship relGrupo
+	fromColumn: Movimentacao.SK_GRUPO_FINANC
+	toColumn: dGrupo.SK_GRUPO_FINANC

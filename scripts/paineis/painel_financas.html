@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dinheiro em Movimento</title>
+<style>
+  /* Mesmo mundo dos outros painéis. Receita em tons frios (menta, ciano,
+     violeta), despesa por classe: azul essencial, âmbar eventual, cinza sem
+     classe e coral para o que dá para cortar. Ouro = patrimônio. */
+  :root {
+    color-scheme: dark;
+    --bg: #071013;
+    --bg-alto: #0a171b;
+    --painel: #0e1d21;
+    --painel-2: #12262b;
+    --linha: #1d343a;
+    --linha-forte: #2a4a51;
+    --tinta: #e8f2f0;
+    --fraca: #8fa8a5;
+    --apagada: #5d7774;
+    --salario: #4fd1a5;
+    --outras: #3cc8ea;
+    --extra: #a68cff;
+    --essencial: #6c8cff;
+    --eventual: #ffb547;
+    --semclasse: #6b8582;
+    --cortavel: #ff6f61;
+    --patrimonio: #e9c46a;
+    --bom: #4fd1a5;
+    --ruim: #ff6f61;
+    --raio: 14px;
+    --display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    --texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 560px at 6% -10%, rgba(79, 209, 165, .11), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(233, 196, 106, .08), transparent 60%),
+      var(--bg);
+    color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.5;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 80px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px 96px; } }
+
+  .barra-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0;
+    border-bottom: 1px solid var(--linha); font-size: 13px; color: var(--fraca); flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 10px; color: var(--tinta); font-weight: 600; letter-spacing: .02em; }
+  .marca svg { width: 26px; height: 26px; }
+  .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav a { color: var(--fraca); text-decoration: none; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; transition: color .15s, border-color .15s; }
+  .nav a:hover, .nav a:focus-visible { color: var(--tinta); border-color: var(--linha-forte); outline: none; }
+  .nav a.cta { color: var(--bg); background: var(--salario); font-weight: 600; }
+
+  .hero { padding: 48px 0 24px; display: grid; gap: 28px; }
+  .hero > * , .grade > *, .grade-3 > *, .sim > *, .filtros > * { min-width: 0; }
+  .olho { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--salario); font-weight: 600; margin: 0 0 14px; }
+  .hero h1 { font-family: var(--display); font-weight: 600; font-stretch: 85%; font-size: clamp(34px, 5.4vw, 66px);
+    line-height: 1.04; letter-spacing: -.015em; margin: 0; max-width: 22ch; text-wrap: balance; }
+  .hero h1 .bom { color: var(--bom); }
+  .hero h1 .ruim { color: var(--ruim); }
+  .hero .tese { max-width: 68ch; color: var(--fraca); font-size: 18px; margin: 18px 0 0; text-wrap: pretty; }
+  .hero .tese b { color: var(--tinta); font-weight: 600; }
+
+  .filtros { display: flex; gap: 12px 20px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; z-index: 10;
+    padding: 12px 0; background: linear-gradient(180deg, var(--bg) 70%, transparent); }
+  .segmento { display: inline-grid; grid-auto-flow: column; padding: 4px; gap: 4px; background: var(--bg-alto);
+    border: 1px solid var(--linha); border-radius: 12px; max-width: 100%; overflow-x: auto; }
+  .segmento button { font: inherit; font-size: 13px; color: var(--fraca); background: transparent; border: 0; border-radius: 9px;
+    padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+  .segmento button[aria-pressed="true"] { background: var(--painel-2); color: var(--tinta); box-shadow: 0 0 0 1px var(--linha-forte); }
+  .segmento button:focus-visible { outline: 2px solid var(--outras); outline-offset: 1px; }
+  .chave { display: inline-flex; gap: 10px; align-items: center; cursor: pointer; font-size: 14px; color: var(--fraca); }
+  .chave input { appearance: none; flex: none; width: 38px; height: 22px; border-radius: 99px; margin: 0; background: var(--linha-forte);
+    position: relative; cursor: pointer; transition: background .2s; }
+  .chave input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--tinta); transition: transform .2s; }
+  .chave input:checked { background: var(--salario); }
+  .chave input:checked::after { transform: translateX(16px); }
+  .chave input:focus-visible { outline: 2px solid var(--outras); outline-offset: 2px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+  .kpis.mini { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+  .kpi { background: linear-gradient(180deg, var(--painel-2), var(--painel)); border: 1px solid var(--linha);
+    border-top: 2px solid var(--cor-k, var(--linha)); border-radius: var(--raio); padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .kpi .numero { font-size: 32px; }
+  .kpis.mini .kpi .numero { font-size: 24px; }
+  .rotulo { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); font-weight: 600; }
+  .numero { font-family: var(--display); font-weight: 600; line-height: 1.1; letter-spacing: -.01em; }
+  .nota { font-size: 13px; color: var(--fraca); }
+  .nota b { color: var(--tinta); }
+  .delta { font-size: 12px; font-weight: 600; }
+  .bom { color: var(--bom); }
+  .ruim { color: var(--ruim); }
+
+  .callout { border-radius: var(--raio); padding: 18px 22px; border: 1px solid var(--linha-forte);
+    background: linear-gradient(90deg, rgba(79, 209, 165, .08), transparent 60%), var(--painel);
+    display: grid; grid-template-columns: auto 1fr; gap: 6px 24px; align-items: center; }
+  .callout .numero { font-size: 40px; }
+  .callout p { margin: 0; color: var(--fraca); font-size: 14px; }
+  .callout p b { color: var(--tinta); }
+  @media (max-width: 640px) { .callout { grid-template-columns: 1fr; } }
+
+  section.bloco { padding: 56px 0 0; scroll-margin-top: 64px; }
+  .cab { display: grid; gap: 8px; margin-bottom: 24px; max-width: 76ch; }
+  .cab h2 { font-family: var(--display); font-weight: 600; font-stretch: 90%; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .cab p { margin: 0; color: var(--fraca); text-wrap: pretty; }
+  .cab p b { color: var(--tinta); font-weight: 600; }
+  .cab .olho { margin: 0; }
+  .grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+  .grade-3 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 22px; min-width: 0;
+    display: flex; flex-direction: column; gap: 12px; }
+  .cartao h3 { margin: 0; font-size: 17px; font-weight: 600; }
+  .cartao .sub { margin: 0; color: var(--fraca); font-size: 14px; }
+  .cartao .sub b { color: var(--tinta); }
+  .tela { width: 100%; position: relative; }
+  .tela svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg .grid { stroke: var(--linha); stroke-width: 1; }
+  svg .ax { fill: var(--apagada); font-size: 11px; font-family: var(--texto); }
+  svg .rot { fill: var(--tinta); font-size: 12px; font-weight: 600; font-family: var(--texto); }
+
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--fraca); align-items: center; }
+  .legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .legenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* categorias */
+  .cats { display: grid; gap: 4px; }
+  .cat { border-radius: 10px; }
+  .cat > button { width: 100%; display: grid; grid-template-columns: minmax(110px, 180px) 1fr 150px; gap: 14px; align-items: center;
+    font: inherit; font-size: 14px; color: var(--tinta); background: transparent; border: 0; padding: 7px 8px; border-radius: 10px;
+    cursor: pointer; text-align: left; }
+  .cat > button:hover { background: var(--painel-2); }
+  .cat > button:focus-visible { outline: 2px solid var(--outras); }
+  .cat .trilho { height: 12px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; display: flex; }
+  .cat .trilho span { height: 100%; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+  .cat .v { text-align: right; color: var(--fraca); font-size: 13px; white-space: nowrap; }
+  .cat .v b { color: var(--tinta); }
+  .cat .grupos { display: none; padding: 4px 8px 12px 24px; }
+  .cat.aberto .grupos { display: grid; gap: 4px; }
+  .cat.aberto > button { background: var(--painel-2); }
+  .gr { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; font-size: 13px; color: var(--fraca); align-items: center; }
+  .gr i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 8px; }
+  .gr b { color: var(--tinta); font-weight: 600; }
+  @media (max-width: 560px) { .cat > button { grid-template-columns: 1fr auto; } .cat .trilho { grid-column: 1 / -1; grid-row: 2; } }
+
+  /* calendário */
+  /* calendário: um mês por vez, uma célula por dia */
+  .cal-topo { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+  .cal-topo b { font-family: var(--display); font-size: 22px; min-width: 9ch; text-align: center; }
+  .cal-nav { font: inherit; font-size: 18px; line-height: 1; color: var(--tinta); background: var(--painel-2); border: 1px solid var(--linha-forte);
+    border-radius: 9px; width: 36px; height: 34px; cursor: pointer; }
+  .cal-nav:disabled { opacity: .35; cursor: default; }
+  .cal-nav:focus-visible { outline: 2px solid var(--bom); outline-offset: 1px; }
+  .cal-grade { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  .cal-sem { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--apagada); text-align: center; padding: 2px 0 4px; }
+  .cal-d { font: inherit; text-align: left; color: var(--tinta); border: 1px solid var(--linha); border-radius: 9px; padding: 6px 7px; min-height: 78px; min-width: 0;
+    display: flex; flex-direction: column; gap: 1px; background: var(--bg-alto); cursor: pointer; }
+  .cal-d:hover { border-color: var(--linha-forte); }
+  .cal-d:focus-visible { outline: 2px solid var(--bom); outline-offset: 1px; }
+  .cal-d[aria-pressed="true"] { border-color: var(--tinta); box-shadow: 0 0 0 1px var(--tinta); }
+  .cal-d .n { font-size: 12px; color: var(--fraca); }
+  .cal-d.fds .n { color: var(--atencao, #ffb547); }
+  .cal-d .v { font-family: var(--display); font-weight: 600; font-size: 15px; margin-top: auto; white-space: nowrap; }
+  .cal-d .g { font-size: 11px; color: var(--fraca); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cal-d.vazio { background: transparent; border-color: transparent; cursor: default; }
+  .cal-d.futuro { background: transparent; border-style: dashed; cursor: default; opacity: .5; }
+  .cal-det { display: grid; gap: 4px; font-size: 14px; }
+  .cal-det .linha { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--linha); }
+  @media (max-width: 560px) {
+    .cal-d { min-height: 54px; padding: 4px 5px; border-radius: 7px; }
+    .cal-d .g { display: none; }
+    .cal-d .v { font-size: 11px; }
+    .cal-grade { gap: 3px; }
+  }
+  .cal-dia:hover { stroke: var(--tinta); stroke-width: 1.5; }
+
+  /* tabelas */
+  .tabela { width: 100%; overflow-x: auto; }
+  table.dados { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.dados th, table.dados td { padding: 9px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--linha); }
+  table.dados th { color: var(--fraca); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  table.dados th:first-child, table.dados td:first-child { text-align: left; }
+  table.dados tbody tr:hover td { background: var(--painel-2); }
+  /* onde gasto */
+  table.locais th:nth-child(2), table.locais td:nth-child(2) { white-space: normal; min-width: 150px; text-align: left; }
+  table.locais tbody tr.lin { cursor: pointer; }
+  table.locais tbody tr.lin:focus-visible td { outline: 2px solid var(--salario); outline-offset: -2px; }
+  table.locais tbody tr.lin[aria-expanded="true"] td { background: var(--painel-2); }
+  table.locais .pos { color: var(--apagada); font-variant-numeric: tabular-nums; }
+  table.locais td.det { white-space: normal; text-align: left; background: var(--bg-alto); padding: 14px 16px; }
+  .det-grade { display: grid; gap: 14px 24px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+  .det-grade svg { display: block; width: 100%; height: 90px; }
+  .det-grade .linha { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--fraca); padding: 3px 0; }
+  .det-grade .linha b { color: var(--tinta); font-weight: 600; }
+  /* rotina */
+  .comp { display: grid; gap: 12px; align-content: start; }
+  .comp table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  .comp th, .comp td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--linha); white-space: nowrap; }
+  .comp th { color: var(--fraca); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .comp th:first-child, .comp td:first-child { text-align: left; }
+  .comp tr.total td { font-weight: 600; color: var(--tinta); }
+  .sinal { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; border: 1px solid var(--linha-forte); color: var(--fraca); }
+  .sinal.mais { color: var(--ruim); border-color: rgba(255, 111, 97, .45); background: rgba(255, 111, 97, .08); }
+  .sinal.menos { color: var(--bom); border-color: rgba(79, 209, 165, .45); background: rgba(79, 209, 165, .08); }
+  .sinal.fraco { opacity: .75; border-style: dashed; }
+  .comp .cu { display: none; }
+  @media (max-width: 560px) { .comp th, .comp td { padding: 6px 3px; font-size: 12.5px; } .comp .lg { display: none; } .comp .cu { display: inline; } .sinal { padding: 2px 5px; font-size: 10.5px; } }
+  table.dados td .barrinha { display: block; height: 3px; border-radius: 2px; background: var(--cortavel); margin-top: 4px; opacity: .8; }
+
+  /* simulador */
+  .sim { display: grid; gap: 16px; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 980px) { .sim { grid-template-columns: 1fr; } }
+  .corte { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--linha); }
+  .corte:last-child { border-bottom: 0; }
+  .corte .topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+  .corte .topo b { font-family: var(--display); font-size: 18px; color: var(--cor-c, var(--cortavel)); white-space: nowrap; }
+  .corte .base { font-size: 12px; color: var(--apagada); }
+  .corte input[type="range"] { width: 100%; accent-color: var(--cor-c, var(--cortavel)); height: 20px; cursor: pointer; background: transparent; margin: 0; }
+  .corte input[type="range"]:focus-visible { outline: 2px solid var(--outras); outline-offset: 2px; border-radius: 6px; }
+  .placar { border-radius: var(--raio); padding: 24px; border: 1px solid var(--linha-forte);
+    background: radial-gradient(600px 240px at 100% 0, rgba(79, 209, 165, .13), transparent 70%), linear-gradient(180deg, var(--painel-2), var(--painel));
+    display: grid; gap: 18px; }
+  .placar-nums { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+  .placar .numero { font-size: clamp(28px, 3vw, 40px); }
+  .placar p { margin: 0; font-size: 14px; color: var(--fraca); }
+  .placar p b { color: var(--tinta); }
+
+  .notas { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--fraca); display: grid; gap: 12px; max-width: 86ch; }
+  .notas h2 { font-size: 15px; color: var(--tinta); margin: 0; font-weight: 600; }
+  .notas ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .notas b { color: var(--tinta); font-weight: 600; }
+
+  .dica { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .12s; background: #0b1a1e;
+    border: 1px solid var(--linha-forte); border-radius: 10px; padding: 8px 12px; font-size: 13px; color: var(--tinta);
+    box-shadow: 0 12px 30px rgba(0,0,0,.45); white-space: nowrap; }
+  .dica .q { color: var(--fraca); display: block; font-size: 12px; margin-bottom: 2px; }
+  .dica i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+
+  .entra { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .entra.visto { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .entra { opacity: 1; transform: none; transition: none; } * { transition-duration: 0s !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="barra-topo">
+    <div class="marca">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M5 23 12 15l5 4 10-11" stroke="#4fd1a5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M21 8h6v6" stroke="#4fd1a5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Dinheiro em Movimento
+    </div>
+    <nav class="nav" aria-label="Seções">
+      <a href="#mensal">Mês a mês</a>
+      <a href="#categorias">Categorias</a>
+      <a href="#locais">Onde gasto</a>
+      <a href="#cortaveis">Cortáveis</a>
+      <a href="#diagnostico">Diagnóstico</a>
+      <a href="#rotina">Rotina</a>
+      <a href="#simulador" class="cta">Simulador</a>
+    </nav>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="olho" id="periodo-txt">—</p>
+      <h1 id="manchete">—</h1>
+      <p class="tese" id="tese">—</p>
+    </div>
+  </header>
+
+  <div class="filtros">
+    <div class="segmento" role="group" aria-label="Período" id="periodos"></div>
+    <label class="chave"><input type="checkbox" id="t-bens" checked> Incluir compras de bem (carro, apartamento)</label>
+  </div>
+
+  <div class="kpis" id="kpis-1"></div>
+  <div class="kpis mini" id="kpis-2" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px" id="so-salario">
+    <div><span class="rotulo">Se dependesse só do salário</span><div class="numero" id="ss-valor">—</div></div>
+    <p id="ss-texto">—</p>
+  </div>
+
+  <!-- ===================================================== mês a mês -->
+  <section class="bloco entra" id="mensal">
+    <div class="cab">
+      <p class="olho">Analítica</p>
+      <h2>Mês a mês: o que entrou, o que saiu e o que sobrou</h2>
+      <p>Barra da esquerda é receita, da direita é despesa, empilhadas por tipo. O ponto é o saldo do mês.
+        Escolha "Tudo" no topo para ver desde 2024.</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda">
+        <span><i style="background:var(--salario)"></i>Salário</span><span><i style="background:var(--outras)"></i>Outras receitas</span>
+        <span><i style="background:var(--extra)"></i>Extraordinárias</span>
+        <span style="margin-left:8px"><i style="background:var(--essencial)"></i>Essencial</span><span><i style="background:var(--eventual)"></i>Eventual</span>
+        <span><i style="background:var(--semclasse)"></i>Sem classificação</span><span><i style="background:var(--cortavel)"></i>Cortável</span>
+        <span style="margin-left:8px"><i style="background:#fff;border-radius:50%"></i>Saldo</span>
+      </div>
+      <div class="tela" id="g-mensal"></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== categorias -->
+  <section class="bloco entra" id="categorias">
+    <div class="cab">
+      <p class="olho">Para onde vai</p>
+      <h2 id="cat-titulo">Gasto por categoria</h2>
+      <p>Cada barra é dividida pela classe do gasto. Clique numa categoria para ver os grupos dentro dela.
+        Reembolsos já estão descontados da categoria em que caíram.</p>
+    </div>
+    <div class="cartao">
+      <div class="legenda"><span><i style="background:var(--essencial)"></i>Essencial</span><span><i style="background:var(--eventual)"></i>Eventual</span>
+        <span><i style="background:var(--semclasse)"></i>Sem classificação</span><span><i style="background:var(--cortavel)"></i>Cortável</span></div>
+      <div class="cats" id="cats"></div>
+    </div>
+
+    <div class="cab" style="margin-top:40px">
+      <h2 style="font-size:clamp(22px,2.6vw,28px)">Gasto por dia</h2>
+      <p>Um mês por vez, dia a dia. Quanto mais forte a cor, maior o gasto do dia; embaixo do valor, o grupo que mais pesou. Clique num dia para ver tudo o que saiu nele.</p>
+    </div>
+    <div class="cartao">
+      <div class="cal-topo">
+        <button type="button" class="cal-nav" id="cal-ant" aria-label="Mês anterior">‹</button>
+        <b id="cal-mes" aria-live="polite">—</b>
+        <button type="button" class="cal-nav" id="cal-prox" aria-label="Próximo mês">›</button>
+        <span class="nota" id="cal-resumo"></span>
+      </div>
+      <div class="legenda" id="cal-leg"></div>
+      <div class="cal-grade" id="g-cal"></div>
+      <div class="cal-det" id="cal-det"></div>
+    </div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao"><h3>Por dia da semana</h3><p class="sub">Gasto médio em cada dia da semana, sem compras de bem.</p><div class="tela" id="g-semana"></div></div>
+      <div class="cartao"><h3>Por dia do mês</h3><p class="sub" id="dm-sub">Gasto médio por dia do mês.</p><div class="tela" id="g-diames"></div></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== onde gasto -->
+  <section class="bloco entra" id="locais">
+    <div class="cab">
+      <p class="olho">Onde gasto</p>
+      <h2 id="lc-titulo">Os 20 lugares onde mais gasto</h2>
+      <p id="lc-sub">—</p>
+    </div>
+    <div class="cartao">
+      <div class="tabela">
+        <table class="dados locais" id="t-locais">
+          <thead><tr><th>#</th><th>Lugar</th><th>Total</th><th>Compras</th><th>Ticket médio</th><th>Por mês</th><th>Últimos 3 meses</th><th>Grupo principal</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="nota" style="margin:12px 0 0">Clique numa linha para ver o mês a mês e os grupos. O nome vem do recebedor do lançamento, com as grafias diferentes do mesmo lugar unidas;
+        o próprio Ale, a Conta Família e nomes genéricos ("Loja", "Pessoa") ficam de fora.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== cortáveis -->
+  <section class="bloco entra" id="cortaveis">
+    <div class="cab">
+      <p class="olho">Onde cortar</p>
+      <h2 id="ct-titulo">Gastos que podem ser cortados</h2>
+      <p id="ct-sub">—</p>
+    </div>
+    <div class="cartao">
+      <div class="tabela">
+        <table class="dados" id="t-cortaveis">
+          <thead><tr><th>Grupo</th><th>Por mês</th><th>Vezes/mês</th><th>Ticket médio</th><th>% da despesa</th><th>Corte de 30%</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== diagnóstico -->
+  <section class="bloco entra" id="diagnostico">
+    <div class="cab">
+      <p class="olho">Diagnóstica</p>
+      <h2>O que explica o saldo</h2>
+      <p>Indicadores além dos pedidos: o peso dos custos fixos, a evolução do padrão de vida ano a ano,
+        o papel do cartão e o que foi para o patrimônio.</p>
+    </div>
+    <div class="grade-3">
+      <div class="cartao"><h3>Custo fixo</h3><p class="sub" id="fx-sub">—</p><div class="tabela"><table class="dados" id="t-fixos"><thead><tr><th>Grupo</th><th>Por mês</th><th>Meses</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="cartao"><h3>Cartão de crédito</h3><p class="sub" id="cc-sub">—</p><div class="tela" id="g-cartao"></div></div>
+      <div class="cartao"><h3>Patrimônio</h3><p class="sub" id="pt-sub">—</p><div class="tela" id="g-patrimonio"></div></div>
+    </div>
+    <div class="cartao" style="margin-top:16px">
+      <h3>O padrão de vida ano a ano</h3>
+      <p class="sub">Média mensal por classe em cada ano, sem compras de bem. 2026 vai até o último lançamento.</p>
+      <div class="tabela"><table class="dados" id="t-anos"><thead><tr><th>Classe</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== rotina -->
+  <section class="bloco entra" id="rotina">
+    <div class="cab">
+      <p class="olho">Rotina × gasto</p>
+      <h2 id="rt-titulo">Como a rotina do dia mexe no gasto</h2>
+      <p id="rt-sub">—</p>
+    </div>
+    <div class="grade" id="rt-comps"></div>
+    <p class="nota" style="margin:14px 0 0;max-width:90ch">Gasto variável do dia: tudo menos contas fixas (escola, plano de saúde, seguro, internet, assinaturas), viagem e compra de bem, que caem num dia pelo calendário e não pela rotina.
+      Trabalho e Nina em casa vêm do registro diário, que começa em 2024 e tem falhas entre janeiro e abril de 2024; dia sem registro fica fora dessas duas comparações.
+      O mercado da casa sai quase todo pela Conta Família, por isso o valor aqui é baixo. É associação, não causa: feriado também costuma ser dia de passeio, por exemplo.</p>
+  </section>
+
+  <!-- ===================================================== simulador -->
+  <section class="bloco entra" id="simulador">
+    <div class="cab">
+      <p class="olho">Simulador</p>
+      <h2>Quanto sobra se você cortar aqui</h2>
+      <p id="sim-sub">—</p>
+    </div>
+    <div class="sim">
+      <div class="cartao" id="sim-cortes"></div>
+      <div style="display:grid;gap:16px;min-width:0">
+        <div class="placar" aria-live="polite">
+          <div class="placar-nums">
+            <div><span class="rotulo">Economia</span><div class="numero bom" id="s-eco">—</div><span class="nota" id="s-eco-ano">—</span></div>
+            <div><span class="rotulo">Novo saldo mensal</span><div class="numero" id="s-saldo">—</div><span class="nota" id="s-saldo-n">—</span></div>
+            <div><span class="rotulo">Taxa de poupança</span><div class="numero" id="s-taxa">—</div><span class="nota" id="s-taxa-n">—</span></div>
+          </div>
+          <p id="s-texto">—</p>
+        </div>
+        <div class="cartao">
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center">
+            <h3>A economia investida</h3>
+            <div class="segmento" role="group" aria-label="Horizonte" id="s-horiz"></div>
+          </div>
+          <p class="sub" id="s-inv-sub">—</p>
+          <div class="tela" id="g-sim"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="notas">
+    <h2>De onde vêm estes números</h2>
+    <ul>
+      <li><b>Fonte</b>: lançamentos analíticos de conta corrente e cartão (<span id="n-linhas">—</span>), de <span id="n-ini">—</span> a <span id="n-fim">—</span>.
+        O pagamento da fatura não entra, para a mesma compra não contar duas vezes. O mês corrente está incompleto.</li>
+      <li><b>Patrimônio fica de fora</b> de receita e despesa: aportes, resgates, previdência, cofrinho e transferências entre contas próprias são dinheiro mudando de bolso.</li>
+      <li><b>Receita</b>: salário é o grupo Salário; extraordinárias são PLR, acerto, FGTS, seguro-desemprego, saques e venda de bens; o resto é "outras".</li>
+      <li><b>Classes de despesa</b> vêm da compressibilidade do grupo. Grupo sem compressibilidade herda da área: GASTOS ESSENCIAIS vira essencial; o resto fica "sem classificação" (<span id="n-semclasse">—</span> no período).</li>
+      <li><b>Reembolsos</b> que caem numa categoria de gasto (a parte da hospedagem que alguém devolveu) abatem a própria categoria em vez de contar como receita.</li>
+      <li><b>Custo fixo</b>: grupos com gasto em pelo menos 75% dos meses do período.</li>
+      <li><b>Simulador</b>: a base é a média mensal do período escolhido; o rendimento é composto mês a mês, sem imposto nem inflação.</li>
+      <li>Gerado em <span id="n-gerado">—</span> a partir do <i>db-demo</i>. Arquivo local, sem conexão com a internet.</li>
+    </ul>
+  </footer>
+</div>
+
+<div class="dica" id="dica" role="tooltip"></div>
+
+<script>
+const D = /*__DADOS__*/null;
+
+(function () {
+  'use strict';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const num = (v, c) => v == null || isNaN(v) ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: c || 0, maximumFractionDigits: c || 0 });
+  const brl = (v, c) => (v < 0 ? '−' : '') + 'R$ ' + num(Math.abs(v), c);
+  const kbrl = (v) => (v < 0 ? '−' : '') + 'R$ ' + (Math.abs(v) >= 1e6 ? num(Math.abs(v) / 1e6, 1) + ' mi' : Math.abs(v) >= 1e4 ? num(Math.abs(v) / 1e3, 0) + ' mil' : num(Math.abs(v), 0));
+  const pct = (v, c) => v == null || !isFinite(v) ? '—' : (v < 0 ? '−' : '') + num(Math.abs(100 * v), c === undefined ? 1 : c) + '%';
+  const DIA = 864e5;
+  const ts = (s) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+  const fd = (t) => { const d = new Date(t); return String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0') + '/' + String(d.getUTCFullYear()).slice(2); };
+  const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const MESES_LONGO = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const COR = { salario: '#4fd1a5', outras: '#3cc8ea', extra: '#a68cff', essencial: '#6c8cff', eventual: '#ffb547', semclasse: '#6b8582', cortavel: '#ff6f61', patrimonio: '#e9c46a' };
+  const NOME = { salario: 'Salário', outras: 'Outras receitas', extra: 'Extraordinárias', essencial: 'Essencial', eventual: 'Eventual', semclasse: 'Sem classificação', cortavel: 'Cortável' };
+  const CLASSES_D = ['essencial', 'eventual', 'semclasse', 'cortavel'];
+  const CLASSES_R = ['salario', 'outras', 'extra'];
+
+  // linha: [data, valor, tipo, classe, cat, grupo, bem, cartao]; extra, na mesma ordem: [recebedor, balde da rotina]
+  const L = D.linhas.map((r, i) => ({ t: ts(r[0]), m: r[0].slice(0, 7), v: r[1], tipo: r[2], cl: r[3], cat: D.cats[r[4]], gr: D.grupos[r[5]], bem: r[6], cc: r[7], rec: D.extra[i][0], rot: D.extra[i][1] }));
+  const T0 = Math.min.apply(null, L.map((x) => x.t)), T1 = Math.max.apply(null, L.map((x) => x.t));
+  const mesDe = (t) => { const d = new Date(t); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0'); };
+  const MES_FIM = mesDe(T1), MES_INI = mesDe(T0);
+  const listaMeses = (a, b) => { const out = []; let [y, m] = a.split('-').map(Number); const [yb, mb] = b.split('-').map(Number);
+    while (y < yb || (y === yb && m <= mb)) { out.push(y + '-' + String(m).padStart(2, '0')); m++; if (m > 12) { m = 1; y++; } } return out; };
+  const TODOS_MESES = listaMeses(MES_INI, MES_FIM);
+  const rotMes = (k) => MESES[+k.slice(5) - 1] + '/' + k.slice(2, 4);
+
+  const dica = $('#dica');
+  function mostra(html, ev) {
+    dica.innerHTML = html; dica.style.opacity = '1';
+    const w = dica.offsetWidth, h = dica.offsetHeight;
+    let x = ev.clientX + 14, y = ev.clientY - h - 12;
+    if (x + w > window.innerWidth - 8) x = ev.clientX - w - 14;
+    if (y < 8) y = ev.clientY + 16;
+    dica.style.left = Math.max(8, x) + 'px'; dica.style.top = y + 'px';
+  }
+  const esconde = () => { dica.style.opacity = '0'; };
+  function anima(el, alvo, fmt) {
+    const de = el._v === undefined ? alvo : el._v;
+    el._v = alvo;
+    if (calmo || de === alvo) { el.textContent = fmt(alvo); return; }
+    const t0 = performance.now();
+    cancelAnimationFrame(el._raf);
+    const passo = (t) => { const p = Math.min(1, (t - t0) / 500), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(de + (alvo - de) * e); if (p < 1) el._raf = requestAnimationFrame(passo); };
+    el._raf = requestAnimationFrame(passo);
+  }
+
+  // --------------------------------------------------------- estado
+  const anoFim = +MES_FIM.slice(0, 4);
+  const PERIODOS = [
+    { id: '12m', nome: 'Últimos 12 meses', meses: TODOS_MESES.slice(-12) },
+    { id: '6m', nome: 'Últimos 6 meses', meses: TODOS_MESES.slice(-6) },
+    { id: String(anoFim), nome: String(anoFim), meses: TODOS_MESES.filter((k) => k.startsWith(String(anoFim))) },
+    { id: String(anoFim - 1), nome: String(anoFim - 1), meses: TODOS_MESES.filter((k) => k.startsWith(String(anoFim - 1))) },
+    { id: String(anoFim - 2), nome: String(anoFim - 2), meses: TODOS_MESES.filter((k) => k.startsWith(String(anoFim - 2))) },
+    { id: 'tudo', nome: 'Tudo', meses: TODOS_MESES }
+  ].filter((p) => p.meses.length);
+  const est = { per: PERIODOS.find((p) => p.id === String(anoFim)) || PERIODOS[0], bens: true, horiz: 5, cortes: {} };
+
+  function anterior(p) {
+    // mesmo número de meses imediatamente antes, se houver dado para isso
+    const i = TODOS_MESES.indexOf(p.meses[0]);
+    if (i - p.meses.length < 0) return null;
+    return TODOS_MESES.slice(i - p.meses.length, i);
+  }
+
+  function resumo(meses) {
+    const set = new Set(meses);
+    const sel = L.filter((x) => set.has(x.m) && (est.bens || !x.bem));
+    const r = { n: meses.length, sel, rec: 0, desp: 0, pat_ap: 0, pat_res: 0, porCl: {} };
+    CLASSES_R.concat(CLASSES_D, ['reembolso']).forEach((c) => { r.porCl[c] = 0; });
+    sel.forEach((x) => {
+      if (x.tipo === 'R') { r.rec += x.v; r.porCl[x.cl] += x.v; }
+      else if (x.tipo === 'D') { r.desp += x.v; r.porCl[x.cl] += x.v; }
+      else if (x.cl === 'aporte') r.pat_ap += x.v; else r.pat_res += x.v;
+    });
+    // reembolso abate a despesa; para a classe, é distribuído na categoria em que caiu (ver categorias)
+    r.saldo = r.rec - r.desp;
+    r.taxa = r.rec > 0 ? r.saldo / r.rec : null;
+    return r;
+  }
+
+  // ------------------------------------------------------------ períodos
+  PERIODOS.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = p.nome; b.dataset.id = p.id;
+    b.setAttribute('aria-pressed', p === est.per);
+    b.addEventListener('click', () => { est.per = p; $$('#periodos button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.id === p.id)); tudo(); });
+    $('#periodos').appendChild(b);
+  });
+  $('#t-bens').addEventListener('change', (e) => { est.bens = e.target.checked; tudo(); });
+
+  // ------------------------------------------------------------ topo
+  function kpi(alvo, rot, valor, nota, cor, delta) {
+    const d = document.createElement('div'); d.className = 'kpi'; d.style.setProperty('--cor-k', cor);
+    d.innerHTML = '<span class="rotulo"></span><span class="numero"></span><span class="nota"></span>';
+    d.children[0].textContent = rot; d.children[1].textContent = valor;
+    if (typeof nota === 'string') d.children[2].textContent = nota; else d.children[2].appendChild(nota);
+    if (delta) { const s = document.createElement('span'); s.className = 'delta ' + delta.cls; s.textContent = delta.txt; d.appendChild(s); }
+    alvo.appendChild(d);
+    return d;
+  }
+  function variacao(a, b, maiorBom) {
+    if (b == null || !isFinite(b) || Math.abs(b) < 1) return null;
+    const v = (a - b) / Math.abs(b);
+    const bom = maiorBom ? v >= 0 : v <= 0;
+    return { txt: (v >= 0 ? '▲ ' : '▼ ') + pct(Math.abs(v), 0) + ' vs período anterior', cls: bom ? 'bom' : 'ruim' };
+  }
+
+  function topo(R, P) {
+    const n = R.n, m = (v) => v / n;
+    const pos = R.saldo >= 0;
+    $('#periodo-txt').textContent = est.per.nome + ' · ' + rotMes(est.per.meses[0]) + ' a ' + rotMes(est.per.meses[est.per.meses.length - 1])
+      + (est.per.meses.includes(MES_FIM) ? ' (' + rotMes(MES_FIM) + ' incompleto)' : '');
+    $('#manchete').innerHTML = pos
+      ? 'Sobraram <span class="bom">' + kbrl(R.saldo) + '</span>, ' + pct(R.taxa, 0) + ' de tudo o que entrou.'
+      : 'Saíram <span class="ruim">' + kbrl(-R.saldo) + '</span> a mais do que entrou.';
+    const cort = R.porCl.cortavel, mesesNeg = est.per.meses.filter((k) => { const x = resumo([k]); return x.saldo < 0; }).length;
+    $('#tese').innerHTML = 'Em ' + n + ' meses entraram <b>' + kbrl(R.rec) + '</b> e saíram <b>' + kbrl(R.desp) + '</b>. '
+      + '<b>' + mesesNeg + ' de ' + n + '</b> meses fecharam no vermelho. O que dá para cortar sem mexer no essencial soma <b>'
+      + brl(m(cort)) + ' por mês</b>.';
+
+    const k1 = $('#kpis-1'); k1.innerHTML = '';
+    kpi(k1, 'Receita total', kbrl(R.rec), brl(m(R.rec)) + ' por mês', 'var(--salario)', P && variacao(R.rec, P.rec, true));
+    kpi(k1, 'Despesa total', kbrl(R.desp), brl(m(R.desp)) + ' por mês', 'var(--cortavel)', P && variacao(R.desp, P.desp, false));
+    const sd = kpi(k1, 'Saldo total', kbrl(R.saldo), brl(m(R.saldo)) + ' por mês', pos ? 'var(--bom)' : 'var(--ruim)', P && variacao(R.saldo, P.saldo, true));
+    sd.children[1].className = 'numero ' + (pos ? 'bom' : 'ruim');
+    kpi(k1, 'Taxa de poupança', pct(R.taxa, 0), 'saldo ÷ receita total', pos ? 'var(--bom)' : 'var(--ruim)');
+
+    const k2 = $('#kpis-2'); k2.innerHTML = '';
+    const desp = R.desp, outrasD = desp - R.porCl.essencial;
+    kpi(k2, 'Receita salário', kbrl(R.porCl.salario), pct(R.porCl.salario / R.rec, 0) + ' da receita', 'var(--salario)');
+    kpi(k2, 'Outras receitas', kbrl(R.porCl.outras), pct(R.porCl.outras / R.rec, 0) + ' da receita', 'var(--outras)');
+    kpi(k2, 'Extraordinárias', kbrl(R.porCl.extra), pct(R.porCl.extra / R.rec, 0) + ' da receita', 'var(--extra)');
+    kpi(k2, 'Despesas essenciais', kbrl(R.porCl.essencial), pct(R.porCl.essencial / desp, 0) + ' da despesa', 'var(--essencial)');
+    kpi(k2, 'Despesas outras', kbrl(outrasD), pct(outrasD / desp, 0) + ' da despesa', 'var(--eventual)');
+    kpi(k2, 'Cortáveis', kbrl(R.porCl.cortavel), pct(R.porCl.cortavel / desp, 0) + ' da despesa', 'var(--cortavel)');
+
+    const ss = R.porCl.salario - R.desp;
+    $('#ss-valor').textContent = brl(m(ss)) + '/mês';
+    $('#ss-valor').className = 'numero ' + (ss >= 0 ? 'bom' : 'ruim');
+    $('#ss-texto').innerHTML = 'Salário menos toda a despesa: <b>' + kbrl(ss) + '</b> no período, '
+      + (R.porCl.salario > 0 ? '<b>' + pct(ss / R.porCl.salario, 0) + ' do salário</b>' : '') + ' e <b>' + pct(ss / R.rec, 0) + ' da receita total</b>. '
+      + (ss < 0 ? 'O salário não cobre o padrão de gasto; a diferença vem de receitas extraordinárias ' + (R.saldo < 0 ? 'e do patrimônio.' : '.') : 'O salário sozinho cobre o padrão de gasto.');
+  }
+
+  // ------------------------------------------------------------ mensal
+  function mensal() {
+    const host = $('#g-mensal'), sel = new Set(est.per.meses);
+    const dados = est.per.meses.map((k) => {
+      const r = resumo([k]);
+      // a classe da despesa usa o valor bruto por classe; o reembolso aparece abatendo o total
+      return { k, r };
+    });
+    const W = Math.max(320, host.clientWidth), H = 300, m = { t: 16, r: 10, b: 30, l: 48 };
+    const vmax = Math.max.apply(null, dados.map((d) => Math.max(d.r.rec, d.r.desp - d.r.porCl.reembolso))) * 1.08;
+    const vmin = Math.min(0, Math.min.apply(null, dados.map((d) => d.r.saldo)) * 1.15);
+    const Y = (v) => m.t + (vmax - v) * (H - m.t - m.b) / (vmax - vmin);
+    const bw = (W - m.l - m.r) / dados.length;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Receita, despesa e saldo por mês">';
+    const passoY = vmax > 60000 ? 20000 : vmax > 25000 ? 10000 : 5000;
+    for (let v = Math.ceil(vmin / passoY) * passoY; v <= vmax; v += passoY) {
+      s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"' + (v === 0 ? ' style="stroke:var(--linha-forte)"' : '') + '/>'
+        + '<text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + (v / 1000) + 'k</text>';
+    }
+    const passoX = Math.max(1, Math.ceil(dados.length / Math.floor((W - m.l) / 46)));
+    const pts = [];
+    dados.forEach((d, i) => {
+      const x0 = m.l + i * bw, w = Math.max(2, bw * 0.36), op = sel.has(d.k) ? 1 : 0.25;
+      s += '<g class="mes" data-i="' + i + '" opacity="' + op + '"><rect x="' + x0 + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+      let acc = 0;
+      CLASSES_R.forEach((c) => { const v = Math.max(0, d.r.porCl[c]); if (v > 0) { s += '<rect x="' + (x0 + bw * 0.1) + '" y="' + Y(acc + v) + '" width="' + w + '" height="' + (Y(acc) - Y(acc + v)) + '" fill="' + COR[c] + '"/>'; acc += v; } });
+      acc = 0;
+      CLASSES_D.forEach((c) => { const v = Math.max(0, d.r.porCl[c]); if (v > 0) { s += '<rect x="' + (x0 + bw * 0.1 + w + 1) + '" y="' + Y(acc + v) + '" width="' + w + '" height="' + (Y(acc) - Y(acc + v)) + '" fill="' + COR[c] + '"/>'; acc += v; } });
+      s += '</g>';
+      pts.push([x0 + bw / 2, Y(d.r.saldo), d.r.saldo, op]);
+      if (i % passoX === 0) s += '<text class="ax" x="' + (x0 + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + rotMes(d.k) + '</text>';
+    });
+    s += '<path d="' + pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('') + '" fill="none" stroke="#e8f2f0" stroke-width="1.4" opacity=".55"/>';
+    pts.forEach((p) => { s += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.6" fill="' + (p[2] >= 0 ? '#4fd1a5' : '#ff6f61') + '" stroke="#071013" stroke-width="1.5" opacity="' + Math.max(0.35, p[3]) + '"/>'; });
+    host.innerHTML = s + '</svg>';
+    $$('.mes', host).forEach((g) => {
+      g.addEventListener('mousemove', (ev) => {
+        const d = dados[+g.dataset.i], r = d.r;
+        let h = '<span class="q">' + rotMes(d.k) + '</span>';
+        CLASSES_R.forEach((c) => { if (r.porCl[c]) h += '<i style="background:' + COR[c] + '"></i>' + NOME[c] + ' ' + brl(r.porCl[c]) + '<br>'; });
+        h += '<b>Receita ' + brl(r.rec) + '</b><br>';
+        CLASSES_D.forEach((c) => { if (r.porCl[c]) h += '<i style="background:' + COR[c] + '"></i>' + NOME[c] + ' ' + brl(r.porCl[c]) + '<br>'; });
+        if (r.porCl.reembolso) h += 'Reembolsos ' + brl(r.porCl.reembolso) + '<br>';
+        h += '<b>Despesa ' + brl(r.desp) + '</b><br><span class="' + (r.saldo >= 0 ? 'bom' : 'ruim') + '">Saldo ' + brl(r.saldo) + '</span>';
+        mostra(h, ev);
+      });
+      g.addEventListener('mouseleave', esconde);
+    });
+  }
+
+  // ------------------------------------------------------------ categorias
+  function categorias(R) {
+    const porCat = new Map();
+    R.sel.filter((x) => x.tipo === 'D').forEach((x) => {
+      const c = porCat.get(x.cat) || { cat: x.cat, total: 0, cl: {}, gr: new Map() };
+      c.total += x.v;
+      const cl = x.cl === 'reembolso' ? null : x.cl;
+      if (cl) c.cl[cl] = (c.cl[cl] || 0) + x.v;
+      const g = c.gr.get(x.gr) || { v: 0, cl: {} };
+      g.v += x.v; if (cl) g.cl[cl] = (g.cl[cl] || 0) + x.v;
+      c.gr.set(x.gr, g);
+      porCat.set(x.cat, c);
+    });
+    const lista = Array.from(porCat.values()).filter((c) => c.total > 1).sort((a, b) => b.total - a.total);
+    const max = lista.length ? lista[0].total : 1;
+    $('#cat-titulo').textContent = lista.length > 1 ? 'Gasto por categoria: ' + lista[0].cat.toLowerCase() + ' e ' + lista[1].cat.toLowerCase() + ' somam '
+      + pct((lista[0].total + lista[1].total) / R.desp, 0) : 'Gasto por categoria';
+    const box = $('#cats'); box.innerHTML = '';
+    lista.forEach((c) => {
+      const el = document.createElement('div'); el.className = 'cat';
+      const bt = document.createElement('button'); bt.type = 'button'; bt.setAttribute('aria-expanded', 'false');
+      const nome = document.createElement('span'); nome.textContent = c.cat;
+      const tr = document.createElement('span'); tr.className = 'trilho';
+      const bruto = CLASSES_D.reduce((s, k) => s + Math.max(0, c.cl[k] || 0), 0) || 1;
+      CLASSES_D.forEach((k) => { if (c.cl[k] > 0) { const sp = document.createElement('span'); sp.style.background = COR[k]; sp.style.width = (100 * (c.total / max) * c.cl[k] / bruto) + '%'; tr.appendChild(sp); } });
+      const v = document.createElement('span'); v.className = 'v';
+      const b = document.createElement('b'); b.textContent = brl(c.total / R.n); v.appendChild(b);
+      v.appendChild(document.createTextNode('/mês · ' + pct(c.total / R.desp)));
+      bt.appendChild(nome); bt.appendChild(tr); bt.appendChild(v);
+      const gw = document.createElement('div'); gw.className = 'grupos';
+      Array.from(c.gr.entries()).sort((a, b) => b[1].v - a[1].v).slice(0, 12).forEach(([g, x]) => {
+        const lin = document.createElement('div'); lin.className = 'gr';
+        const dom = Object.keys(x.cl).sort((a, b) => x.cl[b] - x.cl[a])[0];
+        const n = document.createElement('span'); const i = document.createElement('i'); i.style.background = COR[dom] || '#5d7774'; n.appendChild(i); n.appendChild(document.createTextNode(g));
+        const a = document.createElement('b'); a.textContent = brl(x.v / R.n) + '/mês';
+        const p = document.createElement('span'); p.textContent = pct(x.v / R.desp);
+        lin.appendChild(n); lin.appendChild(a); lin.appendChild(p); gw.appendChild(lin);
+      });
+      bt.addEventListener('click', () => { el.classList.toggle('aberto'); bt.setAttribute('aria-expanded', el.classList.contains('aberto')); });
+      el.appendChild(bt); el.appendChild(gw); box.appendChild(el);
+    });
+  }
+
+  // ------------------------------------------------------------ calendário
+  // um mês por vez; o mês escolhido sobrevive à troca de período quando ainda está dentro dele
+  const cal = { mes: null, dia: null };
+  function calendario(R) {
+    const host = $('#g-cal');
+    const porDia = new Map();
+    R.sel.filter((x) => x.tipo === 'D' && x.cl !== 'reembolso').forEach((x) => {
+      const d = porDia.get(x.t) || { v: 0, itens: new Map() };
+      d.v += x.v; d.itens.set(x.gr, (d.itens.get(x.gr) || 0) + x.v); porDia.set(x.t, d);
+    });
+    const ini = ts(est.per.meses[0] + '-01'), ultimo = est.per.meses[est.per.meses.length - 1];
+    const fim = Math.min(T1, Date.UTC(+ultimo.slice(0, 4), +ultimo.slice(5), 0));
+    const vals = Array.from(porDia.values()).map((d) => d.v).sort((a, b) => a - b);
+    const p95 = vals.length ? vals[Math.floor(vals.length * 0.95)] : 1;
+    // escala em raiz: dias de R$ 30 e de R$ 3.000 precisam ser visíveis no mesmo mês
+    const cor = (v) => { const f = Math.min(1, Math.sqrt(v / p95)); return 'rgba(255,111,97,' + (0.10 + 0.75 * f).toFixed(3) + ')'; };
+    const leg = $('#cal-leg'); leg.innerHTML = '';
+    [['Sem gasto', 'var(--bg-alto)'], ['R$ ' + num(p95 * 0.05), cor(p95 * 0.05)], ['R$ ' + num(p95 * 0.3), cor(p95 * 0.3)], ['R$ ' + num(p95) + ' ou mais', cor(p95)]].forEach((l) => {
+      const sp = document.createElement('span'); const i = document.createElement('i'); i.style.background = l[1]; sp.appendChild(i); sp.appendChild(document.createTextNode(l[0])); leg.appendChild(sp);
+    });
+    const meses = est.per.meses.filter((k) => ts(k + '-01') <= T1);
+    if (!meses.includes(cal.mes)) { cal.mes = meses[meses.length - 1]; cal.dia = null; }
+    const desenha = () => {
+      const k = cal.mes, y = +k.slice(0, 4), mo = +k.slice(5) - 1, i = meses.indexOf(k);
+      $('#cal-mes').textContent = MESES_LONGO[mo] + ' ' + y;
+      $('#cal-ant').disabled = i <= 0; $('#cal-prox').disabled = i >= meses.length - 1;
+      const prim = Date.UTC(y, mo, 1), nDias = new Date(Date.UTC(y, mo + 1, 0)).getUTCDate(), off = new Date(prim).getUTCDay();
+      let tot = 0, comGasto = 0, maior = null;
+      let h = SEMANA.map((w) => '<div class="cal-sem">' + w + '</div>').join('');
+      for (let j = 0; j < off; j++) h += '<div class="cal-d vazio" aria-hidden="true"></div>';
+      for (let dd = 1; dd <= nDias; dd++) {
+        const t = prim + (dd - 1) * DIA, d = porDia.get(t), w = new Date(t).getUTCDay(), fds = w === 0 || w === 6 ? ' fds' : '';
+        if (t > fim) { h += '<div class="cal-d futuro' + fds + '"><span class="n">' + dd + '</span></div>'; continue; }
+        if (d) { tot += d.v; comGasto++; if (!maior || d.v > maior.v) maior = { t, v: d.v }; }
+        const top = d ? Array.from(d.itens.entries()).sort((a, b) => b[1] - a[1])[0][0] : '';
+        h += '<button type="button" class="cal-d' + fds + '" data-t="' + t + '" aria-pressed="' + (cal.dia === t) + '" style="background:' + (d ? cor(d.v) : 'var(--bg-alto)') + '"'
+          + ' aria-label="' + dd + ' de ' + MESES_LONGO[mo] + ': ' + (d ? brl(d.v) : 'sem gasto') + '">'
+          + '<span class="n">' + dd + '</span>' + (d ? '<span class="v">' + brl(d.v, d.v < 10 ? 2 : 0) + '</span><span class="g">' + top + '</span>' : '<span class="v" style="color:var(--apagada)">—</span>') + '</button>';
+      }
+      host.innerHTML = h;
+      const diasCorridos = Math.max(1, Math.min(nDias, Math.round((Math.min(fim, Date.UTC(y, mo, nDias)) - prim) / DIA) + 1));
+      $('#cal-resumo').innerHTML = '<b>' + brl(tot) + '</b> no mês · ' + brl(tot / diasCorridos) + ' por dia · ' + comGasto + ' de ' + diasCorridos + ' dias com gasto'
+        + (maior ? ' · mais caro: dia ' + new Date(maior.t).getUTCDate() + ' (' + brl(maior.v) + ')' : '');
+      // detalhe do dia escolhido (ou do mais caro do mês)
+      const tDet = cal.dia && porDia.get(cal.dia) && new Date(cal.dia).getUTCMonth() === mo ? cal.dia : maior && maior.t;
+      const det = $('#cal-det');
+      if (!tDet) { det.innerHTML = '<p class="nota">Nenhum gasto neste mês.</p>'; return; }
+      const d = porDia.get(tDet);
+      det.innerHTML = '<p class="nota" style="margin:8px 0 2px">' + (tDet === cal.dia ? '' : 'Dia mais caro do mês: ') + '<b>' + SEMANA[new Date(tDet).getUTCDay()] + ', ' + fd(tDet) + '</b> · ' + brl(d.v) + '</p>'
+        + Array.from(d.itens.entries()).sort((a, b) => b[1] - a[1]).map((x) => '<div class="linha"><span>' + x[0] + '</span><b>' + brl(x[1]) + '</b></div>').join('');
+    };
+    host.onclick = (ev) => { const b = ev.target.closest('button.cal-d'); if (!b) return; const t = +b.dataset.t; cal.dia = cal.dia === t ? null : t; desenha(); };
+    $('#cal-ant').onclick = () => { const i = meses.indexOf(cal.mes); if (i > 0) { cal.mes = meses[i - 1]; cal.dia = null; desenha(); } };
+    $('#cal-prox').onclick = () => { const i = meses.indexOf(cal.mes); if (i < meses.length - 1) { cal.mes = meses[i + 1]; cal.dia = null; desenha(); } };
+    desenha();
+
+    // dia da semana e do mês (sem bens, para uma compra grande não dominar)
+    const desp = R.sel.filter((x) => x.tipo === 'D' && x.cl !== 'reembolso' && !x.bem);
+    const nDias = Math.round((fim - ini) / DIA) + 1;
+    const porW = new Array(7).fill(0), contW = new Array(7).fill(0);
+    for (let t = ini; t <= fim; t += DIA) contW[new Date(t).getUTCDay()]++;
+    desp.forEach((x) => { porW[new Date(x.t).getUTCDay()] += x.v; });
+    barrasV($('#g-semana'), [1, 2, 3, 4, 5, 6, 0].map((w) => ({ rot: SEMANA[w], v: porW[w] / Math.max(1, contW[w]) })), (v) => brl(v), 'por dia, em média');
+    const porDM = new Array(31).fill(0), contDM = new Array(31).fill(0);
+    for (let t = ini; t <= fim; t += DIA) contDM[new Date(t).getUTCDate() - 1]++;
+    desp.forEach((x) => { porDM[new Date(x.t).getUTCDate() - 1] += x.v; });
+    const dm = porDM.map((v, i) => ({ rot: String(i + 1), v: v / Math.max(1, contDM[i]) }));
+    barrasV($('#g-diames'), dm, (v) => brl(v), 'em média nesse dia do mês', true);
+    const ord = dm.slice().sort((a, b) => b.v - a.v);
+    $('#dm-sub').innerHTML = 'Gasto médio por dia do mês. Os mais pesados: dia <b>' + ord[0].rot + '</b>, <b>' + ord[1].rot + '</b> e <b>' + ord[2].rot + '</b>, onde caem contas e faturas.';
+  }
+
+  function barrasV(host, dados, fmt, sufixo, fino) {
+    const W = Math.max(280, host.clientWidth), H = 180, m = { t: 22, r: 4, b: 24, l: 4 };
+    const max = Math.max.apply(null, dados.map((d) => d.v)) * 1.15 || 1, bw = (W - m.l - m.r) / dados.length;
+    const media = dados.reduce((s, d) => s + d.v, 0) / dados.length;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    dados.forEach((d, i) => {
+      const h = d.v / max * (H - m.t - m.b), x = m.l + i * bw + bw * 0.15;
+      const corB = d.v > media * 1.35 ? '#ff6f61' : '#6c8cff';
+      s += '<g class="bv" data-i="' + i + '"><rect x="' + (m.l + i * bw) + '" y="' + m.t + '" width="' + bw + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>'
+        + '<rect x="' + x + '" y="' + (H - m.b - h) + '" width="' + bw * 0.7 + '" height="' + h + '" rx="3" fill="' + corB + '" opacity=".9"/></g>';
+      if (!fino) s += '<text class="rot" x="' + (x + bw * 0.35) + '" y="' + (H - m.b - h - 6) + '" text-anchor="middle">' + fmt(d.v) + '</text>';
+      if (!fino || i % 5 === 0 || i === dados.length - 1) s += '<text class="ax" x="' + (x + bw * 0.35) + '" y="' + (H - 6) + '" text-anchor="middle">' + d.rot + '</text>';
+    });
+    host.innerHTML = s + '</svg>';
+    $$('.bv', host).forEach((g) => {
+      g.addEventListener('mousemove', (ev) => { const d = dados[+g.dataset.i]; mostra('<span class="q">' + (fino ? 'Dia ' : '') + d.rot + '</span>' + fmt(d.v) + ' ' + sufixo, ev); });
+      g.addEventListener('mouseleave', esconde);
+    });
+  }
+
+  // ------------------------------------------------------------ cortáveis
+  function cortaveis(R) {
+    const porG = new Map();
+    R.sel.filter((x) => x.tipo === 'D' && x.cl === 'cortavel').forEach((x) => {
+      const g = porG.get(x.gr) || { gr: x.gr, cat: x.cat, v: 0, n: 0 }; g.v += x.v; g.n++; porG.set(x.gr, g);
+    });
+    const lista = Array.from(porG.values()).sort((a, b) => b.v - a.v);
+    const tot = lista.reduce((s, g) => s + g.v, 0);
+    $('#ct-titulo').textContent = 'Gastos que podem ser cortados: ' + brl(tot / R.n) + ' por mês';
+    $('#ct-sub').innerHTML = 'São os grupos marcados como compressíveis: dá para reduzir sem mexer no essencial. Juntos são <b>'
+      + pct(tot / R.desp, 0) + ' da despesa</b> e <b>' + num(lista.reduce((s, g) => s + g.n, 0) / R.n, 0) + ' compras por mês</b>. '
+      + 'Os três maiores, ' + lista.slice(0, 3).map((g) => g.gr.toLowerCase()).join(', ') + ', somam ' + brl(lista.slice(0, 3).reduce((s, g) => s + g.v, 0) / R.n) + ' por mês.';
+    const tb = $('#t-cortaveis tbody'); tb.innerHTML = '';
+    const max = lista.length ? lista[0].v : 1;
+    lista.slice(0, 15).forEach((g) => {
+      const tr = document.createElement('tr');
+      const td = (t) => { const c = document.createElement('td'); c.textContent = t; tr.appendChild(c); return c; };
+      const c0 = td(g.gr); const bar = document.createElement('span'); bar.className = 'barrinha'; bar.style.width = (100 * g.v / max) + '%'; c0.appendChild(bar);
+      td(brl(g.v / R.n)); td(num(g.n / R.n, 1)); td(brl(g.v / g.n, 2)); td(pct(g.v / R.desp));
+      const c5 = td(brl(0.3 * g.v / R.n) + '/mês'); c5.className = 'bom';
+      tb.appendChild(tr);
+    });
+    return lista;
+  }
+
+  // ------------------------------------------------------------ diagnóstico
+  function diagnostico(R) {
+    // custo fixo: grupos com gasto em >= 75% dos meses
+    const meses = est.per.meses, porG = new Map();
+    R.sel.filter((x) => x.tipo === 'D' && x.cl !== 'reembolso' && !x.bem).forEach((x) => {
+      const g = porG.get(x.gr) || { gr: x.gr, v: 0, ms: new Set() }; g.v += x.v; g.ms.add(x.m); porG.set(x.gr, g);
+    });
+    const fixos = Array.from(porG.values()).filter((g) => g.ms.size >= Math.ceil(0.75 * meses.length) && g.v / R.n >= 30).sort((a, b) => b.v - a.v);
+    const totFixo = fixos.reduce((s, g) => s + g.v, 0) / R.n;
+    $('#fx-sub').innerHTML = '<b>' + brl(totFixo) + ' por mês</b> em ' + fixos.length + ' grupos que aparecem quase todo mês: '
+      + pct(totFixo / (R.porCl.salario / R.n), 0) + ' do salário já está comprometido antes do mês começar.';
+    const tf = $('#t-fixos tbody'); tf.innerHTML = '';
+    fixos.slice(0, 8).forEach((g) => {
+      const tr = document.createElement('tr');
+      [g.gr, brl(g.v / R.n), g.ms.size + '/' + meses.length].forEach((t) => { const c = document.createElement('td'); c.textContent = t; tr.appendChild(c); });
+      tf.appendChild(tr);
+    });
+
+    // cartão
+    const dd = R.sel.filter((x) => x.tipo === 'D' && x.cl !== 'reembolso');
+    const cc = dd.filter((x) => x.cc).reduce((s, x) => s + x.v, 0), tot = dd.reduce((s, x) => s + x.v, 0);
+    $('#cc-sub').innerHTML = '<b>' + pct(cc / tot, 0) + ' da despesa</b> passa pelo cartão (' + brl(cc / R.n) + ' por mês). O cartão concentra os cortáveis:';
+    const ccCl = CLASSES_D.map((k) => {
+      const a = dd.filter((x) => x.cl === k), c = a.filter((x) => x.cc).reduce((s, x) => s + x.v, 0), t = a.reduce((s, x) => s + x.v, 0);
+      return { rot: NOME[k], v: t ? c / t : 0, cor: COR[k] };
+    });
+    barrasH($('#g-cartao'), ccCl, (v) => pct(v, 0) + ' no cartão');
+
+    // patrimônio
+    const liq = R.pat_ap - R.pat_res;
+    $('#pt-sub').innerHTML = 'Fora de receita e despesa. No período foram <b>' + kbrl(R.pat_ap) + '</b> para investimentos e outras contas e voltaram <b>'
+      + kbrl(R.pat_res) + '</b>: ' + (liq >= 0 ? 'o patrimônio recebeu <b class="bom">' + kbrl(liq) + '</b> líquidos.' : 'saíram do patrimônio <b class="ruim">' + kbrl(-liq) + '</b> líquidos para cobrir o dia a dia.');
+    barrasH($('#g-patrimonio'), [{ rot: 'Aportes', v: R.pat_ap, cor: '#e9c46a' }, { rot: 'Resgates', v: R.pat_res, cor: '#8fa8a5' }], kbrl, true);
+
+    // ano a ano
+    const anos = Array.from(new Set(TODOS_MESES.map((k) => k.slice(0, 4))));
+    const tab = $('#t-anos');
+    tab.querySelector('thead tr').innerHTML = '<th>Classe</th>' + anos.map((a) => '<th>' + a + '</th>').join('') + '<th>Variação</th>';
+    const tb = tab.querySelector('tbody'); tb.innerHTML = '';
+    const linhas = CLASSES_D.concat(['total']).map((k) => {
+      const vals = anos.map((a) => {
+        const ms = TODOS_MESES.filter((x) => x.startsWith(a));
+        const v = L.filter((x) => x.tipo === 'D' && !x.bem && x.m.startsWith(a) && (k === 'total' ? true : x.cl === k)).reduce((s, x) => s + x.v, 0);
+        return v / ms.length;
+      });
+      return { k, vals };
+    });
+    linhas.forEach((l) => {
+      const tr = document.createElement('tr');
+      const c0 = document.createElement('td');
+      if (l.k !== 'total') { const i = document.createElement('i'); i.style.cssText = 'display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;background:' + COR[l.k]; c0.appendChild(i); }
+      c0.appendChild(document.createTextNode(l.k === 'total' ? 'Total' : NOME[l.k])); if (l.k === 'total') c0.style.fontWeight = '600';
+      tr.appendChild(c0);
+      l.vals.forEach((v) => { const c = document.createElement('td'); c.textContent = brl(v) + '/mês'; tr.appendChild(c); });
+      const a = l.vals[0], b = l.vals[l.vals.length - 1], c = document.createElement('td');
+      const v = a ? (b - a) / a : null; c.textContent = v == null ? '—' : (v >= 0 ? '+' : '−') + pct(Math.abs(v), 0); c.className = v > 0.05 ? 'ruim' : v < -0.05 ? 'bom' : '';
+      tr.appendChild(c); tb.appendChild(tr);
+    });
+  }
+
+  function barrasH(host, dados, fmt, absoluto) {
+    const W = Math.max(240, host.clientWidth), lin = 30, H = dados.length * lin + 6, esq = 112;
+    const max = absoluto ? Math.max.apply(null, dados.map((d) => d.v)) || 1 : 1;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    dados.forEach((d, i) => {
+      const y = 4 + i * lin, w = (W - esq - 96) * d.v / max;
+      s += '<text class="ax" x="0" y="' + (y + 14) + '" style="fill:var(--tinta);font-size:12px">' + d.rot + '</text>'
+        + '<rect x="' + esq + '" y="' + (y + 4) + '" width="' + (W - esq - 96) + '" height="12" rx="6" fill="#0a171b"/>'
+        + '<rect x="' + esq + '" y="' + (y + 4) + '" width="' + Math.max(0, w) + '" height="12" rx="6" fill="' + d.cor + '"/>'
+        + '<text class="rot" x="' + (W - 2) + '" y="' + (y + 14) + '" text-anchor="end">' + fmt(d.v) + '</text>';
+    });
+    host.innerHTML = s + '</svg>';
+  }
+
+  // ------------------------------------------------------------ onde gasto
+  let lcAberto = null;
+  function locais(R) {
+    const meses = est.per.meses.filter((k) => k <= MES_FIM), ult3 = new Set(meses.slice(-3));
+    const porR = new Map();
+    let totD = 0;
+    R.sel.filter((x) => x.tipo === 'D' && x.cl !== 'reembolso').forEach((x) => {
+      totD += x.v;
+      if (x.rec < 0) return;
+      const g = porR.get(x.rec) || { nome: D.recs[x.rec], v: 0, n: 0, v3: 0, gr: new Map(), m: new Map() };
+      g.v += x.v; g.n++; if (ult3.has(x.m)) g.v3 += x.v;
+      g.gr.set(x.gr, (g.gr.get(x.gr) || 0) + x.v); g.m.set(x.m, (g.m.get(x.m) || 0) + x.v);
+      porR.set(x.rec, g);
+    });
+    const lista = Array.from(porR.values()).sort((a, b) => b.v - a.v).slice(0, 20);
+    const nM = Math.max(1, meses.length), n3 = Math.max(1, Math.min(3, meses.length));
+    const soma = lista.reduce((s, g) => s + g.v, 0);
+    $('#lc-titulo').textContent = 'Os ' + lista.length + ' lugares onde mais gasto';
+    if (!lista.length) { $('#lc-sub').textContent = 'Nenhum gasto com recebedor identificado no período.'; $('#t-locais tbody').innerHTML = ''; return; }
+    const sobe = lista.filter((g) => g.v / nM > 50 && g.v3 / n3 > 1.25 * g.v / nM).sort((a, b) => (b.v3 / n3 - b.v / nM) - (a.v3 / n3 - a.v / nM))[0];
+    $('#lc-sub').innerHTML = 'Juntos somam <b>' + kbrl(soma) + '</b>, ' + pct(soma / totD, 0) + ' da despesa do período. O primeiro, <b>' + lista[0].nome + '</b>, levou '
+      + brl(lista[0].v / nM) + ' por mês em ' + num(lista[0].n) + ' compras.'
+      + (sobe ? ' O que mais acelerou nos últimos 3 meses foi <b>' + sobe.nome + '</b>: ' + brl(sobe.v3 / n3) + ' por mês, contra ' + brl(sobe.v / nM) + ' na média.' : '');
+    const tb = $('#t-locais tbody'); tb.innerHTML = '';
+    const max = lista[0].v;
+    lista.forEach((g, i) => {
+      const tr = document.createElement('tr'); tr.className = 'lin'; tr.tabIndex = 0; tr.setAttribute('aria-expanded', String(lcAberto === g.nome));
+      const td = (t, cls) => { const c = document.createElement('td'); c.textContent = t; if (cls) c.className = cls; tr.appendChild(c); return c; };
+      td(String(i + 1), 'pos');
+      const c1 = td(g.nome); const bar = document.createElement('span'); bar.className = 'barrinha'; bar.style.cssText = 'width:' + (100 * g.v / max) + '%;background:var(--eventual)'; c1.appendChild(bar);
+      td(brl(g.v)); td(num(g.n)); td(brl(g.v / g.n, 2)); td(brl(g.v / nM));
+      const m3 = g.v3 / n3, med = g.v / nM, dv = med > 0 ? m3 / med - 1 : 0;
+      const c6 = td(brl(m3) + ' ' + (Math.abs(dv) < 0.1 ? '·' : (dv > 0 ? '▲' : '▼') + ' ' + pct(Math.abs(dv), 0)));
+      c6.className = Math.abs(dv) < 0.1 ? '' : dv > 0 ? 'ruim' : 'bom';
+      const top = Array.from(g.gr.entries()).sort((a, b) => b[1] - a[1])[0];
+      td(top[0] + (top[1] / g.v < 0.98 ? ' · ' + pct(top[1] / g.v, 0) : ''));
+      const abre = () => { lcAberto = lcAberto === g.nome ? null : g.nome; locais(R); };
+      tr.addEventListener('click', abre);
+      tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abre(); } });
+      tb.appendChild(tr);
+      if (lcAberto === g.nome) tb.appendChild(detalheLocal(g, meses));
+    });
+  }
+  function detalheLocal(g, meses) {
+    const tr = document.createElement('tr'), td = document.createElement('td');
+    td.colSpan = 8; td.className = 'det'; tr.appendChild(td);
+    const vals = meses.map((k) => g.m.get(k) || 0), max = Math.max.apply(null, vals) || 1, W = 360, H = 90, bw = W / vals.length;
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Gasto por mês em ' + g.nome + '">';
+    vals.forEach((v, i) => { const h = v / max * (H - 18); svg += '<rect x="' + (i * bw + bw * 0.15) + '" y="' + (H - 14 - h) + '" width="' + bw * 0.7 + '" height="' + Math.max(v ? 1 : 0, h) + '" rx="2" fill="#ffb547"><title>' + rotMes(meses[i]) + ': ' + brl(v) + '</title></rect>'; });
+    svg += '<text class="ax" x="0" y="' + (H - 2) + '">' + rotMes(meses[0]) + '</text><text class="ax" x="' + W + '" y="' + (H - 2) + '" text-anchor="end">' + rotMes(meses[meses.length - 1]) + '</text></svg>';
+    const grs = Array.from(g.gr.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    td.innerHTML = '<div class="det-grade"><div><p class="nota" style="margin:0 0 6px">Mês a mês em <b>' + g.nome + '</b></p>' + svg + '</div><div><p class="nota" style="margin:0 0 6px">Por grupo</p>'
+      + grs.map((x) => '<div class="linha"><span>' + x[0] + '</span><b>' + brl(x[1]) + ' · ' + pct(x[1] / g.v, 0) + '</b></div>').join('') + '</div></div>';
+    return tr;
+  }
+
+  // ------------------------------------------------------------ rotina × gasto
+  const DIAS0 = ts(D.dias.ini), NDIAS = D.dias.fer.length;
+  // normal padrão acumulada (Abramowitz-Stegun 26.2.17), para o p do teste de Welch
+  const fi = (z) => { const t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2);
+    const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+  function welch(a, b) {
+    const m = (x) => x.reduce((s, v) => s + v, 0) / x.length;
+    const va = (x, mu) => x.reduce((s, v) => s + (v - mu) * (v - mu), 0) / Math.max(1, x.length - 1);
+    const ma = m(a), mb = m(b), se = Math.sqrt(va(a, ma) / a.length + va(b, mb) / b.length);
+    return { ma, mb, p: se > 0 ? 2 * (1 - fi(Math.abs(ma - mb) / se)) : 1 };
+  }
+  const COMPS = [
+    { id: 'trab', nome: 'Dia de trabalho', a: 'Trabalho', b: 'Folga', sa: 'de trabalho', sb: 'de folga', f: (i) => D.dias.trab[i] === '-' ? null : D.dias.trab[i] === '1' },
+    { id: 'fds', nome: 'Fim de semana', a: 'Sáb e dom', b: 'Dia útil', sa: 'de fim de semana', sb: 'úteis', f: (i) => { const w = new Date(DIAS0 + i * DIA).getUTCDay(); return w === 0 || w === 6; } },
+    { id: 'fer', nome: 'Feriado', a: 'Feriado', b: 'Outros', sa: 'de feriado', sb: 'normais', f: (i) => D.dias.fer[i] === '1' },
+    { id: 'nina', nome: 'Nina em casa', a: 'Com a Nina', b: 'Sem a Nina', sa: 'com a Nina', sb: 'sem a Nina', f: (i) => D.dias.nina[i] === '-' ? null : D.dias.nina[i] === '1' },
+  ];
+  function rotinaGasto(R) {
+    const meses = est.per.meses;
+    const ini = Math.max(DIAS0, ts(meses[0] + '-01')), ul = meses[meses.length - 1];
+    const fim = Math.min(T1, DIAS0 + (NDIAS - 1) * DIA, Date.UTC(+ul.slice(0, 4), +ul.slice(5), 0));
+    const nB = D.rotina.length, porDia = new Map();
+    R.sel.forEach((x) => {
+      if (x.rot < 0 || x.t < ini || x.t > fim) return;
+      const v = porDia.get(x.t) || new Array(nB + 1).fill(0); v[0] += x.v; v[x.rot + 1] += x.v; porDia.set(x.t, v);
+    });
+    const dias = [];
+    for (let t = ini; t <= fim; t += DIA) dias.push({ i: Math.round((t - DIAS0) / DIA), v: porDia.get(t) || new Array(nB + 1).fill(0) });
+    const ordem = [0, 2, 3, 4, 5];   // total, comer fora, mercado, uber, lazer (o "outros" entra só no total)
+    const rot = ['Gasto variável', D.rotina[1], D.rotina[2], D.rotina[3], D.rotina[4]];
+    const res = COMPS.map((c) => {
+      const A = [], B = [];
+      dias.forEach((d) => { const k = c.f(d.i); if (k === null) return; (k ? A : B).push(d.v); });
+      const linhas = ordem.map((j, n) => {
+        if (A.length < 3 || B.length < 3) return { rot: rot[n], ma: null };
+        const w = welch(A.map((v) => v[j]), B.map((v) => v[j])); return Object.assign({ rot: rot[n] }, w);
+      });
+      return { c, nA: A.length, nB: B.length, linhas };
+    });
+    const box = $('#rt-comps'); box.innerHTML = '';
+    res.forEach((r) => {
+      const d = document.createElement('div'); d.className = 'cartao comp';
+      let h = '<h3>' + r.c.nome + '</h3><p class="sub">' + num(r.nA) + ' dias ' + r.c.sa + ' e ' + num(r.nB) + ' ' + r.c.sb + '. Média por dia.</p>';
+      if (r.nA < 3 || r.nB < 3) { d.innerHTML = h + '<p class="nota">Poucos dias no período para comparar.</p>'; box.appendChild(d); return; }
+      h += '<div class="tabela"><table><thead><tr><th></th><th>' + r.c.a + '</th><th>' + r.c.b + '</th><th><span class="lg">Diferença</span><span class="cu">Dif.</span></th></tr></thead><tbody>';
+      r.linhas.forEach((l, n) => {
+        const dv = l.mb > 0 ? l.ma / l.mb - 1 : (l.ma > 0 ? 1 : 0);
+        // diferença clara pede amostra (20 dias de cada lado) e peso em reais (R$ 3 por dia)
+        const relevante = Math.abs(l.ma - l.mb) >= 3, amostra = Math.min(r.nA, r.nB) >= 20;
+        const forte = relevante && amostra && l.p < 0.05, ind = relevante && !forte && l.p < 0.15, nada = !forte && !ind;
+        const cls = nada || Math.abs(dv) < 0.05 ? '' : (dv > 0 ? 'mais' : 'menos') + (ind ? ' fraco' : '');
+        const txt = nada || Math.abs(dv) < 0.05 ? 'parecido' : (dv > 0 ? '+' : '−') + pct(Math.abs(dv), 0);
+        h += '<tr' + (n === 0 ? ' class="total"' : '') + '><td>' + l.rot + '</td><td>' + brl(l.ma, l.ma < 10 ? 2 : 0) + '</td><td>' + brl(l.mb, l.mb < 10 ? 2 : 0) + '</td>'
+          + '<td><span class="sinal ' + cls + '" title="p = ' + num(l.p, 3) + (ind ? ' · indício, ainda fraco' : forte ? ' · diferença clara' : ' · dentro do acaso') + '">' + txt + '</span></td></tr>';
+      });
+      d.innerHTML = h + '</tbody></table></div>';
+      box.appendChild(d);
+    });
+    // manchete: a diferença clara de maior peso em reais
+    const cand = [];
+    res.forEach((r) => r.linhas.forEach((l) => { if (l.ma != null && l.p < 0.05 && l.mb > 0 && Math.min(r.nA, r.nB) >= 20 && Math.abs(l.ma - l.mb) >= 3) cand.push({ r, l, dr: l.ma - l.mb }); }));
+    cand.sort((a, b) => Math.abs(b.dr) - Math.abs(a.dr));
+    const tot = dias.reduce((s, d) => s + d.v[0], 0) / Math.max(1, dias.length);
+    $('#rt-sub').innerHTML = 'No período, o gasto variável foi de <b>' + brl(tot) + ' por dia</b> (' + num(dias.length) + ' dias, de ' + fd(ini) + ' a ' + fd(fim) + '). '
+      + (cand.length ? 'A diferença mais pesada: nos dias <b>' + cand[0].r.c.sa + '</b>, ' + cand[0].l.rot.toLowerCase() + ' fica em <b>' + brl(cand[0].l.ma) + '</b> por dia, contra '
+        + brl(cand[0].l.mb) + ' nos dias ' + cand[0].r.c.sb + '. ' : 'Nenhuma diferença passou do que o acaso explicaria neste período. ')
+      + 'O selo cheio marca diferença clara; o tracejado, um indício ainda fraco; "parecido", nada além do acaso.';
+  }
+
+  // ------------------------------------------------------------ simulador
+  const HORIZ = [1, 3, 5, 10];
+  HORIZ.forEach((h) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = h + (h === 1 ? ' ano' : ' anos'); b.dataset.h = h;
+    b.setAttribute('aria-pressed', h === est.horiz);
+    b.addEventListener('click', () => { est.horiz = h; $$('#s-horiz button').forEach((x) => x.setAttribute('aria-pressed', +x.dataset.h === h)); simula(); });
+    $('#s-horiz').appendChild(b);
+  });
+  let SIM = null;
+  function montaSimulador(R, lista) {
+    // controles: os 6 maiores cortáveis, o resto dos cortáveis e os eventuais
+    const top = lista.slice(0, 6), resto = lista.slice(6).reduce((s, g) => s + g.v, 0);
+    const itens = top.map((g) => ({ id: 'g:' + g.gr, nome: g.gr, base: g.v / R.n, cor: 'var(--cortavel)' }));
+    if (resto > 0) itens.push({ id: 'resto', nome: 'Demais cortáveis', base: resto / R.n, cor: 'var(--cortavel)' });
+    const ev = R.sel.filter((x) => x.tipo === 'D' && x.cl === 'eventual' && !x.bem).reduce((s, x) => s + x.v, 0) / R.n;
+    if (ev > 0) itens.push({ id: 'eventual', nome: 'Eventuais (viagem, manutenção, compras)', base: ev, cor: 'var(--eventual)' });
+    SIM = { R, itens, rec: R.rec / R.n, desp: R.desp / R.n };
+    const box = $('#sim-cortes'); box.innerHTML = '';
+    itens.forEach((it) => {
+      if (est.cortes[it.id] === undefined) est.cortes[it.id] = it.id === 'eventual' ? 0 : 30;
+      const c = document.createElement('div'); c.className = 'corte'; c.style.setProperty('--cor-c', it.cor);
+      c.innerHTML = '<div class="topo"><span></span><b></b></div><input type="range" min="0" max="100" step="5"><span class="base"></span>';
+      c.querySelector('.topo span').textContent = it.nome;
+      const inp = c.querySelector('input'); inp.value = est.cortes[it.id]; inp.setAttribute('aria-label', 'Corte em ' + it.nome);
+      const b = c.querySelector('b'), base = c.querySelector('.base');
+      const atualiza = () => { b.textContent = '−' + est.cortes[it.id] + '% · ' + brl(it.base * est.cortes[it.id] / 100) + '/mês'; base.textContent = 'hoje ' + brl(it.base) + ' por mês'; };
+      inp.addEventListener('input', () => { est.cortes[it.id] = +inp.value; atualiza(); simula(); });
+      atualiza(); box.appendChild(c);
+    });
+    $('#sim-sub').innerHTML = 'A base é a média mensal do período escolhido: <b>' + brl(SIM.rec) + '</b> de receita e <b>' + brl(SIM.desp)
+      + '</b> de despesa. Os controles começam com 30% de corte nos cortáveis; mude à vontade. A economia é investida a 10% ao ano, perto do CDI.';
+  }
+
+  function simula() {
+    if (!SIM) return;
+    const eco = SIM.itens.reduce((s, it) => s + it.base * est.cortes[it.id] / 100, 0);
+    const saldo0 = SIM.rec - SIM.desp, saldo1 = saldo0 + eco;
+    const taxa0 = saldo0 / SIM.rec, taxa1 = saldo1 / SIM.rec;
+    anima($('#s-eco'), eco, (v) => brl(v) + '/mês');
+    $('#s-eco-ano').textContent = brl(12 * eco) + ' por ano';
+    anima($('#s-saldo'), saldo1, (v) => brl(v));
+    $('#s-saldo').className = 'numero ' + (saldo1 >= 0 ? 'bom' : 'ruim');
+    $('#s-saldo-n').textContent = 'hoje ' + brl(saldo0) + ' por mês';
+    anima($('#s-taxa'), taxa1, (v) => pct(v, 0));
+    $('#s-taxa').className = 'numero ' + (taxa1 >= 0 ? 'bom' : 'ruim');
+    $('#s-taxa-n').textContent = 'hoje ' + pct(taxa0, 0);
+    $('#s-texto').innerHTML = saldo0 < 0 && saldo1 >= 0 ? 'Com esses cortes o mês <b>deixa de fechar no vermelho</b>.'
+      : saldo0 < 0 ? 'Mesmo com esses cortes, o mês ainda fecha <b>' + brl(-saldo1) + ' no vermelho</b>: a diferença está no essencial ou na receita.'
+      : 'O saldo mensal sobe ' + pct(eco / Math.max(1, saldo0), 0) + '.';
+    // investida a 10% a.a., composto mensal
+    const i = Math.pow(1.10, 1 / 12) - 1, meses = est.horiz * 12;
+    const serie = []; let acc = 0, aportado = 0;
+    for (let k = 1; k <= meses; k++) { acc = acc * (1 + i) + eco; aportado += eco; serie.push({ k, acc, aportado }); }
+    $('#s-inv-sub').innerHTML = 'Investindo ' + brl(eco) + ' todo mês, em ' + est.horiz + (est.horiz === 1 ? ' ano' : ' anos') + ' são <b class="bom">' + brl(acc)
+      + '</b>, dos quais ' + brl(acc - aportado) + ' de rendimento.';
+    const host = $('#g-sim'), W = Math.max(280, host.clientWidth), H = 200, m = { t: 14, r: 12, b: 26, l: 52 };
+    const max = Math.max(1, acc) * 1.08, X = (k) => m.l + (k / meses) * (W - m.l - m.r), Y = (v) => m.t + (max - v) * (H - m.t - m.b) / max;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Economia acumulada">'
+      + '<defs><linearGradient id="gsim" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#4fd1a5" stop-opacity=".35"/><stop offset="1" stop-color="#4fd1a5" stop-opacity="0"/></linearGradient></defs>';
+    [0, 0.5, 1].forEach((f) => { const v = max * f / 1.08; s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="ax" x="' + (m.l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + kbrl(v) + '</text>'; });
+    for (let a = 1; a <= est.horiz; a++) s += '<text class="ax" x="' + X(a * 12) + '" y="' + (H - 8) + '" text-anchor="middle">' + a + 'a</text>';
+    const d1 = serie.map((p, j) => (j ? 'L' : 'M') + X(p.k).toFixed(1) + ',' + Y(p.acc).toFixed(1)).join('');
+    const d2 = serie.map((p, j) => (j ? 'L' : 'M') + X(p.k).toFixed(1) + ',' + Y(p.aportado).toFixed(1)).join('');
+    s += '<path d="' + d1 + 'L' + X(meses) + ',' + Y(0) + 'L' + X(1) + ',' + Y(0) + 'Z" fill="url(#gsim)"/>'
+      + '<path d="' + d2 + '" fill="none" stroke="#8fa8a5" stroke-width="1.4" stroke-dasharray="4 4"/>'
+      + '<path d="' + d1 + '" fill="none" stroke="#4fd1a5" stroke-width="2.4"/>'
+      + '<circle cx="' + X(meses) + '" cy="' + Y(acc) + '" r="4" fill="#4fd1a5"/>';
+    host.innerHTML = s + '</svg>';
+  }
+
+  // ------------------------------------------------------------ notas
+  $('#n-linhas').textContent = num(L.length) + ' lançamentos';
+  $('#n-ini').textContent = fd(T0); $('#n-fim').textContent = fd(T1);
+  $('#n-gerado').textContent = D.gerado;
+
+  const obs = 'IntersectionObserver' in window ? new IntersectionObserver((ents) => {
+    ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visto'); obs.unobserve(e.target); } });
+  }, { threshold: 0.05 }) : null;
+  $$('.entra').forEach((s) => { if (obs) obs.observe(s); else s.classList.add('visto'); });
+
+  function tudo() {
+    const R = resumo(est.per.meses);
+    const ant = anterior(est.per);
+    const P = ant ? resumo(ant) : null;
+    topo(R, P);
+    mensal();
+    categorias(R);
+    calendario(R);
+    locais(R);
+    const lista = cortaveis(R);
+    diagnostico(R);
+    rotinaGasto(R);
+    montaSimulador(R, lista);
+    simula();
+    $('#n-semclasse').textContent = brl(R.porCl.semclasse / R.n) + ' por mês';
+  }
+  tudo();
+  let tm;
+  window.addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(tudo, 150); });
+})();
+</script>
+</body>
+</html>

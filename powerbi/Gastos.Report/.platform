@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "Gastos"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "98c8ddc7-7041-5917-a3a0-5c70a114b2cc"
+  }
+}

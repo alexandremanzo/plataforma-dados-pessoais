@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diário de Bordo</title>
+<style>
+  /* Mesmo mundo dos outros painéis. Viagem é azul-céu; cada tipo de gasto
+     tem a sua cor: violeta hospedagem, azul passagem, âmbar carro, ciano
+     transporte local, coral restaurante, menta mercado, ouro bar, rosa passeio. */
+  :root {
+    color-scheme: dark;
+    --bg: #071013;
+    --bg-alto: #0a171b;
+    --painel: #0e1d21;
+    --painel-2: #12262b;
+    --linha: #1d343a;
+    --linha-forte: #2a4a51;
+    --tinta: #e8f2f0;
+    --fraca: #8fa8a5;
+    --apagada: #5d7774;
+    --viagem: #ffa552;
+    --bom: #4fd1a5;
+    --ruim: #ff6f61;
+    --atencao: #ffb547;
+    --terra: #13282d;
+    --raio: 14px;
+    --display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    --texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 560px at 6% -10%, rgba(255, 165, 82, .12), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(255, 143, 107, .06), transparent 60%),
+      var(--bg);
+    color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.5;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 80px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px 96px; } }
+
+  .barra-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0;
+    border-bottom: 1px solid var(--linha); font-size: 13px; color: var(--fraca); flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 10px; color: var(--tinta); font-weight: 600; letter-spacing: .02em; }
+  .marca svg { width: 26px; height: 26px; }
+  .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav a { color: var(--fraca); text-decoration: none; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; transition: color .15s, border-color .15s; }
+  .nav a:hover, .nav a:focus-visible { color: var(--tinta); border-color: var(--linha-forte); outline: none; }
+  .nav a.cta { color: var(--bg); background: var(--viagem); font-weight: 600; }
+
+  .hero { padding: 48px 0 24px; display: grid; gap: 28px; }
+  .hero > *, .grade > *, .grade-3 > *, .sim > *, .filtros > * { min-width: 0; }
+  .olho { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--viagem); font-weight: 600; margin: 0 0 14px; }
+  .hero h1 { font-family: var(--display); font-weight: 600; font-stretch: 85%; font-size: clamp(34px, 5.4vw, 66px);
+    line-height: 1.04; letter-spacing: -.015em; margin: 0; max-width: 22ch; text-wrap: balance; }
+  .hero h1 em { font-style: normal; color: var(--viagem); }
+  .hero .tese { max-width: 68ch; color: var(--fraca); font-size: 18px; margin: 18px 0 0; text-wrap: pretty; }
+  .hero .tese b { color: var(--tinta); font-weight: 600; }
+
+  .filtros { display: flex; gap: 12px 20px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; z-index: 10;
+    padding: 12px 0; background: linear-gradient(180deg, var(--bg) 70%, transparent); }
+  .segmento { display: inline-grid; grid-auto-flow: column; padding: 4px; gap: 4px; background: var(--bg-alto);
+    border: 1px solid var(--linha); border-radius: 12px; max-width: 100%; overflow-x: auto; }
+  .segmento button { font: inherit; font-size: 13px; color: var(--fraca); background: transparent; border: 0; border-radius: 9px;
+    padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+  .segmento button[aria-pressed="true"] { background: var(--painel-2); color: var(--tinta); box-shadow: 0 0 0 1px var(--linha-forte); }
+  .segmento button:focus-visible { outline: 2px solid var(--viagem); outline-offset: 1px; }
+  .segmento.mini button { padding: 5px 10px; font-size: 12px; }
+  .chave { display: inline-flex; gap: 10px; align-items: center; cursor: pointer; font-size: 14px; color: var(--fraca); }
+  .chave input { appearance: none; flex: none; width: 38px; height: 22px; border-radius: 99px; margin: 0; background: var(--linha-forte);
+    position: relative; cursor: pointer; transition: background .2s; }
+  .chave input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--tinta); transition: transform .2s; }
+  .chave input:checked { background: var(--viagem); }
+  .chave input:checked::after { transform: translateX(16px); }
+  .chave input:focus-visible { outline: 2px solid var(--viagem); outline-offset: 2px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 12px; }
+  .kpi { background: linear-gradient(180deg, var(--painel-2), var(--painel)); border: 1px solid var(--linha);
+    border-top: 2px solid var(--cor-k, var(--linha)); border-radius: var(--raio); padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .kpi .numero { font-size: 30px; }
+  .rotulo { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); font-weight: 600; }
+  .numero { font-family: var(--display); font-weight: 600; line-height: 1.1; letter-spacing: -.01em; }
+  .nota { font-size: 13px; color: var(--fraca); }
+  .nota b { color: var(--tinta); }
+  .delta { font-size: 12px; font-weight: 600; }
+  .bom { color: var(--bom); }
+  .ruim { color: var(--ruim); }
+
+  section.bloco { padding: 56px 0 0; scroll-margin-top: 64px; }
+  .cab { display: grid; gap: 8px; margin-bottom: 24px; max-width: 76ch; }
+  .cab h2 { font-family: var(--display); font-weight: 600; font-stretch: 90%; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .cab p { margin: 0; color: var(--fraca); text-wrap: pretty; }
+  .cab p b { color: var(--tinta); font-weight: 600; }
+  .cab .olho { margin: 0; }
+  .grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); align-items: start; }
+  .grade-3 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 22px; min-width: 0;
+    display: flex; flex-direction: column; gap: 12px; }
+  .cartao h3 { margin: 0; font-size: 17px; font-weight: 600; }
+  .cartao .sub { margin: 0; color: var(--fraca); font-size: 14px; }
+  .cartao .sub b { color: var(--tinta); }
+  .tela { width: 100%; position: relative; }
+  .tela svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg .grid { stroke: var(--linha); stroke-width: 1; }
+  svg .ax { fill: var(--apagada); font-size: 11px; font-family: var(--texto); }
+  .cab-linha { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--fraca); align-items: center; }
+  .legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .legenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  .barras { display: grid; gap: 6px; }
+  .barra { display: grid; grid-template-columns: minmax(120px, 200px) 1fr minmax(130px, auto); gap: 14px; align-items: center; font-size: 14px; padding: 4px 0; }
+  .barra .trilho { height: 12px; border-radius: 99px; background: var(--bg-alto); overflow: hidden; display: flex; }
+  .barra .trilho span { height: 100%; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+  .barra .v { text-align: right; color: var(--fraca); font-size: 13px; white-space: nowrap; }
+  .barra .v b { color: var(--tinta); }
+  .barra .n { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+  .barra .n i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .barra .n span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 560px) { .barra { grid-template-columns: 1fr auto; } .barra .trilho { grid-column: 1 / -1; grid-row: 2; } }
+
+  /* ranking de viagens */
+  .rank { display: grid; gap: 4px; }
+  .rk { font: inherit; color: inherit; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 12px; cursor: pointer;
+    display: grid; grid-template-columns: minmax(0, 230px) minmax(0, 1fr) minmax(96px, auto); gap: 6px 16px; align-items: center; padding: 9px 12px; }
+  .rk:hover { background: var(--painel-2); }
+  .rk[aria-pressed="true"] { background: var(--painel-2); border-color: var(--linha-forte); }
+  .rk:focus-visible { outline: 2px solid var(--viagem); outline-offset: 1px; }
+  .rk .nm { display: grid; min-width: 0; }
+  .rk .nm b { font-weight: 600; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rk .nm small { font-size: 12px; color: var(--apagada); }
+  .rk .pilha { height: 14px; border-radius: 5px; background: var(--bg-alto); display: flex; overflow: hidden; }
+  .rk .pilha span { height: 100%; }
+  .rk .vv { text-align: right; white-space: nowrap; font-size: 13px; color: var(--fraca); }
+  .rk .vv b { color: var(--tinta); font-family: var(--display); font-size: 16px; font-weight: 600; display: block; }
+  @media (max-width: 640px) { .rk { grid-template-columns: 1fr auto; } .rk .pilha { grid-column: 1 / -1; grid-row: 2; } }
+  .pilula { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 0 7px; border-radius: 99px; border: 1px solid currentColor; margin-left: 6px; vertical-align: 1px; color: var(--atencao); }
+  .pilula.azul { color: var(--viagem); }
+
+  .det { display: grid; gap: 16px; }
+  .det-topo { display: flex; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; align-items: end; }
+  .det-topo h3 { font-family: var(--display); font-size: 28px; font-weight: 600; margin: 0; line-height: 1.1; }
+  .mini-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 10px; }
+  .mini-kpis div { background: var(--bg-alto); border: 1px solid var(--linha); border-radius: 10px; padding: 9px 12px; display: grid; gap: 1px; }
+  .mini-kpis .numero { font-size: 20px; }
+  .mini-kpis small { font-size: 12px; color: var(--apagada); }
+  .lista { display: grid; gap: 2px; font-size: 13.5px; }
+  .lista div { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--linha); }
+  .lista div span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lista div span:first-child { color: var(--apagada); }
+  .lista b { font-weight: 600; white-space: nowrap; }
+
+  /* tabelas */
+  .tabela { width: 100%; overflow-x: auto; }
+  table.dados { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.dados th, table.dados td { padding: 9px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--linha); }
+  table.dados th { color: var(--fraca); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; background: var(--painel); }
+  table.dados th:first-child, table.dados td:first-child { text-align: left; }
+  table.dados tbody tr:hover td { background: var(--painel-2); }
+  table.dados tr.grupo td { color: var(--tinta); font-weight: 600; background: var(--bg-alto); }
+
+  /* mapa */
+  .mapa-grade { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 900px) { .mapa-grade { grid-template-columns: 1fr; } }
+  #g-mapa svg { max-height: 640px; }
+  #g-mapa .terra { fill: var(--terra); stroke: var(--linha-forte); stroke-width: 1.2; stroke-linejoin: round; }
+  #g-mapa .ponto { fill: var(--viagem); fill-opacity: .42; stroke: var(--viagem); stroke-width: 1.5; cursor: pointer; transition: fill-opacity .15s; }
+  #g-mapa .ponto:hover { fill-opacity: .75; }
+  #g-mapa .solto { fill: none; stroke: var(--atencao); stroke-width: 1.2; stroke-dasharray: 2 2; cursor: pointer; }
+  #g-mapa .casa { fill: var(--tinta); stroke: var(--bg); stroke-width: 2; }
+  #g-mapa .rot { fill: var(--fraca); font-size: 11px; font-family: var(--texto); pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+
+  /* saúde */
+  .hab { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+  .hab .cartao { gap: 8px; padding: 18px; }
+  .hab .linha3 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; text-align: center; }
+  .hab .linha3 small { display: block; font-size: 11px; color: var(--apagada); text-transform: uppercase; letter-spacing: .06em; }
+  .hab .linha3 b { font-family: var(--display); font-size: 19px; font-weight: 600; }
+
+  /* simulador */
+  .sim { display: grid; gap: 16px; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 980px) { .sim { grid-template-columns: 1fr; } }
+  .ctl { display: grid; gap: 6px; padding: 11px 0; border-bottom: 1px solid var(--linha); }
+  .ctl:last-of-type { border-bottom: 0; }
+  .ctl .topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+  .ctl .topo b { font-family: var(--display); font-size: 18px; color: var(--cor-c, var(--viagem)); white-space: nowrap; }
+  .ctl .base { font-size: 12px; color: var(--apagada); }
+  .ctl input[type="range"] { width: 100%; accent-color: var(--cor-c, var(--viagem)); height: 20px; cursor: pointer; background: transparent; margin: 0; }
+  .ctl input[type="range"]:focus-visible { outline: 2px solid var(--viagem); outline-offset: 2px; border-radius: 6px; }
+  .ctl select { font: inherit; font-size: 14px; color: var(--tinta); background: var(--bg-alto); border: 1px solid var(--linha-forte); border-radius: 10px; padding: 8px 10px; width: 100%; }
+  .ctl select:focus-visible { outline: 2px solid var(--viagem); outline-offset: 1px; }
+  .placar { border-radius: var(--raio); padding: 24px; border: 1px solid var(--linha-forte);
+    background: radial-gradient(600px 240px at 100% 0, rgba(255, 165, 82, .14), transparent 70%), linear-gradient(180deg, var(--painel-2), var(--painel));
+    display: grid; gap: 18px; }
+  .placar-nums { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
+  .placar .numero { font-size: clamp(28px, 3vw, 40px); }
+  .placar p { margin: 0; font-size: 14px; color: var(--fraca); }
+  .placar p b { color: var(--tinta); }
+
+  .notas { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--fraca); display: grid; gap: 12px; max-width: 86ch; }
+  .notas h2 { font-size: 15px; color: var(--tinta); margin: 0; font-weight: 600; }
+  .notas ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .notas b { color: var(--tinta); font-weight: 600; }
+
+  .dica { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .12s; background: #0b1a1e;
+    border: 1px solid var(--linha-forte); border-radius: 10px; padding: 8px 12px; font-size: 13px; color: var(--tinta);
+    box-shadow: 0 12px 30px rgba(0,0,0,.45); white-space: nowrap; }
+  .dica .q { color: var(--fraca); display: block; font-size: 12px; margin-bottom: 2px; }
+  .dica i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+
+  .entra { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .entra.visto { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .entra { opacity: 1; transform: none; transition: none; } * { transition-duration: 0s !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="barra-topo">
+    <div class="marca">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M4.5 18.5 27 9.5c1.2-.5 2.2.9 1.3 1.8L22 17.5l-1.4 8.2c-.2 1-1.5 1.2-2 .3L15 20l-5 3.5.6-5.4-6-1.6c-.6-.2-.6-1-.1-1.3Z" stroke="#ffa552" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M10.6 18.1 22 11.6" stroke="#ffa552" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Diário de Bordo
+    </div>
+    <nav class="nav" aria-label="Seções">
+      <a href="#viagens">Viagens</a>
+      <a href="#gasto">Para onde vai</a>
+      <a href="#destinos">Destinos</a>
+      <a href="#mapa">Mapa</a>
+      <a href="#saude">Saúde</a>
+      <a href="#simulador" class="cta">Simulador</a>
+    </nav>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="olho" id="periodo-txt">—</p>
+      <h1 id="manchete">—</h1>
+      <p class="tese" id="tese">—</p>
+    </div>
+  </header>
+
+  <div class="filtros">
+    <div class="segmento" role="group" aria-label="Período" id="periodos"></div>
+    <label class="chave"><input type="checkbox" id="t-achadas" checked> Incluir viagens sem tag (achadas pela cidade)</label>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <!-- ===================================================== viagens -->
+  <section class="bloco entra" id="viagens">
+    <div class="cab">
+      <p class="olho">Analítica</p>
+      <h2 id="v-titulo">Cada viagem</h2>
+      <p>Custo de cada viagem somando finanças e conta da família, já sem o que veio em dobro e com os reembolsos abatidos. A barra mostra em que o dinheiro foi. <b>Clique numa viagem</b> para abrir o detalhe.</p>
+    </div>
+    <div class="grade">
+      <div class="cartao">
+        <div class="cab-linha">
+          <h3>Ranking</h3>
+          <div class="segmento mini" role="group" aria-label="Ordenar" id="v-ordem">
+            <button type="button" data-o="custo" aria-pressed="true">Custo</button>
+            <button type="button" data-o="dia" aria-pressed="false">Por dia</button>
+            <button type="button" data-o="data" aria-pressed="false">Data</button>
+          </div>
+        </div>
+        <div class="legenda" id="v-leg"></div>
+        <div class="rank" id="v-rank"></div>
+      </div>
+      <div class="cartao det" id="v-det" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== para onde vai -->
+  <section class="bloco entra" id="gasto">
+    <div class="cab">
+      <p class="olho">Analítica</p>
+      <h2 id="g-titulo">Para onde vai o dinheiro</h2>
+      <p>O mesmo custo, agora somando todas as viagens do período: por tipo de gasto, por quem pagou e por quando foi pago.</p>
+    </div>
+    <div class="grade">
+      <div class="cartao">
+        <h3>Por tipo de gasto</h3>
+        <p class="sub" id="g-baldes-sub">—</p>
+        <div class="barras" id="g-baldes"></div>
+      </div>
+      <div class="cartao">
+        <h3>Quem pagou</h3>
+        <p class="sub" id="g-quem-sub">—</p>
+        <div class="barras" id="g-quem"></div>
+        <h3 style="margin-top:10px">Quando foi pago</h3>
+        <p class="sub" id="g-ante-sub">—</p>
+        <div class="barras" id="g-ante"></div>
+      </div>
+    </div>
+    <div class="cartao" style="margin-top:16px">
+      <h3>Viagem por ano</h3>
+      <p class="sub" id="g-ano-sub">—</p>
+      <div class="legenda" id="g-ano-leg"></div>
+      <div class="tela" id="g-ano"></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== destinos -->
+  <section class="bloco entra" id="destinos">
+    <div class="cab">
+      <p class="olho">Diagnóstica</p>
+      <h2>Mesmo destino, outra conta</h2>
+      <p>Os lugares para onde você voltou, viagem contra viagem, e o custo por dia de cada região. Viagens longas costumam puxar o custo por dia para baixo.</p>
+    </div>
+    <div class="grade">
+      <div class="cartao">
+        <h3>Destinos repetidos</h3>
+        <p class="sub">Todas as viagens, sem o filtro de período. Variação do custo por dia contra a primeira vez.</p>
+        <div class="tabela"><table class="dados" id="t-dest"><thead><tr><th>Destino</th><th>Dias</th><th>Custo</th><th>Por dia</th><th>vs 1ª</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="cartao">
+        <h3>Custo por dia, por região</h3>
+        <p class="sub" id="d-reg-sub">Mediana das viagens de até 30 dias do período.</p>
+        <div class="barras" id="d-reg"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== mapa -->
+  <section class="bloco entra" id="mapa">
+    <div class="cab">
+      <p class="olho">Analítica</p>
+      <h2 id="m-titulo">Onde o dinheiro foi gasto</h2>
+      <p>Cada círculo é um destino, do tamanho do que as viagens custaram. O ponto branco é a casa (Campinas). Em âmbar tracejado, gasto fora de casa que não virou viagem.</p>
+    </div>
+    <div class="mapa-grade">
+      <div class="cartao">
+        <div class="cab-linha">
+          <div class="segmento mini" role="group" aria-label="Recorte do mapa" id="m-zoom">
+            <button type="button" data-z="br" aria-pressed="true">Brasil</button>
+            <button type="button" data-z="se" aria-pressed="false">Sudeste</button>
+          </div>
+          <label class="chave"><input type="checkbox" id="t-soltos"> Gasto fora de casa sem viagem</label>
+        </div>
+        <div class="tela" id="g-mapa"></div>
+      </div>
+      <div class="cartao">
+        <h3>Destinos no período</h3>
+        <p class="sub" id="m-sub">—</p>
+        <div class="barras" id="m-lista"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== saúde -->
+  <section class="bloco entra" id="saude">
+    <div class="cab">
+      <p class="olho">Diagnóstica</p>
+      <h2>Viagem e corpo</h2>
+      <p>Os hábitos do registro diário nas duas semanas antes, durante e nas duas semanas depois de cada viagem desde 2024, contra um dia comum. São poucas viagens: leia como associação, não como causa.</p>
+    </div>
+    <div class="hab" id="h-cards"></div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao">
+        <h3>Viagem a viagem</h3>
+        <p class="sub">Cada célula é <b>antes · durante · depois</b>. Treino em % dos dias, água em litros por dia, jaca em refeições por dia; gordura é a variação do % entre a avaliação de antes e a de depois.</p>
+        <div class="tabela"><table class="dados" id="t-hab"><thead><tr><th>Viagem</th><th>Treino</th><th>Água</th><th>Jaca</th><th>Gordura</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="cartao">
+        <h3>Entre uma avaliação e outra</h3>
+        <p class="sub" id="h-av-sub">—</p>
+        <div class="tela" id="g-av"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== simulador -->
+  <section class="bloco entra" id="simulador">
+    <div class="cab">
+      <p class="olho">Simulador</p>
+      <h2>Quanto vai custar a próxima</h2>
+      <p>O orçamento sai do que as suas viagens parecidas custaram de verdade: passagem e carro por viagem; hospedagem por noite; o resto por dia. As viagens do histórico são quase todas de casal.</p>
+    </div>
+    <div class="sim">
+      <div class="cartao">
+        <div class="ctl"><div class="topo"><label for="s-base">Parecida com</label></div><select id="s-base"></select><span class="base" id="s-base-b">—</span></div>
+        <div class="ctl"><div class="topo"><label for="s-dias">Dias</label><b id="s-dias-v">—</b></div><input type="range" id="s-dias" min="1" max="30" step="1"><span class="base" id="s-dias-b">—</span></div>
+        <div class="ctl"><div class="topo"><label for="s-pes">Pessoas</label><b id="s-pes-v">—</b></div><input type="range" id="s-pes" min="1" max="6" step="1"><span class="base">2 é o casal do histórico; hospedagem conta um quarto a cada 2 pessoas, e carro não muda.</span></div>
+        <div class="ctl"><div class="topo"><label for="s-folga">Folga para imprevistos</label><b id="s-folga-v">—</b></div><input type="range" id="s-folga" min="0" max="40" step="5"></div>
+        <div class="ctl"><div class="topo"><label for="s-meses">Meses até viajar</label><b id="s-meses-v">—</b></div><input type="range" id="s-meses" min="1" max="24" step="1"></div>
+        <label class="chave" style="padding-top:10px"><input type="checkbox" id="s-infl" checked> Corrigir pela inflação (≈ 4,5% ao ano)</label>
+      </div>
+      <div class="placar">
+        <div class="placar-nums">
+          <div><span class="rotulo">Orçamento</span><div class="numero" id="s-total">—</div></div>
+          <div><span class="rotulo">Por dia</span><div class="numero" id="s-dia">—</div></div>
+          <div><span class="rotulo">Guardar por mês</span><div class="numero" id="s-mes">—</div></div>
+        </div>
+        <p id="s-txt">—</p>
+        <div class="barras" id="s-baldes"></div>
+        <p id="s-comp">—</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="notas">
+    <h2>Como as viagens foram montadas</h2>
+    <ul>
+      <li><b>Tags.</b> Cada tag de viagem (finanças e família) é a semente. As duplicadas viraram uma viagem só, e o nome vem com a data real dos lançamentos.</li>
+      <li><b>Pelo texto.</b> Hospedagem, passagem, pacote e voo sem tag, com o destino no texto, entram na viagem mais próxima (até 200 dias antes). É assim que entram as hospedagens pagas meses antes.</li>
+      <li><b>Pela cidade.</b> Gasto sem tag numa cidade da viagem, de 3 dias antes a 3 dias depois, também entra. Sem tag nenhuma, gasto fora de casa em dois dias ou mais e acima de R$ 300 vira <i>viagem achada pela cidade</i>; a chave no topo tira essas.</li>
+      <li><b>Período da viagem</b> é o maior bloco de dias com gasto no destino, e não do primeiro ao último lançamento: hospedagem e passagem pagas antes aparecem como <i>compra antecipada</i>.</li>
+      <li><b>Custo</b> = despesas − reembolsos (amigos pagando a parte, estornos). Lançamento da família (pessoa Ale) com a mesma data e valor de um de finanças é o mesmo gasto e conta uma vez. Parcelas do cartão entram na data da compra.</li>
+      <li><b>% do consumo</b> compara o custo das viagens com o gasto essencial + estilo de vida do ano em finanças, mais a parte das viagens paga pela conta da família. É uma régua, não uma fatia exata.</li>
+      <li><b>Casa</b> é Campinas e arredores. O empreendimento de férias (Resort) é imóvel e fica fora.</li>
+      <li id="n-avisos"></li>
+      <li id="n-soltos"></li>
+      <li>Gerado em <span id="n-gerado">—</span> a partir do <i>db-demo</i>. Arquivo local, sem conexão com a internet.</li>
+    </ul>
+  </section>
+</div>
+<div class="dica" id="dica" role="tooltip"></div>
+
+<script>
+const D = /*__DADOS__*/null;
+
+(function () {
+  'use strict';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const num = (v, c) => v == null || isNaN(v) ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: c || 0, maximumFractionDigits: c || 0 });
+  const brl = (v, c) => (v < 0 ? '−' : '') + 'R$ ' + num(Math.abs(v), c);
+  const kbrl = (v) => (v < 0 ? '−' : '') + 'R$ ' + (Math.abs(v) >= 1e6 ? num(Math.abs(v) / 1e6, 1) + ' mi' : Math.abs(v) >= 1e4 ? num(Math.abs(v) / 1e3, 0) + ' mil' : Math.abs(v) >= 1e3 ? num(Math.abs(v) / 1e3, 1) + ' mil' : num(Math.abs(v), 0));
+  const pct = (v, c) => v == null || !isFinite(v) ? '—' : num(100 * v, c || 0) + '%';
+  const DIA = 864e5;
+  const ts = (s) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+  const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const fdc = (s) => s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(2, 4);
+  const mesAno = (s) => MESES[+s.slice(5, 7) - 1] + '/' + s.slice(0, 4);
+  const faixa = (v) => v.ini.slice(0, 7) === v.fim.slice(0, 7)
+    ? +v.ini.slice(8, 10) + (v.dias > 1 ? '–' + +v.fim.slice(8, 10) : '') + ' ' + mesAno(v.ini)
+    : fdc(v.ini) + ' a ' + fdc(v.fim);
+  const mediana = (a) => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const soma = (a) => a.reduce((s, x) => s + x, 0);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  const B = D.baldes.map((b) => b[0]), NOME_B = Object.fromEntries(D.baldes);
+  const COR_B = { hosp: '#a68cff', pass: '#6ea8ff', carro: '#ffb547', local: '#3cc8ea', rest: '#ff8f6b', merc: '#4fd1a5', bar: '#e9c46a', lazer: '#ff7eb6', outros: '#5d7774' };
+  const COR_Q = { Ale: '#6ea8ff', Lia: '#ff7eb6', Conta: '#a68cff', Outros: '#5d7774' };
+  const CID = D.cidades.map((c) => ({ nome: c[0], uf: c[1], lat: c[2], lon: c[3], casa: !!c[4] }));
+  const HOJE = ts(D.hoje);
+  const V = D.viagens.map((v, i) => Object.assign({}, v, { i, t: ts(v.ini), tf: ts(v.fim), ano: +v.ini.slice(0, 4), porDia: v.custo / v.dias }));
+  // [data, viagem, valor, balde, quem, cidade, fonte, como, descricao]
+  const L = D.linhas.map((r) => ({ d: r[0], t: ts(r[0]), vi: r[1], v: r[2], b: B[r[3]], q: D.quem[r[4]], c: r[5], fonte: r[6], como: r[7], det: r[8] }));
+  const LV = V.map(() => []); L.forEach((x) => LV[x.vi].push(x));
+
+  const dica = $('#dica');
+  function mostra(html, ev) {
+    dica.innerHTML = html; dica.style.opacity = '1';
+    const w = dica.offsetWidth, h = dica.offsetHeight;
+    let x = ev.clientX + 14, y = ev.clientY - h - 12;
+    if (x + w > window.innerWidth - 8) x = ev.clientX - w - 14;
+    if (y < 8) y = ev.clientY + 16;
+    dica.style.left = Math.max(8, x) + 'px'; dica.style.top = y + 'px';
+  }
+  const esconde = () => { dica.style.opacity = '0'; };
+  function anima(el, alvo, fmt) {
+    const de = el._v === undefined ? alvo : el._v;
+    el._v = alvo;
+    if (calmo || de === alvo) { el.textContent = fmt(alvo); return; }
+    const t0 = performance.now();
+    cancelAnimationFrame(el._raf);
+    const passo = (t) => { const p = Math.min(1, (t - t0) / 500), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(de + (alvo - de) * e); if (p < 1) el._raf = requestAnimationFrame(passo); };
+    el._raf = requestAnimationFrame(passo);
+  }
+  function barras(host, linhas, max) {
+    host.innerHTML = '';
+    linhas.forEach((l) => {
+      const d = document.createElement('div'); d.className = 'barra';
+      d.innerHTML = '<span class="n"><i></i><span></span></span><span class="trilho"><span></span></span><span class="v"><b></b><span></span></span>';
+      d.querySelector('.n i').style.background = l.cor; d.querySelector('.n span').textContent = l.nome;
+      const s = d.querySelector('.trilho span'); s.style.background = l.cor; s.style.width = Math.max(0, 100 * l.v / (max || 1)) + '%';
+      d.querySelector('.v b').textContent = l.txt; d.querySelector('.v span').textContent = l.nota ? ' ' + l.nota : '';
+      if (l.dica) { d.addEventListener('mousemove', (ev) => mostra(l.dica, ev)); d.addEventListener('mouseleave', esconde); }
+      host.appendChild(d);
+    });
+  }
+  function kpi(alvo, rot, valor, nota, cor) {
+    const d = document.createElement('div'); d.className = 'kpi'; d.style.setProperty('--cor-k', cor);
+    d.innerHTML = '<span class="rotulo"></span><span class="numero"></span><span class="nota"></span>';
+    d.children[0].textContent = rot; d.children[1].textContent = valor; d.children[2].textContent = nota;
+    alvo.appendChild(d);
+  }
+
+  // --------------------------------------------------------- períodos
+  const anoFim = new Date(HOJE).getUTCFullYear();
+  const anos = Array.from(new Set(V.map((v) => v.ano))).sort((a, b) => b - a);
+  const PERIODOS = [
+    { id: 'ano', nome: String(anoFim), ok: (v) => v.ano === anoFim },
+    { id: '12m', nome: 'Últimos 12 meses', ok: (v) => v.tf > HOJE - 365 * DIA },
+  ].concat(anos.filter((a) => a < anoFim && a >= 2021).slice(0, 4).map((a) => ({ id: 'a' + a, nome: String(a), ok: (v) => v.ano === a })))
+    .concat([{ id: 'd21', nome: 'Desde 2021', ok: (v) => v.ano >= 2021 }, { id: 'tudo', nome: 'Tudo', ok: () => true }]);
+  const est = { per: PERIODOS[0], achadas: true, ordem: 'custo', sel: null, zoom: 'br', soltos: false };
+  PERIODOS.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = p.nome; b.dataset.id = p.id;
+    b.setAttribute('aria-pressed', p === est.per);
+    b.addEventListener('click', () => { est.per = p; est.sel = null; $$('#periodos button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.id === p.id)); recorte(); });
+    $('#periodos').appendChild(b);
+  });
+  $('#t-achadas').addEventListener('change', (e) => { est.achadas = e.target.checked; est.sel = null; recorte(); });
+  const valeAchada = (v) => est.achadas || v.marcada;
+  const doPeriodo = () => V.filter((v) => est.per.ok(v) && valeAchada(v));
+
+  // --------------------------------------------------------- topo
+  function abertura(S) {
+    const tot = soma(S.map((v) => v.custo)), dias = soma(S.map((v) => v.dias));
+    $('#periodo-txt').textContent = est.per.nome + ' · ' + S.length + (S.length === 1 ? ' viagem' : ' viagens');
+    $('#kpis').innerHTML = '';
+    if (!S.length) {
+      $('#manchete').innerHTML = 'Nenhuma viagem <em>neste período</em>.';
+      $('#tese').textContent = 'Escolha outro período ou inclua as viagens achadas pela cidade.';
+      return;
+    }
+    const maior = S.slice().sort((a, b) => b.custo - a.custo)[0];
+    $('#manchete').innerHTML = (S.length === 1 ? 'Uma viagem, ' : S.length + ' viagens, ') + '<em>' + kbrl(tot) + '</em> e ' + num(dias) + ' dias fora.';
+    const anosSel = Array.from(new Set(S.map((v) => v.ano)));
+    const cons = soma(anosSel.map((a) => D.anos[a] || 0));
+    const ant = soma(S.map((v) => v.antecipado));
+    const bal = B.map((b) => [b, soma(S.map((v) => v.baldes[B.indexOf(b)]))]).sort((a, b) => b[1] - a[1]);
+    const desp = soma(S.map((v) => v.desp));
+    $('#tese').innerHTML = 'A maior foi <b>' + esc(maior.nome) + '</b> (' + faixa(maior) + '), com <b>' + brl(maior.custo) + '</b>. '
+      + '<b>' + NOME_B[bal[0][0]] + '</b> levou ' + pct(bal[0][1] / desp) + ' do gasto e ' + pct(ant / desp) + ' foi pago antes de sair de casa.';
+    kpi($('#kpis'), 'Custo das viagens', kbrl(tot), soma(S.map((v) => v.reemb)) > 0 ? 'já sem ' + kbrl(soma(S.map((v) => v.reemb))) + ' de reembolsos' : 'despesas, sem reembolsos', 'var(--viagem)');
+    kpi($('#kpis'), 'Viagens', num(S.length), S.filter((v) => v.marcada).length + ' com tag · ' + num(dias) + ' dias fora', '#a68cff');
+    kpi($('#kpis'), 'Custo por dia', brl(tot / dias), 'mediana ' + brl(mediana(S.map((v) => v.porDia))) + ' por viagem', '#ff8f6b');
+    kpi($('#kpis'), 'Do consumo do ano', cons > 0 ? pct(tot / cons, 1) : '—', cons > 0 ? 'de ' + kbrl(cons) + ' em essencial + estilo de vida' : 'sem consumo registrado', '#ffb547');
+    kpi($('#kpis'), 'Pago antes', pct(ant / desp), kbrl(ant) + ' em compra antecipada', '#4fd1a5');
+  }
+
+  // --------------------------------------------------------- ranking e detalhe
+  const leg = $('#v-leg');
+  B.forEach((b) => { const s = document.createElement('span'); s.innerHTML = '<i></i>'; s.querySelector('i').style.background = COR_B[b]; s.appendChild(document.createTextNode(NOME_B[b])); leg.appendChild(s); });
+  $$('#v-ordem button').forEach((b) => b.addEventListener('click', () => {
+    est.ordem = b.dataset.o; $$('#v-ordem button').forEach((x) => x.setAttribute('aria-pressed', x === b)); ranking(doPeriodo());
+  }));
+  function ranking(S) {
+    const host = $('#v-rank'); host.innerHTML = '';
+    $('#v-titulo').textContent = S.length ? 'Cada viagem, ' + est.per.nome.toLowerCase() : 'Cada viagem';
+    const ord = S.slice().sort(est.ordem === 'custo' ? (a, b) => b.custo - a.custo : est.ordem === 'dia' ? (a, b) => b.porDia - a.porDia : (a, b) => b.t - a.t);
+    const max = Math.max.apply(null, ord.map((v) => (est.ordem === 'dia' ? v.porDia : v.desp)).concat([1]));
+    ord.forEach((v) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'rk'; b.setAttribute('aria-pressed', est.sel === v.i);
+      const escala = est.ordem === 'dia' ? v.porDia / v.desp : 1;
+      const pilha = B.map((k, j) => v.baldes[j] > 0 ? '<span style="width:' + (100 * v.baldes[j] * escala / max) + '%;background:' + COR_B[k] + '"></span>' : '').join('');
+      b.innerHTML = '<span class="nm"><b>' + esc(v.nome) + (v.marcada ? '' : '<span class="pilula">sem tag</span>') + '</b><small>' + faixa(v) + ' · ' + v.dias + (v.dias === 1 ? ' dia' : ' dias') + '</small></span>'
+        + '<span class="pilha">' + pilha + '</span>'
+        + '<span class="vv"><b>' + (est.ordem === 'dia' ? brl(v.porDia) : brl(v.custo)) + '</b>' + (est.ordem === 'dia' ? brl(v.custo) + ' no total' : brl(v.porDia) + ' por dia') + '</span>';
+      b.addEventListener('click', () => { est.sel = v.i; $$('#v-rank .rk').forEach((x) => x.setAttribute('aria-pressed', x === b)); detalhe(v); });
+      host.appendChild(b);
+    });
+    if (!ord.length) host.innerHTML = '<p class="nota">Nenhuma viagem neste período.</p>';
+  }
+  function detalhe(v) {
+    const host = $('#v-det');
+    if (!v) { host.innerHTML = '<p class="nota">Escolha uma viagem no ranking.</p>'; return; }
+    const lin = LV[v.i], g = lin.filter((x) => x.v < 0);
+    const antes = soma(g.filter((x) => x.t < v.t).map((x) => -x.v));
+    const dAntes = g.filter((x) => x.t < v.t).map((x) => (v.t - x.t) / DIA);
+    const comoTxt = [v.n - v.por_texto - v.por_cidade + ' pela tag', v.por_texto ? v.por_texto + ' pelo texto' : '', v.por_cidade ? v.por_cidade + ' pela cidade' : ''].filter(Boolean).join(' · ');
+    host.innerHTML = '<div class="det-topo"><div><p class="olho" style="margin:0 0 6px">' + faixa(v) + (v.achou === 'fixo' ? ' · datas estimadas' : '') + '</p><h3>' + esc(v.nome)
+      + (v.marcada ? '' : '<span class="pilula">sem tag</span>') + '</h3></div><span class="nota">' + (v.tags.length ? esc(v.tags.join(', ')) : 'achada pela cidade') + '</span></div>'
+      + '<div class="mini-kpis"><div><small>Custo</small><span class="numero">' + brl(v.custo) + '</span></div><div><small>Por dia</small><span class="numero">' + brl(v.porDia) + '</span></div>'
+      + '<div><small>Dias</small><span class="numero">' + v.dias + '</span></div><div><small>Pago antes</small><span class="numero">' + pct(antes / v.desp) + '</span></div></div>'
+      + '<div class="barras" id="d-baldes"></div><div class="barras" id="d-quem"></div>'
+      + '<p class="nota" style="margin:0">' + (v.reemb > 0 ? 'Despesas ' + brl(v.desp) + ' − reembolsos ' + brl(v.reemb) + '. ' : '')
+      + (dAntes.length ? 'Primeira compra ' + num(Math.max.apply(null, dAntes)) + ' dias antes de sair. ' : '') + comoTxt + '.</p>'
+      + '<h3 style="font-size:15px;margin:4px 0 0">Maiores gastos</h3><div class="lista" id="d-lista"></div>';
+    const linB = B.map((b, j) => ({ nome: NOME_B[b], v: v.baldes[j], cor: COR_B[b], txt: brl(v.baldes[j]), nota: pct(v.baldes[j] / v.desp) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v);
+    barras($('#d-baldes'), linB, linB.length ? linB[0].v : 1);
+    const linQ = D.quem.map((q, j) => ({ nome: 'Pago por ' + q, v: v.quem[j], cor: COR_Q[q], txt: brl(v.quem[j]), nota: pct(v.quem[j] / v.desp) })).filter((x) => x.v > 0);
+    barras($('#d-quem'), linQ, v.desp);
+    // parcelas do mesmo gasto (mesma data e texto) somadas
+    const ag = new Map();
+    g.forEach((x) => { const k = x.d + '|' + x.det; const a = ag.get(k) || { d: x.d, det: x.det, v: 0, n: 0, b: x.b }; a.v += -x.v; a.n++; ag.set(k, a); });
+    $('#d-lista').innerHTML = Array.from(ag.values()).sort((a, b) => b.v - a.v).slice(0, 8)
+      .map((a) => '<div><span>' + fdc(a.d) + '</span><span title="' + esc(a.det) + '"><i style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:' + COR_B[a.b] + '"></i>'
+        + esc(a.det || NOME_B[a.b]) + (a.n > 1 ? ' <span class="nota">(' + a.n + 'x)</span>' : '') + '</span><b>' + brl(a.v) + '</b></div>').join('');
+  }
+
+  // --------------------------------------------------------- para onde vai
+  function gasto(S) {
+    $('#g-titulo').textContent = 'Para onde vai o dinheiro' + (S.length ? ', ' + est.per.nome.toLowerCase() : '');
+    const desp = soma(S.map((v) => v.desp)) || 1;
+    const lin = B.map((b, j) => ({ nome: NOME_B[b], v: soma(S.map((v) => v.baldes[j])), cor: COR_B[b] })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v);
+    lin.forEach((x) => { x.txt = brl(x.v); x.nota = pct(x.v / desp); });
+    barras($('#g-baldes'), lin, lin.length ? lin[0].v : 1);
+    const comida = soma(lin.filter((x) => x.nome === NOME_B.rest || x.nome === NOME_B.merc || x.nome === NOME_B.bar).map((x) => x.v));
+    $('#g-baldes-sub').innerHTML = S.length ? 'Comer e beber (restaurante, mercado e bar) somou <b>' + pct(comida / desp) + '</b>; dormir, <b>' + pct(soma(S.map((v) => v.baldes[B.indexOf('hosp')])) / desp) + '</b>.' : '—';
+    const q = D.quem.map((nm, j) => ({ nome: nm, v: soma(S.map((v) => v.quem[j])), cor: COR_Q[nm] })).filter((x) => x.v > 0);
+    q.forEach((x) => { x.txt = brl(x.v); x.nota = pct(x.v / desp); });
+    barras($('#g-quem'), q, desp);
+    const lia = q.find((x) => x.nome === 'Lia');
+    $('#g-quem-sub').innerHTML = S.length ? 'Ale pelo próprio bolso (finanças e família); Lia e Conta pela conta da família.' + (lia ? ' Lia pagou <b>' + pct(lia.v / desp) + '</b>.' : '') : '—';
+    // quando foi pago, em relação à saída
+    const fx = [['Mais de 90 dias antes', 90, 1e9], ['31 a 90 dias antes', 31, 90], ['8 a 30 dias antes', 8, 30], ['1 a 7 dias antes', 1, 7], ['Durante', null, null], ['Depois de voltar', -1e9, -1]];
+    const tot = fx.map(() => 0);
+    S.forEach((v) => LV[v.i].forEach((x) => {
+      if (x.v >= 0) return;
+      const dAntes = Math.round((v.t - x.t) / DIA);
+      let k;
+      if (x.t >= v.t && x.t <= v.tf) k = 4; else if (x.t > v.tf) k = 5; else k = dAntes > 90 ? 0 : dAntes > 30 ? 1 : dAntes > 7 ? 2 : 3;
+      tot[k] += -x.v;
+    }));
+    const cores = ['#a68cff', '#6ea8ff', '#3cc8ea', '#4fd1a5', '#ffb547', '#5d7774'];
+    barras($('#g-ante'), fx.map((f, k) => ({ nome: f[0], v: tot[k], cor: cores[k], txt: brl(tot[k]), nota: pct(tot[k] / desp) })), Math.max.apply(null, tot.concat([1])));
+    $('#g-ante-sub').innerHTML = S.length ? '<b>' + pct((tot[0] + tot[1]) / desp) + '</b> sai com mais de um mês de antecedência — passagem, pacote e hospedagem.' : '—';
+    porAno(S);
+  }
+  function porAno(S) {
+    const host = $('#g-ano');
+    const todas = V.filter(valeAchada);
+    const a0 = Math.min.apply(null, todas.map((v) => v.ano)), a1 = anoFim;
+    const lista = []; for (let a = a0; a <= a1; a++) lista.push(a);
+    const vals = lista.map((a) => soma(todas.filter((v) => v.ano === a).map((v) => v.custo)));
+    const pcs = lista.map((a, i) => D.anos[a] ? vals[i] / D.anos[a] : null);
+    const sel = new Set(S.map((v) => v.ano));
+    const W = Math.max(320, host.clientWidth || 900), H = 240, m = { l: 52, r: 44, t: 16, b: 28 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b, bw = iw / lista.length;
+    const max = Math.max.apply(null, vals.concat([1])) * 1.1, maxP = Math.max.apply(null, pcs.filter((x) => x != null).concat([0.01])) * 1.15;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Custo das viagens por ano">';
+    for (let k = 0; k <= 4; k++) { const y = m.t + ih - ih * k / 4; s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y + '" y2="' + y + '"/><text class="ax" x="' + (m.l - 8) + '" y="' + (y + 4) + '" text-anchor="end">' + kbrl(max * k / 4) + '</text>'
+      + '<text class="ax" x="' + (W - m.r + 8) + '" y="' + (y + 4) + '">' + pct(maxP * k / 4) + '</text>'; }
+    lista.forEach((a, i) => {
+      const h = ih * vals[i] / max, x = m.l + i * bw + bw * 0.18, w = bw * 0.64;
+      s += '<rect x="' + x + '" y="' + (m.t + ih - h) + '" width="' + w + '" height="' + h + '" rx="3" fill="var(--viagem)" fill-opacity="' + (sel.has(a) ? 0.95 : 0.35) + '" data-i="' + i + '"/>';
+      if (lista.length <= 14 || i % 2 === 0) s += '<text class="ax" x="' + (x + w / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + (lista.length > 8 ? String(a).slice(2) : a) + '</text>';
+    });
+    const pts = lista.map((a, i) => pcs[i] == null ? null : [m.l + i * bw + bw / 2, m.t + ih - ih * pcs[i] / maxP]);
+    let d = ''; pts.forEach((p) => { if (p) d += (d ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); });
+    s += '<path d="' + d + '" fill="none" stroke="#ffb547" stroke-width="2"/>';
+    pts.forEach((p) => { if (p) s += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3" fill="#ffb547"/>'; });
+    lista.forEach((a, i) => { s += '<rect x="' + (m.l + i * bw) + '" y="' + m.t + '" width="' + bw + '" height="' + ih + '" fill="transparent" data-i="' + i + '" class="alvo"/>'; });
+    host.innerHTML = s + '</svg>';
+    $$('.alvo', host).forEach((r) => {
+      const i = +r.dataset.i, a = lista[i], n = todas.filter((v) => v.ano === a).length;
+      r.addEventListener('mousemove', (ev) => mostra('<span class="q">' + a + '</span>' + brl(vals[i]) + ' em ' + n + (n === 1 ? ' viagem' : ' viagens') + (pcs[i] != null ? '<br>' + pct(pcs[i], 1) + ' do consumo do ano' : ''), ev));
+      r.addEventListener('mouseleave', esconde);
+    });
+    $('#g-ano-leg').innerHTML = '<span><i style="background:var(--viagem)"></i>Custo das viagens (anos do período em destaque)</span><span><i style="background:#ffb547"></i>% do consumo do ano</span>';
+    const ultC = lista.filter((a, i) => a < anoFim && vals[i] > 0).slice(-3);
+    $('#g-ano-sub').innerHTML = 'Todas as viagens, ano a ano. ' + (ultC.length ? 'Nos últimos anos completos: ' + ultC.map((a) => a + ' <b>' + kbrl(vals[lista.indexOf(a)]) + '</b>').join(', ') + '.' : '')
+      + ' Antes de 2021 o registro de viagem é escasso.';
+  }
+
+  // --------------------------------------------------------- destinos
+  function destinos(S) {
+    const grupos = new Map();
+    V.filter(valeAchada).forEach((v) => { const k = v.dest >= 0 ? CID[v.dest].nome : v.nome; const a = grupos.get(k) || []; a.push(v); grupos.set(k, a); });
+    const rep = Array.from(grupos.entries()).filter((g) => g[1].length >= 2).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+    $('#t-dest tbody').innerHTML = rep.map((g) => {
+      const vs = g[1].slice().sort((a, b) => a.t - b.t), p0 = vs[0].porDia;
+      return '<tr class="grupo"><td>' + esc(g[0]) + ' · ' + vs.length + ' vezes</td><td>' + num(soma(vs.map((v) => v.dias))) + '</td><td>' + brl(soma(vs.map((v) => v.custo))) + '</td><td>' + brl(soma(vs.map((v) => v.custo)) / soma(vs.map((v) => v.dias))) + '</td><td></td></tr>'
+        + vs.map((v, j) => { const dv = (v.porDia - p0) / p0;
+          return '<tr><td>' + faixa(v) + (v.marcada ? '' : ' <span class="pilula">sem tag</span>') + '</td><td>' + v.dias + '</td><td>' + brl(v.custo) + '</td><td>' + brl(v.porDia) + '</td><td class="' + (j === 0 ? '' : dv > 0 ? 'ruim' : 'bom') + '">' + (j === 0 ? '—' : (dv > 0 ? '+' : '−') + pct(Math.abs(dv))) + '</td></tr>'; }).join('');
+    }).join('');
+    const reg = new Map();
+    S.filter((v) => v.dias <= 30 && v.regiao !== 'Sem destino').forEach((v) => { const a = reg.get(v.regiao) || []; a.push(v); reg.set(v.regiao, a); });
+    const lin = Array.from(reg.entries()).map((g) => ({ nome: g[0], v: mediana(g[1].map((v) => v.porDia)), n: g[1].length }))
+      .sort((a, b) => b.v - a.v).map((x, k) => ({ nome: x.nome, v: x.v, cor: ['#6ea8ff', '#a68cff', '#ff8f6b', '#4fd1a5', '#ffb547', '#3cc8ea', '#ff7eb6'][k % 7], txt: brl(x.v), nota: x.n + (x.n === 1 ? ' viagem' : ' viagens') }));
+    barras($('#d-reg'), lin, lin.length ? lin[0].v : 1);
+    $('#d-reg-sub').textContent = lin.length ? 'Mediana do custo por dia das viagens de até 30 dias, ' + est.per.nome.toLowerCase() + '.' : 'Nenhuma viagem de até 30 dias no período.';
+  }
+
+  // --------------------------------------------------------- mapa
+  // contorno do Brasil bem simplificado (lon, lat), à mão
+  const BRASIL = [[-51.6,4.2],[-50.9,3.2],[-50.0,1.8],[-49.9,1.0],[-48.5,-0.6],[-47.6,-0.7],[-46.0,-1.0],[-44.6,-1.6],[-44.3,-2.5],[-42.8,-2.6],[-41.8,-2.9],[-40.2,-2.8],[-38.5,-3.7],[-37.2,-4.9],[-35.4,-5.1],[-34.9,-6.8],[-34.8,-8.0],[-35.3,-9.0],[-35.9,-9.9],[-37.0,-11.0],[-38.0,-12.5],[-38.6,-13.1],[-39.0,-14.8],[-39.0,-16.5],[-39.3,-17.8],[-39.7,-19.6],[-40.3,-20.3],[-41.0,-21.6],[-41.9,-22.4],[-42.0,-23.0],[-43.2,-23.0],[-44.7,-23.3],[-45.4,-23.8],[-46.3,-24.0],[-47.9,-25.0],[-48.5,-26.2],[-48.6,-27.6],[-48.8,-28.6],[-50.0,-29.9],[-51.2,-31.8],[-52.1,-32.2],[-53.4,-33.7],[-53.5,-32.6],[-53.1,-32.0],[-55.0,-31.3],[-56.0,-30.2],[-57.6,-30.2],[-56.8,-29.3],[-56.0,-28.1],[-55.0,-27.2],[-53.8,-27.1],[-53.6,-26.0],[-54.6,-25.6],[-54.3,-24.0],[-55.4,-23.9],[-55.7,-22.6],[-57.8,-22.1],[-58.0,-20.2],[-57.5,-18.2],[-58.4,-16.3],[-60.2,-16.2],[-60.4,-13.5],[-62.0,-13.0],[-63.4,-12.0],[-65.3,-10.9],[-66.6,-9.9],[-68.0,-10.6],[-69.6,-11.0],[-70.6,-9.5],[-72.4,-9.5],[-73.2,-9.4],[-74.0,-7.5],[-72.9,-5.2],[-70.0,-4.3],[-69.9,-1.0],[-69.4,-0.2],[-70.0,0.6],[-69.3,1.1],[-67.4,2.1],[-66.9,1.2],[-65.5,0.8],[-64.0,1.8],[-64.0,4.0],[-62.8,4.0],[-61.2,4.5],[-60.6,5.2],[-60.0,4.5],[-59.7,2.2],[-59.5,1.3],[-58.0,1.5],[-56.5,1.9],[-55.0,2.4],[-54.0,2.2],[-52.9,2.2],[-51.6,4.2]];
+  const ZOOM = { br: { lon: [-74.5, -33.5], lat: [-34.5, 6] }, ext: { lon: [-78.5, -33.5], lat: [-36.5, 6] }, se: { lon: [-51.5, -39.2], lat: [-25.3, -14.8] } };
+  $$('#m-zoom button').forEach((b) => b.addEventListener('click', () => { est.zoom = b.dataset.z; $$('#m-zoom button').forEach((x) => x.setAttribute('aria-pressed', x === b)); mapa(doPeriodo()); }));
+  $('#t-soltos').addEventListener('change', (e) => { est.soltos = e.target.checked; mapa(doPeriodo()); });
+  function mapa(S) {
+    const host = $('#g-mapa');
+    // destino no exterior so alarga o mapa quando tem viagem para la no periodo
+    const z = ZOOM[est.zoom === 'br' && S.some((v) => v.uf === 'Chile') ? 'ext' : est.zoom];
+    const kx = Math.cos(-15 * Math.PI / 180);
+    const W = Math.max(300, host.clientWidth || 700), wGeo = (z.lon[1] - z.lon[0]) * kx, hGeo = z.lat[1] - z.lat[0];
+    const H = Math.round(W * hGeo / wGeo);
+    const px = (lon) => (lon - z.lon[0]) * kx / wGeo * W, py = (lat) => (z.lat[1] - lat) / hGeo * H;
+    // custo de cada destino: viagem inteira no destino principal
+    const porDest = new Map();
+    S.forEach((v) => { if (v.dest < 0) return; const a = porDest.get(v.dest) || { v: 0, vs: [] }; a.v += v.custo; a.vs.push(v); porDest.set(v.dest, a); });
+    const max = Math.max.apply(null, Array.from(porDest.values()).map((a) => a.v).concat([1]));
+    const R = (v) => 4 + 22 * Math.sqrt(v / max) * (est.zoom === 'se' ? 1.2 : 1);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Mapa dos destinos"><defs><clipPath id="corte"><rect width="' + W + '" height="' + H + '"/></clipPath></defs><g clip-path="url(#corte)">';
+    s += '<path class="terra" d="' + BRASIL.map((p, i) => (i ? 'L' : 'M') + px(p[0]).toFixed(1) + ' ' + py(p[1]).toFixed(1)).join('') + 'Z"/>';
+    const dentro = (c) => c.lon >= z.lon[0] && c.lon <= z.lon[1] && c.lat >= z.lat[0] && c.lat <= z.lat[1];
+    if (est.soltos) {
+      const anosSel = new Set(S.map((v) => v.ano));
+      const sp = new Map();
+      D.fora.forEach((f) => { if (!anosSel.has(f[1]) && est.per.id !== 'tudo') return; const a = sp.get(f[0]) || { v: 0, n: 0, d: 0 }; a.v += f[2]; a.n += f[3]; a.d += f[4]; sp.set(f[0], a); });
+      sp.forEach((a, ci) => { const c = CID[ci]; if (c.casa || !dentro(c)) return;
+        s += '<circle class="solto" cx="' + px(c.lon) + '" cy="' + py(c.lat) + '" r="' + (3 + 10 * Math.sqrt(a.v / max)) + '" data-s="' + ci + '" data-v="' + a.v + '" data-n="' + a.n + '"/>'; });
+    }
+    Array.from(porDest.entries()).sort((a, b) => b[1].v - a[1].v).forEach((e) => { const c = CID[e[0]]; if (!dentro(c)) return;
+      s += '<circle class="ponto" cx="' + px(c.lon) + '" cy="' + py(c.lat) + '" r="' + R(e[1].v) + '" data-c="' + e[0] + '"/>'; });
+    CID.forEach((c) => { if (c.casa && c.nome === 'Campinas' && dentro(c)) s += '<circle class="casa" cx="' + px(c.lon) + '" cy="' + py(c.lat) + '" r="4.5"/>'; });
+    // rótulo dos maiores
+    const top = Array.from(porDest.entries()).sort((a, b) => b[1].v - a[1].v).slice(0, est.zoom === 'se' ? 10 : 7);
+    top.forEach((e) => { const c = CID[e[0]]; if (!dentro(c)) return; const x = px(c.lon), r = R(e[1].v), esq = x > W - 110;
+      s += '<text class="rot" x="' + (esq ? x - r - 4 : x + r + 4) + '" y="' + (py(c.lat) + 4) + '"' + (esq ? ' text-anchor="end"' : '') + '>' + esc(c.nome) + '</text>'; });
+    host.innerHTML = s + '</g></svg>';
+    $$('.ponto', host).forEach((el) => { const a = porDest.get(+el.dataset.c), c = CID[+el.dataset.c];
+      el.addEventListener('mousemove', (ev) => mostra('<span class="q">' + esc(c.nome) + ' · ' + c.uf + '</span>' + brl(a.v) + ' em ' + a.vs.length + (a.vs.length === 1 ? ' viagem' : ' viagens') + '<br>' + a.vs.map((v) => esc(mesAno(v.ini))).join(', '), ev));
+      el.addEventListener('mouseleave', esconde);
+      el.addEventListener('click', () => { const v = a.vs.slice().sort((x, y) => y.custo - x.custo)[0]; est.sel = v.i; ranking(S); detalhe(v); $('#viagens').scrollIntoView({ behavior: calmo ? 'auto' : 'smooth' }); }); });
+    $$('.solto', host).forEach((el) => { const c = CID[+el.dataset.s];
+      el.addEventListener('mousemove', (ev) => mostra('<span class="q">' + esc(c.nome) + ' · fora de viagem</span>' + brl(+el.dataset.v) + ' em ' + el.dataset.n + ' lançamentos', ev));
+      el.addEventListener('mouseleave', esconde); });
+    const lin = Array.from(porDest.entries()).sort((a, b) => b[1].v - a[1].v).slice(0, 12).map((e, k) => ({ nome: CID[e[0]].nome + ' · ' + CID[e[0]].uf, v: e[1].v, cor: 'var(--viagem)', txt: brl(e[1].v), nota: e[1].vs.length > 1 ? e[1].vs.length + 'x' : '' }));
+    barras($('#m-lista'), lin, lin.length ? lin[0].v : 1);
+    const ufs = new Set(S.filter((v) => v.uf).map((v) => v.uf));
+    const fora = S.filter((v) => v.dest >= 0 && !dentro(CID[v.dest]));
+    $('#m-sub').innerHTML = S.length ? '<b>' + porDest.size + '</b> ' + (porDest.size === 1 ? 'destino' : 'destinos') + ' em <b>' + ufs.size + '</b> ' + (ufs.size === 1 ? 'estado' : 'estados ou países') + '.'
+      + (fora.length ? ' Fora deste recorte: ' + Array.from(new Set(fora.map((v) => CID[v.dest].nome))).join(', ') + '.' : '') : 'Nenhuma viagem no período.';
+    $('#m-titulo').textContent = 'Onde o dinheiro foi gasto' + (S.length ? ', ' + est.per.nome.toLowerCase() : '');
+  }
+
+  // --------------------------------------------------------- saúde
+  function saude() {
+    const VH = V.filter((v) => v.hab && v.hab.durante && valeAchada(v));
+    const base = D.base_hab;
+    const med = (j, k) => { const xs = VH.map((v) => v.hab[j] && v.hab[j][k]).filter((x) => x != null); return xs.length ? soma(xs) / xs.length : null; };
+    const itens = [
+      { k: 'treino', nome: 'Treino', f: (x) => pct(x), melhor: 1 }, { k: 'cardio', nome: 'Cardio', f: (x) => pct(x), melhor: 1 },
+      { k: 'agua', nome: 'Água por dia', f: (x) => num(x, 1) + ' L', melhor: 1 }, { k: 'jaca', nome: 'Refeições jaca por dia', f: (x) => num(x, 1), melhor: -1 },
+    ];
+    $('#h-cards').innerHTML = itens.map((it) => {
+      const c = base[it.k], du = med('durante', it.k), de = med('depois', it.k), an = med('antes', it.k);
+      const cls = (x) => x == null ? '' : (x - c) * it.melhor > 0.001 ? 'bom' : (x - c) * it.melhor < -0.001 ? 'ruim' : '';
+      return '<div class="cartao"><span class="rotulo">' + it.nome + '</span><div class="linha3">'
+        + '<div><small>Dia comum</small><b>' + it.f(c) + '</b></div><div><small>Antes</small><b class="' + cls(an) + '">' + it.f(an) + '</b></div>'
+        + '<div><small>Durante</small><b class="' + cls(du) + '">' + it.f(du) + '</b></div><div><small>Depois</small><b class="' + cls(de) + '">' + it.f(de) + '</b></div></div></div>';
+    }).join('');
+    $('#t-hab tbody').innerHTML = VH.slice().sort((a, b) => b.t - a.t).map((v) => {
+      const h = v.hab, f = (j, k, fn) => h[j] && h[j][k] != null ? fn(h[j][k]) : '—';
+      const av = v.aval ? (v.aval.gord[1] - v.aval.gord[0]) : null;
+      const p0 = (x) => num(100 * x);
+      return '<tr><td><span style="display:block;max-width:150px;overflow:hidden;text-overflow:ellipsis">' + esc(v.nome) + '</span><span class="nota">' + mesAno(v.ini) + '</span></td>'
+        + '<td>' + f('antes', 'treino', p0) + ' · <b>' + f('durante', 'treino', p0) + '</b> · ' + f('depois', 'treino', p0) + '</td>'
+        + '<td>' + f('antes', 'agua', (x) => num(x, 1)) + ' · <b>' + f('durante', 'agua', (x) => num(x, 1)) + '</b> · ' + f('depois', 'agua', (x) => num(x, 1)) + '</td>'
+        + '<td>' + f('antes', 'jaca', (x) => num(x, 1)) + ' · <b>' + f('durante', 'jaca', (x) => num(x, 1)) + '</b> · ' + f('depois', 'jaca', (x) => num(x, 1)) + '</td>'
+        + '<td class="' + (av == null ? '' : av > 0 ? 'ruim' : 'bom') + '" title="' + (v.aval ? 'de ' + fdc(v.aval.de) + ' a ' + fdc(v.aval.ate) : '') + '">' + (av == null ? '—' : (av > 0 ? '+' : '−') + num(Math.abs(av), 1)) + '</td></tr>';
+    }).join('') || '<tr><td colspan="5" class="nota">Nenhuma viagem com registro diário.</td></tr>';
+    // pares de avaliações: Δ% gordura por 30 dias, com e sem viagem no meio
+    const P = D.pares.map((p) => ({ de: p[0], ate: p[1], n: p[2], fora: p[3], g: p[4], g30: p[4] / p[2] * 30 }));
+    const com = P.filter((p) => p.fora > 0), sem = P.filter((p) => p.fora === 0);
+    const mc = com.length ? soma(com.map((p) => p.g30)) / com.length : null, ms = sem.length ? soma(sem.map((p) => p.g30)) / sem.length : null;
+    $('#h-av-sub').innerHTML = P.length ? 'Cada ponto é um intervalo entre avaliações desde 2024: dias em viagem no meio × variação do % de gordura a cada 30 dias. '
+      + (mc != null && ms != null ? 'Com viagem no meio, <b class="' + (mc > ms ? 'ruim' : 'bom') + '">' + (mc > 0 ? '+' : '−') + num(Math.abs(mc), 2) + ' pp</b> por 30 dias; sem, <b>' + (ms > 0 ? '+' : '−') + num(Math.abs(ms), 2) + ' pp</b> (' + com.length + ' e ' + sem.length + ' intervalos).' : '') : 'Sem avaliações suficientes.';
+    const host = $('#g-av'), W = Math.max(300, host.clientWidth || 520), H = 220, m = { l: 46, r: 14, t: 12, b: 32 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const xm = Math.max.apply(null, P.map((p) => p.fora).concat([5])), ya = Math.max.apply(null, P.map((p) => Math.abs(p.g30)).concat([0.5])) * 1.15;
+    const X = (x) => m.l + iw * x / xm, Y = (y) => m.t + ih / 2 - ih / 2 * y / ya;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Dias em viagem e variação do % de gordura">';
+    [-1, -0.5, 0, 0.5, 1].forEach((k) => { const y = Y(ya * k); s += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y + '" y2="' + y + '"' + (k === 0 ? ' style="stroke:var(--linha-forte)"' : '') + '/><text class="ax" x="' + (m.l - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + (k > 0 ? '+' : '') + num(ya * k, 1) + '</text>'; });
+    for (let k = 0; k <= 4; k++) { const x = X(xm * k / 4); s += '<text class="ax" x="' + x + '" y="' + (H - 12) + '" text-anchor="middle">' + num(xm * k / 4) + '</text>'; }
+    s += '<text class="ax" x="' + (W - m.r) + '" y="' + (H - 1) + '" text-anchor="end">dias em viagem no intervalo</text>';
+    P.forEach((p, i) => { s += '<circle cx="' + X(p.fora) + '" cy="' + Y(p.g30) + '" r="5" fill="' + (p.g30 > 0 ? '#ff6f61' : '#4fd1a5') + '" fill-opacity=".75" data-i="' + i + '"/>'; });
+    host.innerHTML = s + '</svg>';
+    $$('circle', host).forEach((c) => { const p = P[+c.dataset.i];
+      c.addEventListener('mousemove', (ev) => mostra('<span class="q">' + fdc(p.de) + ' a ' + fdc(p.ate) + ' (' + p.n + ' dias)</span>' + p.fora + ' dias em viagem<br>% gordura ' + (p.g > 0 ? '+' : '−') + num(Math.abs(p.g), 1) + ' pp', ev));
+      c.addEventListener('mouseleave', esconde); });
+  }
+
+  // --------------------------------------------------------- simulador
+  const sim = { base: null, dias: 7, pes: 2, folga: 10, meses: 6, infl: true };
+  const REG = Array.from(new Set(V.map((v) => v.regiao))).filter((r) => r !== 'Sem destino');
+  const sel = $('#s-base');
+  sel.innerHTML = '<optgroup label="Região">' + REG.map((r) => '<option value="r:' + esc(r) + '">' + esc(r) + '</option>').join('') + '</optgroup>'
+    + '<optgroup label="Uma viagem">' + V.filter((v) => v.achou !== 'fixo').slice().sort((a, b) => b.t - a.t).map((v) => '<option value="v:' + v.i + '">' + esc(v.nome) + ' · ' + mesAno(v.ini) + '</option>').join('') + '</optgroup>';
+  // região da última viagem como ponto de partida
+  const ultima = V.filter((v) => v.achou !== 'fixo' && v.regiao !== 'Sem destino').sort((a, b) => b.t - a.t)[0];
+  sim.base = ultima ? 'r:' + ultima.regiao : sel.options[0].value;
+  sel.value = sim.base;
+  const POR_VIAGEM = ['pass', 'carro'], POR_NOITE = ['hosp'];
+  function baseSim() {
+    let vs;
+    if (sim.base.startsWith('v:')) vs = [V[+sim.base.slice(2)]];
+    else vs = V.filter((v) => v.regiao === sim.base.slice(2) && v.achou !== 'fixo' && v.dias <= 30 && valeAchada(v));
+    if (!vs.length) vs = V.filter((v) => v.achou !== 'fixo' && v.dias <= 30);
+    const anoHoje = anoFim;
+    const fator = (v) => sim.infl ? Math.pow(1.045, Math.max(0, anoHoje - v.ano)) : 1;
+    const r = {};
+    B.forEach((b, j) => {
+      const xs = vs.map((v) => { const x = v.baldes[j] * fator(v); return POR_VIAGEM.includes(b) ? x : POR_NOITE.includes(b) ? x / Math.max(1, v.dias - 1) : x / v.dias; });
+      r[b] = mediana(xs) || 0;
+    });
+    return { vs, r };
+  }
+  function simula() {
+    const { vs, r } = baseSim();
+    const quartos = Math.ceil(sim.pes / 2), escala = sim.pes / 2, noites = Math.max(1, sim.dias - 1);
+    const partes = B.map((b) => {
+      let x;
+      if (b === 'carro') x = r[b];
+      else if (b === 'pass') x = r[b] * escala;
+      else if (b === 'hosp') x = r[b] * noites * quartos;
+      else x = r[b] * sim.dias * escala;
+      return { b, x };
+    });
+    const sub = soma(partes.map((p) => p.x)), total = sub * (1 + sim.folga / 100);
+    anima($('#s-total'), total, (x) => brl(x)); anima($('#s-dia'), total / sim.dias, (x) => brl(x)); anima($('#s-mes'), total / sim.meses, (x) => brl(x));
+    $('#s-dias-v').textContent = sim.dias + (sim.dias === 1 ? ' dia' : ' dias');
+    $('#s-pes-v').textContent = sim.pes + (sim.pes === 1 ? ' pessoa' : ' pessoas');
+    $('#s-folga-v').textContent = sim.folga + '%';
+    $('#s-meses-v').textContent = sim.meses + (sim.meses === 1 ? ' mês' : ' meses');
+    const dMed = mediana(vs.map((v) => v.dias));
+    $('#s-base-b').textContent = 'Base: ' + vs.length + (vs.length === 1 ? ' viagem' : ' viagens') + ' (mediana de ' + num(dMed) + ' dias)' + (sim.infl ? ', em valores de hoje' : '') + '.';
+    $('#s-dias-b').textContent = 'As viagens da base duraram de ' + Math.min.apply(null, vs.map((v) => v.dias)) + ' a ' + Math.max.apply(null, vs.map((v) => v.dias)) + ' dias.';
+    const lin = partes.filter((p) => p.x > 0.5).sort((a, b) => b.x - a.x).map((p) => ({ nome: NOME_B[p.b], v: p.x, cor: COR_B[p.b], txt: brl(p.x),
+      nota: POR_VIAGEM.includes(p.b) ? 'por viagem' : p.b === 'hosp' ? brl(r.hosp * quartos) + '/noite' : brl(p.x / sim.dias) + '/dia' }));
+    barras($('#s-baldes'), lin, lin.length ? lin[0].v : 1);
+    $('#s-txt').innerHTML = 'Para ' + sim.dias + ' dias com ' + sim.pes + (sim.pes === 1 ? ' pessoa' : ' pessoas') + ': <b>' + brl(sub) + '</b> pelo histórico' + (sim.folga ? ' + ' + sim.folga + '% de folga' : '')
+      + '. Guardando <b>' + brl(total / sim.meses) + '</b> por mês, dá para pagar à vista em ' + sim.meses + (sim.meses === 1 ? ' mês.' : ' meses.');
+    const comp = vs.slice().sort((a, b) => b.t - a.t).slice(0, 4);
+    $('#s-comp').innerHTML = 'Parecidas: ' + comp.map((v) => '<b>' + esc(v.nome) + '</b> ' + mesAno(v.ini) + ' (' + v.dias + ' dias, ' + brl(v.custo) + ')').join(' · ') + '.';
+  }
+  function liga(id, k) { const el = $(id); el.value = sim[k]; el.addEventListener('input', () => { sim[k] = +el.value; simula(); }); }
+  liga('#s-dias', 'dias'); liga('#s-pes', 'pes'); liga('#s-folga', 'folga'); liga('#s-meses', 'meses');
+  sel.addEventListener('change', () => {
+    sim.base = sel.value;
+    if (sim.base.startsWith('v:')) { sim.dias = Math.min(30, V[+sim.base.slice(2)].dias); $('#s-dias').value = sim.dias; }
+    simula();
+  });
+  $('#s-infl').addEventListener('change', (e) => { sim.infl = e.target.checked; simula(); });
+
+  // --------------------------------------------------------- recorte
+  function recorte() {
+    const S = doPeriodo();
+    abertura(S);
+    if (est.sel == null || !S.some((v) => v.i === est.sel)) est.sel = S.length ? S.slice().sort((a, b) => b.custo - a.custo)[0].i : null;
+    ranking(S); detalhe(est.sel == null ? null : V[est.sel]);
+    gasto(S); destinos(S); mapa(S); saude(); simula();
+  }
+
+  $('#n-gerado').textContent = D.gerado;
+  $('#n-avisos').innerHTML = '<b>Dados para corrigir no lake.</b> ' + D.avisos.map(esc).join(' ');
+  $('#n-soltos').innerHTML = D.soltos.length ? '<b>Gasto com cara de viagem que não entrou em nenhuma</b> (acima de R$ 300, desde 2021; vale taguear): '
+    + D.soltos.map((s) => fdc(s[0]) + ' ' + esc(s[2]) + ' ' + brl(-s[1])).join('; ') + '.' : '';
+  recorte();
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { const S = doPeriodo(); porAno(S); mapa(S); saude(); }, 150); });
+
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visto'); io.unobserve(e.target); } }), { threshold: 0.06 }) : null;
+  $$('.entra').forEach((el) => io ? io.observe(el) : el.classList.add('visto'));
+})();
+</script>
+</body>
+</html>

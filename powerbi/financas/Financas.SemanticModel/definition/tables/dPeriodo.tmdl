@@ -1,0 +1,59 @@
+/// Seletor de período. DESCONECTADA de propósito: se filtrasse o calendário, o histórico de doze meses encolheria para o mês escolhido.
+table dPeriodo
+	lineageTag: 49abd4e4-9a71-54e6-8f1d-cfbcf14a05b9
+
+	column NM_ANO_MES
+		dataType: string
+		isHidden
+		lineageTag: d8780416-9e99-5c51-a02b-a1713a23fd65
+		summarizeBy: none
+		sourceColumn: NM_ANO_MES
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Mês por extenso. É o que o seletor do cabeçalho mostra.
+	column NM_PERIODO
+		dataType: string
+		lineageTag: 93601559-0f00-5621-93d5-8c10988618a6
+		sortByColumn: NR_INDICE
+		summarizeBy: none
+		sourceColumn: NM_PERIODO
+
+		annotation SummarizationSetBy = Automatic
+
+	column NR_INDICE
+		dataType: int64
+		isHidden
+		lineageTag: d8acd664-d474-5ea4-a9af-a54b00ba0da0
+		summarizeBy: none
+		sourceColumn: NR_INDICE
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dPeriodo = m
+		mode: import
+		source = ```
+				let
+				    Origem = Sql.Database(pServidor, pBanco),
+				    Tabela = Origem{[Schema="gold", Item="dim_calendario"]}[Data],
+
+				    // UM MES POR LINHA, E DESCONECTADA DO FATO DE PROPOSITO. E so daqui
+				    // que o seletor de periodo filtra. Se ele filtrasse dCalendario, o
+				    // historico de doze meses encolheria para o mes escolhido, porque
+				    // seriam a mesma coluna servindo de eixo e de filtro.
+				    Hoje   = Date.From(DateTime.LocalNow()),
+				    Limite = Date.AddMonths(Date.StartOfMonth(Hoje), -35),
+				    Janela = Table.SelectRows(Tabela,
+				                 each [DT_DATA] >= Limite and [DT_DATA] <= Hoje),
+				    Meses  = Table.Distinct(Table.SelectColumns(Janela,
+				                 {"NM_ANO_MES", "NM_MES", "NR_ANO", "NR_MES"})),
+				    Indice = Table.AddColumn(Meses, "NR_INDICE",
+				                 each [NR_ANO] * 12 + [NR_MES], Int64.Type),
+				    Rotulo = Table.AddColumn(Indice, "NM_PERIODO",
+				                 each [NM_MES] & " / " & Text.From([NR_ANO]), type text),
+				    Final  = Table.SelectColumns(Rotulo, {"NM_ANO_MES", "NM_PERIODO", "NR_INDICE"})
+				in
+				    Final
+				```
+
+	annotation PBI_ResultType = Table
